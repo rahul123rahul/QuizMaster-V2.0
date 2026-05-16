@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Secure Exam Browser | QuizMaster</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ext-language_tools.min.js"></script>
+
+    <style>
+        /* --- CORE LAYOUT --- */
+        body {
+            background-color: #f4f6f9;
+            user-select: none; /* CSS Anti-Select */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            overflow: hidden; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+        }
+
+        /* --- BLUR & VIOLATION OVERLAY --- */
+        /* This class will be added to the main UI when a violation occurs */
+        .blur-filter {
+            filter: blur(10px);
+            pointer-events: none; /* Prevent clicking while blurred */
+            transition: filter 0.3s ease;
+        }
+
+        #violation-overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(220, 38, 38, 0.9); /* Red semi-transparent */
+            z-index: 10000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+        }
+
+        /* --- EXISTING STYLES --- */
+        .top-bar { background: #0f172a; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; height: 60px; border-bottom: 1px solid #334155; }
+        .main-wrapper { display: flex; flex: 1; overflow: hidden; }
+        .question-area { flex: 1; padding: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; background: #fff; }
+        .sidebar { width: 280px; background: #f8fafc; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 100; }
+        .palette-grid { padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 8px; align-content: start; }
+        .grid-btn { height: 35px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: 600; font-size: 13px; color: #475569; transition:0.2s; }
+        .grid-btn:hover { background: #e2e8f0; }
+        .grid-btn.active { border-color: #4f46e5; background: #4f46e5; color: white; }
+        .grid-btn.answered { background: #10b981; color: white; border-color: #10b981; }
+        .grid-btn.skipped { background: #f97316; color: white; border-color: #f97316; } /* Orange for Skipped */
+        .footer { background: rgb(113, 179, 238); padding: 15px 25px; border-top: 1px solid #b0bdcf; display: flex; justify-content: space-between; height: 70px; align-items: center; }
+        .q-container { padding: 40px; max-width: 900px; margin: 0 auto; width: 100%; }
+        .q-header { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
+        .q-text { font-size: 17px; line-height: 1.6; color: #334155; margin-bottom: 30px; }
+        .option-card { padding: 18px 25px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; background: white; display: flex; align-items: center; gap: 15px; }
+        .option-card:hover { border-color: #94a3b8; background: #f8fafc; }
+        .option-card.selected { border-color: #4f46e5; background: #eef2ff; color: #312e81; font-weight: 600; }
+        .opt-key { width: 30px; height: 30px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: #64748b; }
+        .option-card.selected .opt-key { background: #4f46e5; color: white; }
+
+        /* MODULE MENU */
+        .module-header { padding: 10px 15px; background: #e2e8f0; font-weight: 700; font-size: 13px; color: #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; }
+        .module-header:hover { background: #cbd5e1; }
+        .module-content { display: none; padding: 10px; background: #f8fafc; }
+        .module-content.open { display: block; }
+        .module-badge { background: #4f46e5; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+
+        /* CODING UI */
+        .coding-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
+            min-height: 100%;
+            background:
+                radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 32%),
+                linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+        }
+        .problem-panel {
+            padding: 28px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            border-right: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255,255,255,0.74);
+            backdrop-filter: blur(10px);
+        }
+        .problem-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .problem-kicker {
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #0f766e;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .problem-title {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.1;
+            color: #0f172a;
+            font-weight: 800;
+        }
+        .problem-subtitle {
+            color: #475569;
+            font-size: 14px;
+            margin-top: 6px;
+        }
+        .meta-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .meta-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #0f172a;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+        }
+        .problem-card {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid rgba(191, 219, 254, 0.9);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 28px 55px rgba(15, 23, 42, 0.08);
+        }
+        .problem-body {
+            font-size: 16px;
+            line-height: 1.75;
+            color: #1e293b;
+            white-space: pre-wrap;
+        }
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+        .spec-card {
+            border-radius: 18px;
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(226, 232, 240, 0.92);
+            padding: 18px;
+            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+        }
+        .spec-label {
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+        .spec-card pre {
+            margin: 0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.55;
+            color: #0f172a;
+            white-space: pre-wrap;
+            background: #f8fafc;
+            border-radius: 14px;
+            padding: 14px;
+        }
+        .workspace-panel {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 1) 100%);
+            color: #e2e8f0;
+        }
+        .workspace-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.9);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(14px);
+        }
+        .workspace-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .workspace-title strong {
+            font-size: 16px;
+            letter-spacing: 0.02em;
+        }
+        .workspace-title span {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .workspace-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .lang-select {
+            background: rgba(15, 23, 42, 0.92);
+            color: #f8fafc;
+            border: 1px solid rgba(71, 85, 105, 0.8);
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            outline: none;
+            min-width: 130px;
+        }
+        .workspace-btn {
+            border: 1px solid rgba(71, 85, 105, 0.65);
+            background: rgba(30, 41, 59, 0.92);
+            color: #e2e8f0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+        .workspace-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(125, 211, 252, 0.65);
+            color: #f8fafc;
+        }
+        .workspace-btn.run {
+            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+            border-color: transparent;
+            color: #04131f;
+        }
+        .workspace-btn.run:hover {
+            color: #04131f;
+        }
+        .editor-frame {
+            position: relative;
+            min-height: 360px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.8);
+            background: #0b1220;
+        }
+        .ace-editor {
+            position: absolute;
+            inset: 0;
+            font-size: 14px;
+        }
+        .console-shell {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 18px;
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 1) 100%);
+        }
+        .judge-tabs {
+            display: inline-flex;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 16px;
+            background: rgba(30, 41, 59, 0.82);
+            border: 1px solid rgba(51, 65, 85, 0.9);
+            width: fit-content;
+        }
+        .judge-tab {
+            border: 0;
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+        .judge-tab.active {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(20, 184, 166, 0.14));
+            color: #e0f2fe;
+        }
+        .judge-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .status-banner {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 44px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.62);
+            border: 1px solid rgba(51, 65, 85, 0.85);
+            color: #cbd5e1;
+            font-size: 13px;
+            font-weight: 700;
+            flex: 1;
+        }
+        .status-banner.success { color: #86efac; border-color: rgba(34, 197, 94, 0.38); }
+        .status-banner.error { color: #fca5a5; border-color: rgba(248, 113, 113, 0.35); }
+        .status-banner.loading { color: #fde68a; border-color: rgba(250, 204, 21, 0.35); }
+        .summary-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 112px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(71, 85, 105, 0.8);
+            color: #e2e8f0;
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .test-case-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .case-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(71, 85, 105, 0.8);
+            background: rgba(15, 23, 42, 0.68);
+            color: #cbd5e1;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .case-btn.pass { border-color: rgba(74, 222, 128, 0.45); color: #86efac; }
+        .case-btn.fail { border-color: rgba(251, 146, 60, 0.45); color: #fdba74; }
+        .case-btn.error { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
+        .case-btn.active {
+            transform: translateY(-1px);
+            background: rgba(14, 165, 233, 0.15);
+            border-color: rgba(125, 211, 252, 0.65);
+            color: #e0f2fe;
+        }
+        .case-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .io-box {
+            background: rgba(15, 23, 42, 0.72);
+            border: 1px solid rgba(51, 65, 85, 0.92);
+            border-radius: 16px;
+            padding: 16px;
+            min-height: 132px;
+        }
+        .io-box.full-width {
+            grid-column: 1 / -1;
+        }
+        .io-label {
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #64748b;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .io-content {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.65;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #e2e8f0;
+        }
+        .terminal-input {
+            width: 100%;
+            min-height: 118px;
+            border-radius: 16px;
+            border: 1px solid rgba(71, 85, 105, 0.88);
+            background: rgba(15, 23, 42, 0.82);
+            color: #f8fafc;
+            padding: 14px;
+            resize: vertical;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .terminal-output {
+            min-height: 138px;
+            border-radius: 16px;
+            border: 1px solid rgba(51, 65, 85, 0.9);
+            background:
+                linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.94) 100%);
+            padding: 16px;
+            color: #e2e8f0;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+        /* --- RESPONSIVE DESIGN --- */
+        @media (max-width: 992px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                height: 100%;
+                right: 0;
+                width: 85%; /* Wider on mobile */
+                max-width: 320px;
+                transform: translateX(100%); /* Hidden by default */
+                transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Friendly smooth animation */
+                box-shadow: -5px 0 30px rgba(0,0,0,0.3);
+                z-index: 2000;
+            }
+            .sidebar.active { transform: translateX(0); }
+            
+            /* Overlay for sidebar */
+            .sidebar-overlay {
+                display: none;
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 1999;
+                backdrop-filter: blur(2px);
+            }
+            .sidebar-overlay.active { display: block; }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar { padding: 0 15px; font-size: 14px; height: 50px; }
+            .q-container { padding: 20px; }
+            .footer { padding: 10px 15px; height: 60px; }
+            
+            /* Adjust font sizes for mobile */
+            .q-text { font-size: 15px; }
+            .option-card { padding: 12px 15px; }
+            
+            /* Hide non-essential elements on very small screens */
+            .vr { display: none; }
+            .coding-shell { grid-template-columns: 1fr; }
+            .problem-panel { padding: 18px; border-right: none; border-bottom: 1px solid rgba(148, 163, 184, 0.16); }
+            .problem-head { flex-direction: column; }
+            .problem-title { font-size: 22px; }
+            .meta-chips { justify-content: flex-start; }
+            .workspace-toolbar { align-items: stretch; }
+            .workspace-actions { justify-content: stretch; width: 100%; }
+            .workspace-actions > * { flex: 1 1 calc(50% - 10px); }
+            .spec-grid,
+            .case-details-grid { grid-template-columns: 1fr; }
+            .editor-frame { min-height: 300px; }
+            .console-shell { padding: 14px; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false" oncopy="return false" oncut="return false" onpaste="return false">
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <div id="violation-overlay">
+        <div style="font-size: 60px; margin-bottom: 20px;"><i class="fas fa-exclamation-triangle"></i></div>
+        <h1 class="fw-bold">Don't switch tabs!</h1>
+        <p class="fs-4">You are not allowed to leave the exam window.</p>
+        <div class="bg-white text-danger px-4 py-2 rounded-pill fw-bold mt-3 mb-4">
+            Warning <span id="overlay-count">0</span>/3
+        </div>
+        <button class="btn btn-light btn-lg fw-bold px-5" onclick="resumeExam()">Return to Exam</button>
+    </div>
+
+    <div id="start-overlay">
+        <div style="width:80px; height:80px; background:#e0e7ff; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
+            <i class="fas fa-shield-alt text-primary" style="font-size:36px;"></i>
+        </div>
+        <h2 class="fw-bold mb-2 text-dark">Secure Exam Environment</h2>
+        <p class="text-muted mb-4 text-center" style="max-width:600px;">
+            <strong>Mandatory Full Screen:</strong> Once the assessment launches, the browser will lock into full-screen mode.<br>
+            <strong>Locked Down Environment:</strong> The exam software prevents the use of the internet or other applications.<br>
+            <span class="text-danger">In case of a "locked" session error, <strong>ask to help coordinator</strong> to exit.</span>
+        </p>
+        <button class="btn btn-primary btn-lg px-5 rounded-pill fw-bold" onclick="enterFullscreenAndStart()">
+            <i class="fas fa-lock me-2"></i> Enter Secure Mode
+        </button>
+    </div>
+
+    <div id="exam-ui-container">
+        <div class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <div class="fw-bold"><i class="fas fa-cube text-primary"></i> QuizMaster Pro</div>
+                <div class="vr bg-secondary opacity-25 d-none d-md-block"></div>
+                <div style="font-size:14px; opacity:0.8;" id="quiz-title-display">{{ quiz_meta.title }}</div>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <div class="badge bg-danger rounded-pill px-3 py-2" id="violation-badge" style="display:none;">
+                    <i class="fas fa-exclamation-circle"></i> Warnings: <span id="v-count">0</span>/3
+                </div>
+                <div class="badge bg-warning text-dark fs-6 font-monospace" id="timer" style="min-width:100px; text-align:center;">Loading...</div>
+                <button class="btn btn-outline-light d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+            </div>
+        </div>
+
+        <div class="main-wrapper">
+            <div class="question-area" id="q-area" style="position:relative;">
+                {% for q in questions %}
+                <div class="question-block h-100" id="q-{{ loop.index0 }}" style="display: {{ 'block' if loop.first else 'none' }};">
+                    <input type="hidden" id="module-{{ loop.index0 }}" value="{{ q.module or 'General' }}">
+
+                    {% if q.question_type == 'MCQ' %}
+                        <div class="q-container">
+                            <div class="q-header">
+                                <span class="badge bg-primary me-2">{{ q.module or 'General' }}</span> Question {{ loop.index }} 
+                                <span class="float-end badge bg-light text-dark border">Mark: {{ q.marks }}</span>
+                            </div>
+                            <div class="q-text">{{ q.question_text }}</div>
+                            <div class="options-group">
+                                {% for opt in q.shuffled_options %}
+                                <div class="option-card" onclick="selectOpt(this, '{{ q.question_id }}', '{{ opt.key }}')">
+                                    <div class="opt-key">{{ loop.index }}</div>
+                                    <div>{{ opt.text }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" id="ans-{{ q.question_id }}">
+                        </div>
+
+                    {% else %}
+                        <div class="coding-shell">
+                            <div class="problem-panel">
+                                <div class="problem-head">
+                                    <div>
+                                        <div class="problem-kicker">Coding Challenge</div>
+                                        <h2 class="problem-title">Question {{ loop.index }}</h2>
+                                        <div class="problem-subtitle">Solve it like a judged contest problem. Your code is evaluated against the configured test cases.</div>
+                                    </div>
+                                    <div class="meta-chips">
+                                        <span class="meta-chip"><i class="fas fa-layer-group"></i> {{ q.module or 'General' }}</span>
+                                        <span class="meta-chip"><i class="fas fa-star"></i> {{ q.marks }} Marks</span>
+                                    </div>
+                                </div>
+
+                                <div class="problem-card">
+                                    <div class="problem-body">{{ q.question_text }}</div>
+                                </div>
+
+                                <div class="spec-grid">
+                                    <div class="spec-card">
+                                        <div class="spec-label">Input Format</div>
+                                        <pre>{{ q.test_input or "Standard Input" }}</pre>
+                                    </div>
+                                    <div class="spec-card">
+                                        <div class="spec-label">Expected Output</div>
+                                        <pre>{{ q.test_output or "Judge compares the solution output with configured cases." }}</pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="workspace-panel" id="workspace-{{ q.question_id }}">
+                                <div class="workspace-toolbar">
+                                    <div class="workspace-title">
+                                        <strong>Contest Workspace</strong>
+                                        <span>LeetCode-style editor, judge view, and terminal workflow.</span>
+                                    </div>
+                                    <div class="workspace-actions">
+                                        <select class="lang-select" id="lang-select-{{ q.question_id }}" onchange="changeLanguage('{{ q.question_id }}')">
+                                            <option value="python">Python 3</option>
+                                            <option value="java">Java</option>
+                                            <option value="cpp">C++</option>
+                                            <option value="javascript">JavaScript</option>
+                                            <option value="c">C</option>
+                                            <option value="go">Go</option>
+                                        </select>
+                                        <button class="workspace-btn" onclick="toggleTheme('{{ q.question_id }}')" title="Toggle editor theme">
+                                            <i class="fas fa-adjust me-1"></i> Theme
+                                        </button>
+                                        <button class="workspace-btn" onclick="resetCode('{{ q.question_id }}')" title="Reset starter code">
+                                            <i class="fas fa-rotate-left me-1"></i> Reset
+                                        </button>
+                                        <button class="workspace-btn run" onclick="runCode('{{ q.question_id }}')">
+                                            <i class="fas fa-play me-1"></i> Run Tests
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="editor-frame">
+                                    <div id="ace-{{ q.question_id }}" class="ace-editor"></div>
+                                </div>
+
+                                <div class="console-shell">
+                                    <div class="judge-tabs">
+                                        <button type="button" class="judge-tab active" id="tab-res-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'res')">Judge Results</button>
+                                        <button type="button" class="judge-tab" id="tab-cust-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'cust')">Custom Run</button>
+                                    </div>
+
+                                    <div id="view-res-{{ q.question_id }}">
+                                        <div class="judge-status">
+                                            <div id="status-msg-{{ q.question_id }}" class="status-banner">
+                                                <i class="fas fa-terminal"></i> Run the official test suite to see verdicts and per-case details.
+                                            </div>
+                                            <div id="summary-pill-{{ q.question_id }}" class="summary-pill">0 / 0 cases</div>
+                                        </div>
+
+                                        <div id="cases-nav-{{ q.question_id }}" class="test-case-container" style="display:none;"></div>
+
+                                        <div id="case-details-{{ q.question_id }}" class="case-details-grid" style="display:none;">
+                                            <div class="io-box">
+                                                <div class="io-label">Input</div>
+                                                <div class="io-content" id="detail-input-{{ q.question_id }}"></div>
+                                            </div>
+                                            <div class="io-box">
+                                                <div class="io-label">Expected Output</div>
+                                                <div class="io-content" id="detail-expected-{{ q.question_id }}"></div>
+                                            </div>
+                                            <div class="io-box full-width">
+                                                <div class="io-label">Your Output</div>
+                                                <div class="io-content" id="detail-actual-{{ q.question_id }}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div id="view-cust-{{ q.question_id }}" style="display:none;">
+                                        <div class="io-label">Custom Input</div>
+                                        <textarea id="custom-input-{{ q.question_id }}" class="terminal-input" placeholder="Type custom stdin here and run it like a local terminal session."></textarea>
+                                        <div class="d-flex justify-content-end mt-3">
+                                            <button class="workspace-btn" onclick="runCustom('{{ q.question_id }}')">
+                                                <i class="fas fa-terminal me-1"></i> Run Custom Input
+                                            </button>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="io-label">Terminal Output</div>
+                                            <div class="terminal-output" id="custom-output-{{ q.question_id }}">Terminal output will appear here.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="sidebar">
+                <div class="p-3 border-bottom fw-bold bg-white d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-bars me-2"></i> Exam Modules</span>
+                    <button class="btn btn-sm btn-light d-lg-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <div style="flex: 1; overflow-y: auto;" id="sidebar-content">
+                    <!-- Group Questions by Module -->
+                    {% set ns = namespace(current_module=None) %}
+                    {% for q in questions %}
+                        {% if ns.current_module != (q.module or 'General') %}
+                            {% if not loop.first %}</div></div>{% endif %}
+                            {% set ns.current_module = (q.module or 'General') %}
+                            
+                            <div class="module-group">
+                                <div class="module-header" onclick="toggleModule('mod-{{ loop.index }}')">
+                                    {{ ns.current_module }}
+                                    <i class="fas fa-chevron-down small"></i>
+                                </div>
+                                <div class="module-content open" id="mod-{{ loop.index }}">
+                                    <div class="palette-grid" style="padding:0;">
+                        {% endif %}
+                        
+                        <button class="grid-btn" id="btn-{{ q.question_id }}" onclick="jumpTo({{ loop.index0 }})">{{ loop.index }}</button>
+
+                        {% if loop.last %}</div></div></div>{% endif %}
+                    {% endfor %}
+                </div>
+                <div class="p-3 mt-auto border-top bg-white">
+                    <button class="btn btn-danger w-100 fw-bold py-2" onclick="attemptSubmit()">Finish Exam</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <button class="btn btn-outline-dark d-lg-none me-2" onclick="toggleSidebar()"><i class="fas fa-th-large"></i></button>
+            <button class="btn btn-outline-secondary px-4 fw-bold" onclick="prevQ()"><i class="fas fa-arrow-left me-2"></i> Previous</button>
+            <button class="btn btn-primary px-4 fw-bold shadow-sm" onclick="nextQ()">Save & Next <i class="fas fa-arrow-right ms-2"></i></button>
+        </div>
+    </div>
+
+    <script>
+        let attemptId = {{ attempt_id }};
+        let questions = [{% for q in questions %}'{{ q.question_id }}',{% endfor %}];
+        let savedResponses = {{ saved_responses | tojson }};
+        let currentIdx = 0;
+        let timeLeft = {{ quiz_meta.duration_minutes }} * 60; // Default
+        let editorInstances = {};
+        let editorThemes = {};
+        let isExamActive = false;
+
+        let violationCount = 0;
+        const MAX_VIOLATIONS = 3;
+
+        // BOILERPLATES (Same as before)
+        const boilerplates = {
+            'python': 'def solve():\n    # Write code here\n    print("Hello World")\n\nif __name__ == "__main__":\n    solve()',
+            'java': 'public class Main {\n    public static void main(String[] args) {\n        System.out.println("Hello World");\n    }\n}',
+            'cpp': '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World";\n    return 0;\n}',
+            'c': '#include <stdio.h>\n\nint main() {\n    printf("Hello World");\n    return 0;\n}',
+            'javascript': 'console.log("Hello World");',
+            'go': 'package main\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello World")\n}'
+        };
+        const aceModes = {'python': 'ace/mode/python', 'java': 'ace/mode/java', 'cpp': 'ace/mode/c_cpp', 'c': 'ace/mode/c_cpp', 'javascript': 'ace/mode/javascript', 'go': 'ace/mode/golang'};
+        const aceThemes = { dark: 'ace/theme/twilight', light: 'ace/theme/github' };
+
+        function getDraftStorageKey(qId, lang) {
+            return `exam_draft_${attemptId}_${qId}_${lang}`;
+        }
+
+        function saveEditorDraft(qId, lang, value) {
+            localStorage.setItem(getDraftStorageKey(qId, lang), value);
+        }
+
+        function loadEditorDraft(qId, lang) {
+            return localStorage.getItem(getDraftStorageKey(qId, lang));
+        }
+
+        function setStatusBanner(qId, message, state = 'idle') {
+            const el = document.getElementById(`status-msg-${qId}`);
+            el.className = 'status-banner';
+            if (state !== 'idle') {
+                el.classList.add(state);
+            }
+            el.innerHTML = message;
+        }
+
+        function setSummaryPill(qId, text) {
+            document.getElementById(`summary-pill-${qId}`).innerText = text;
+        }
+
+        // --- ENHANCED SECURITY ---
+        // 1. Disable Keyboard Shortcuts (Copy, Paste, PrintScreen, Inspect)
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+            if (e.ctrlKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+C
+            if (e.ctrlKey && e.keyCode == 'V'.charCodeAt(0)) return false; // Ctrl+V
+            if (e.ctrlKey && e.keyCode == 'A'.charCodeAt(0)) return false; // Ctrl+A
+        }
+        
+        // 2. Disable Selection and Dragging
+        document.onselectstart = function() { return false; };
+        document.ondragstart = function() { return false; };
+        
+        // Emergency Exit (Right Shift + Esc)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === "Escape" && e.shiftKey && e.location === 2) {
+                isExamActive = false;
+                window.location.href = '/student';
+            }
+        });
+
+        // 3. Security Monitors
+        function enterFullscreenAndStart() {
+            requestFS();
+            document.getElementById('start-overlay').style.display = 'none';
+            isExamActive = true;
+            initTimers();
+            initEditors();
+            
+            // Monitor Tab Switching
+            document.addEventListener("visibilitychange", () => { 
+                if(document.hidden && isExamActive) triggerViolation("Tab Switch"); 
+            });
+
+            // Monitor Window Blur (Minimizing or clicking outside)
+            window.onblur = function() {
+                if(isExamActive) triggerViolation("Window Minimized");
+            };
+
+            // Monitor Fullscreen Exit
+            ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange'].forEach(
+                eventType => document.addEventListener(eventType, () => {
+                    if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                        !document.mozFullScreenElement && !document.msFullscreenElement && isExamActive) {
+                        triggerViolation("Exited Fullscreen");
+                    }
+                }, false)
+            );
+        }
+
+        // Helper for Cross-Browser Fullscreen
+        function requestFS() {
+            var doc = document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen().catch(()=>{});
+            else if (doc.mozRequestFullScreen) doc.mozRequestFullScreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen(); // Safari/iOS
+            else if (doc.msRequestFullscreen) doc.msRequestFullscreen(); // IE/Edge
+        }
+
+        // 4. Violation Handler (Blur & Block)
+        function triggerViolation(reason) {
+            if (!isExamActive) return;
+
+            violationCount++;
+            
+            // Update UI Counters
+            document.getElementById('violation-badge').style.display = 'block';
+            document.getElementById('v-count').innerText = violationCount;
+            document.getElementById('overlay-count').innerText = violationCount;
+
+            // Blur the Exam UI
+            document.getElementById('exam-ui-container').classList.add('blur-filter');
+            
+            // Show the Red Overlay
+            document.getElementById('violation-overlay').style.display = 'flex';
+
+            // Check Limit
+            if (violationCount >= MAX_VIOLATIONS) {
+                // Send to Server
+                fetch('/api/terminate_exam', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ attempt_id: attemptId, reason: reason }) 
+                });
+
+                // Permanently Lock
+                document.getElementById('violation-overlay').innerHTML = `
+                    <h1 class='fw-bold'>EXAM TERMINATED</h1>
+                    <p>You exceeded the violation limit.</p>
+                    <button class='btn btn-light' onclick='window.location.href="/logout"'>Exit</button>
+                `;
+            }
+        }
+
+        // 5. Resume Function (Called when user clicks button on red screen)
+        function resumeExam() {
+            if (violationCount >= MAX_VIOLATIONS) return; // Cannot resume if banned
+            
+            // Remove Blur and Hide Overlay
+            document.getElementById('exam-ui-container').classList.remove('blur-filter');
+            document.getElementById('violation-overlay').style.display = 'none';
+            
+            // Re-enter Fullscreen if they left it
+            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+                requestFS();
+            }
+        }
+
+        // --- EXAM LOGIC ---
+        function attemptSubmit() {
+            Swal.fire({
+                title: 'Finish Exam?',
+                text: "Are you sure you want to submit? You cannot undo this action.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, Submit'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    submitExam();
+                }
+            });
+        }
+
+        function submitExam() {
+            isExamActive = false;
+            Swal.fire({ title: 'Submitting...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            fetch('/api/submit_quiz', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ attempt_id: attemptId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                Swal.fire('Submitted!', `Your score: ${data.score}`, 'success').then(() => window.location.href = '/student');
+            })
+            .catch(() => { isExamActive = true; Swal.fire('Error', 'Submission failed.', 'error'); });
+        }
+
+        function initTimers() {
+            let timerEl = document.getElementById('timer');
+            let interval = setInterval(() => {
+                if(timeLeft <= 0) { clearInterval(interval); submitExam(); }
+                else {
+                    timeLeft--;
+                    let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+                    timerEl.innerText = `${m}m ${s}s`;
+                    if(timeLeft < 300) timerEl.classList.replace('bg-warning', 'bg-danger');
+                }
+            }, 1000);
+        }
+
+        function initEditors() {
+            {% for q in questions %}
+                {% if q.question_type == 'CODE' %}
+                    var editor = ace.edit("ace-{{ q.question_id }}");
+                    editorThemes['{{ q.question_id }}'] = 'dark';
+                    editor.setTheme(aceThemes.dark);
+                    editor.session.setMode("ace/mode/python");
+                    editor.setOptions({
+                        enableBasicAutocompletion: true,
+                        enableLiveAutocompletion: true,
+                        enableSnippets: true,
+                        fontSize: "14px",
+                        showPrintMargin: false,
+                        tabSize: 4,
+                        useSoftTabs: true
+                    });
+                    const savedDraft = loadEditorDraft('{{ q.question_id }}', 'python');
+                    editor.setValue(savedDraft || boilerplates['python'], -1);
+                    editor.setShowPrintMargin(false);
+                    editor.session.on('change', function() {
+                        const lang = document.getElementById('lang-select-{{ q.question_id }}').value;
+                        saveEditorDraft('{{ q.question_id }}', lang, editor.getValue());
+                    });
+                    editorInstances['{{ q.question_id }}'] = editor;
+                    setSummaryPill('{{ q.question_id }}', '0 / 0 cases');
+                {% endif %}
+            {% endfor %}
+        }
+
+        function changeLanguage(qId) {
+            let lang = document.getElementById(`lang-select-${qId}`).value;
+            let editor = editorInstances[qId];
+            if(editor) {
+                editor.session.setMode(aceModes[lang]);
+                let draft = loadEditorDraft(qId, lang);
+                editor.setValue(draft || boilerplates[lang], -1);
+                saveEditorDraft(qId, lang, editor.getValue());
+            }
+        }
+
+        function toggleTheme(qId) {
+            let editor = editorInstances[qId];
+            if (!editor) return;
+            editorThemes[qId] = editorThemes[qId] === 'light' ? 'dark' : 'light';
+            editor.setTheme(aceThemes[editorThemes[qId]]);
+        }
+
+        function resetCode(qId) {
+            let editor = editorInstances[qId];
+            let lang = document.getElementById(`lang-select-${qId}`).value;
+            if (!editor) return;
+            editor.setValue(boilerplates[lang], -1);
+            saveEditorDraft(qId, lang, editor.getValue());
+            setStatusBanner(qId, '<i class="fas fa-rotate-left"></i> Starter code restored for the selected language.');
+        }
+
+        function jumpTo(idx) {
+            // 1. Mark previous question status (Orange if skipped)
+            updateStatusColor(currentIdx);
+
+            // 2. Switch Question
+            document.getElementById(`q-${currentIdx}`).style.display = 'none';
+            document.getElementById(`btn-${questions[currentIdx]}`).classList.remove('active');
+            
+            currentIdx = idx;
+            
+            document.getElementById(`q-${currentIdx}`).style.display = 'block';
+            document.getElementById(`btn-${questions[currentIdx]}`).classList.add('active');
+            
+            // 3. Resize Editor if needed
+            let qId = questions[currentIdx];
+            if(editorInstances[qId]) editorInstances[qId].resize();
+            
+            document.querySelector('.sidebar').classList.remove('active'); // Close sidebar on mobile
+        }
+
+        function updateStatusColor(idx) {
+            let qId = questions[idx];
+            let btn = document.getElementById(`btn-${qId}`);
+            
+            // Check if answered
+            let isAnswered = false;
+            
+            // Check MCQ hidden input
+            let mcqInput = document.getElementById(`ans-${qId}`);
+            if (mcqInput && mcqInput.value) isAnswered = true;
+
+            // Check Code (if submitted previously or typed)
+            // Note: For code, we usually rely on 'Run Code' or explicit save. 
+            // Here we check if 'savedResponses' has it.
+            if (savedResponses[qId]) isAnswered = true;
+
+            if (!isAnswered) {
+                btn.classList.add('skipped'); // Orange
+                btn.classList.remove('answered');
+            }
+        }
+
+        function toggleSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            let overlay = document.querySelector('.sidebar-overlay');
+            if(overlay) overlay.classList.toggle('active');
+        }
+
+        function toggleModule(id) {
+            let el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
+
+        function nextQ() { if(currentIdx < questions.length - 1) jumpTo(currentIdx + 1); }
+        function prevQ() { if(currentIdx > 0) jumpTo(currentIdx - 1); }
+
+        function selectOpt(el, qId, val) {
+            el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            // Update local state for color logic
+            document.getElementById(`ans-${qId}`).value = val;
+            savedResponses[qId] = { opt: val };
+            
+            document.getElementById(`btn-${qId}`).classList.remove('skipped');
+            document.getElementById(`btn-${qId}`).classList.add('answered');
+            
+            fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: val }) });
+        }
+
+        // --- PASTE THIS IN YOUR SCRIPT SECTION ---
+
+// 1. Helper to switch tabs
+function switchTab(qId, tabName) {
+    document.getElementById(`view-res-${qId}`).style.display = 'none';
+    document.getElementById(`view-cust-${qId}`).style.display = 'none';
+    document.getElementById(`tab-res-${qId}`).classList.remove('active');
+    document.getElementById(`tab-cust-${qId}`).classList.remove('active');
+
+    document.getElementById(`view-${tabName}-${qId}`).style.display = 'block';
+    document.getElementById(`tab-${tabName}-${qId}`).classList.add('active');
+}
+
+// 2. Helper to show details when clicking a test case button
+function showCaseDetails(qId, index) {
+    let results = window[`results_${qId}`]; // Retrieve saved results
+    let res = results[index];
+    
+    // Highlight active button
+    let btns = document.querySelectorAll(`#cases-nav-${qId} .case-btn`);
+    btns.forEach(b => b.classList.remove('active'));
+    btns[index].classList.add('active');
+
+    // Fill Data
+    document.getElementById(`detail-input-${qId}`).innerText = res.input;
+    document.getElementById(`detail-expected-${qId}`).innerText = res.expected;
+    document.getElementById(`detail-actual-${qId}`).innerText = res.actual;
+    
+    // Color Logic
+    let actBox = document.getElementById(`detail-actual-${qId}`);
+    actBox.style.color = res.status === 'Pass' ? '#4ade80' : '#f87171';
+
+    document.getElementById(`case-details-${qId}`).style.display = 'block';
+}
+
+// 3. THE NEW RUN CODE FUNCTION
+function runCode(qId) {
+    let editor = editorInstances[qId];
+    let code = editor.getValue();
+    let lang = document.getElementById(`lang-select-${qId}`).value;
+    saveEditorDraft(qId, lang, code);
+    
+    // Show Loading
+    setStatusBanner(qId, '<i class="fas fa-spinner fa-spin"></i> Running against official test cases...', 'loading');
+    document.getElementById(`cases-nav-${qId}`).style.display = 'none';
+    document.getElementById(`case-details-${qId}`).style.display = 'none';
+    setSummaryPill(qId, 'Running...');
+    switchTab(qId, 'res'); 
+
+    fetch('/api/run_code', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.status === 'error') {
+            setStatusBanner(qId, `<i class="fas fa-circle-exclamation"></i> ${data.output}`, 'error');
+            setSummaryPill(qId, '0 / 0 cases');
+            return;
+        }
+
+        // Render Buttons for each test case
+        let navHtml = '';
+        let results = data.results || []; 
+        let passedCount = 0;
+
+        results.forEach((res, index) => {
+            let colorClass = res.status === 'Pass' ? 'pass' : (res.status === 'Error' ? 'error' : 'fail');
+            let icon = res.status === 'Pass' ? 'check' : (res.status === 'Error' ? 'triangle-exclamation' : 'times');
+            if(res.status === 'Pass') passedCount++;
+
+            navHtml += `<div class="case-btn ${colorClass}" onclick="showCaseDetails('${qId}', ${index})">
+                            <i class="fas fa-${icon}"></i> Case ${index + 1}
+                        </div>`;
+        });
+
+        // Save results to use later when clicking buttons
+        window[`results_${qId}`] = results;
+
+        document.getElementById(`cases-nav-${qId}`).innerHTML = navHtml;
+        document.getElementById(`cases-nav-${qId}`).style.display = results.length ? 'flex' : 'none';
+        
+        let verdict = data.verdict || (passedCount === results.length ? 'Accepted' : 'Wrong Answer');
+        let verdictState = verdict === 'Accepted' ? 'success' : 'error';
+        setStatusBanner(qId, `<i class="fas fa-gavel"></i> ${verdict}`, verdictState);
+        setSummaryPill(qId, `${passedCount} / ${results.length} cases`);
+
+        savedResponses[qId] = { code_status: verdict, language: lang };
+        document.getElementById(`btn-${qId}`).classList.remove('skipped');
+        document.getElementById(`btn-${qId}`).classList.add('answered');
+
+        // Auto-click the first case
+        if(results.length > 0) showCaseDetails(qId, 0);
+        if(results.length === 0 && data.output) {
+            document.getElementById(`detail-input-${qId}`).innerText = 'No fixed input';
+            document.getElementById(`detail-expected-${qId}`).innerText = 'No expected output configured';
+            document.getElementById(`detail-actual-${qId}`).innerText = data.output;
+            document.getElementById(`case-details-${qId}`).style.display = 'grid';
+        }
+    })
+    .catch(() => {
+        setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Unable to reach the judge service.', 'error');
+        setSummaryPill(qId, '0 / 0 cases');
+    });
+}
+
+function runCustom(qId) {
+    let editor = editorInstances[qId];
+    let code = editor.getValue();
+    let lang = document.getElementById(`lang-select-${qId}`).value;
+    let stdin = document.getElementById(`custom-input-${qId}`).value;
+    let outputEl = document.getElementById(`custom-output-${qId}`);
+
+    saveEditorDraft(qId, lang, code);
+    outputEl.innerText = 'Running custom input...';
+
+    fetch('/api/run_code', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang, mode: 'custom', stdin: stdin })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'error') {
+            outputEl.innerText = data.output || 'Execution failed.';
+            setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Custom run failed.', 'error');
+            return;
+        }
+
+        outputEl.innerText = data.output || 'No Output';
+        setStatusBanner(qId, '<i class="fas fa-terminal"></i> Custom run completed.', 'success');
+        savedResponses[qId] = { code_status: 'Custom Run', language: lang };
+        document.getElementById(`btn-${qId}`).classList.remove('skipped');
+        document.getElementById(`btn-${qId}`).classList.add('answered');
+    })
+    .catch(() => {
+        outputEl.innerText = 'Execution failed.';
+        setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Unable to reach the judge service.', 'error');
+    });
+}
+
+// Initialize Saved States (Coloring)
+window.onload = function() {
+    // Mark saved answers as green
+    for (const [qId, data] of Object.entries(savedResponses)) {
+        let btn = document.getElementById(`btn-${qId}`);
+        if(btn) btn.classList.add('answered');
+        
+        // If MCQ, select the option visually
+        let optCard = document.querySelector(`.option-card[onclick*="'${qId}', '${data.opt}'"]`);
+        if(optCard) optCard.classList.add('selected');
+        
+        let inp = document.getElementById(`ans-${qId}`);
+        if(inp) inp.value = data.opt;
+    }
+    // Mark first question active
+    document.getElementById(`btn-${questions[0]}`).classList.add('active');
+};
+    </script>
+</body>
+</html>

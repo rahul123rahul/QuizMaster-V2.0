@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+            --border-light: #e2e8f0;
+            --shadow-light: rgba(0, 0, 0, 0.04);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+            --shadow-primary: rgba(99, 102, 241, 0.15);
+            --sidebar-width: 280px;
+            --header-height: 72px;
+            --border-radius: 12px;
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 50%, #fef3c7 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Mobile Navigation Overlay */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .mobile-nav-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-light);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 24px var(--shadow-light);
+            transition: transform var(--transition-normal);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            font-family: 'Dancing Script', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-logo i {
+            color: var(--secondary);
+            font-size: 20px;
+        }
+
+        .sidebar-close {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            margin-bottom: 4px;
+            transition: var(--transition-fast);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--text-inverse);
+            box-shadow: 0 4px 12px var(--shadow-primary);
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+            text-align: center;
+            flex-shrink: 0;
+            margin-right: 14px;
+        }
+
+        .nav-item span {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+        }
+
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            box-shadow: 0 2px 8px var(--shadow-light);
+        }
+
+        .sidebar-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse);
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user-name {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-role {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left var(--transition-normal);
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 30px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px var(--shadow-light);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hamburger-menu {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 10px;
+            background: none;
+            border: none;
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+            gap: 5px;
+        }
+
+        .hamburger-menu:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .hamburger-menu span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 1px;
+            transition: var(--transition-normal);
+            transform-origin: center;
+        }
+
+        .hamburger-menu.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger-menu.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-menu.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title i {
+            color: var(--primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-decoration: none;
+            box-shadow: 0 1px 3px var(--shadow-light);
+        }
+
+        .header-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow-primary);
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 30px;
+            flex: 1;
+        }
+
+        .page-info {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Glass Card */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.9);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.06);
+            padding: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+            margin-bottom: 24px;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.1);
+        }
+
+        /* Search Section */
+        .search-section {
+            margin-bottom: 0;
+        }
+
+        .search-bar {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-size: 15px;
+            transition: var(--transition-fast);
+            background: var(--bg-primary);
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .search-bar i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 16px;
+        }
+
+        /* Filter Row */
+        .filter-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            background: var(--bg-primary);
+            cursor: pointer;
+            min-width: 140px;
+            transition: var(--transition-fast);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-search {
+            padding: 12px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-search:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        /* Materials Grid */
+        .materials-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .material-card {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+        }
+
+        .material-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 16px var(--shadow-primary);
+            transform: translateY(-2px);
+        }
+
+        .material-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--gray-100), var(--gray-200));
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            font-size: 24px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .material-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .material-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .material-meta {
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+.material-meta span {
+            margin-right: 12px;
+        }
+        
+        .material-meta span i {
+            margin-right: 4px;
+        }
+        
+        .material-preview-btn {
+            cursor: pointer;
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .material-preview-btn:hover .material-title {
+            color: var(--primary);
+        }
+        
+        .material-actions {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+            margin-left: 16px;
+        }
+
+        .btn-action {
+            padding: 10px 16px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .btn-action:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-action.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            padding: 12px 18px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .pagination button:hover:not(:disabled) {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination .page-info {
+            padding: 12px 16px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin: 0 8px;
+        }
+
+        .pagination .current-page {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Empty State */
+        .no-materials {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .no-materials i {
+            font-size: 56px;
+            margin-bottom: 20px;
+            opacity: 0.4;
+            color: var(--gray-400);
+        }
+
+        .no-materials p {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .no-materials small {
+            font-size: 14px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .loading i {
+            font-size: 32px;
+            animation: spin 1s linear infinite;
+            color: var(--primary);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        
+        /* Tablet and below (1024px and below) */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-close {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .hamburger-menu {
+                display: flex;
+            }
+
+            .filter-row {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .btn-search {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Tablet Portrait (600px - 767px) */
+        @media (max-width: 767px) {
+            :root {
+                --header-height: 64px;
+            }
+
+            .dashboard-header {
+                padding: 0 16px;
+            }
+
+            .content-area {
+                padding: 20px 16px;
+            }
+
+            .header-btn span {
+                display: none;
+            }
+
+            .header-btn {
+                padding: 10px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .glass-card {
+                padding: 20px;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .material-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .material-icon {
+                margin-bottom: 12px;
+                width: 48px;
+                height: 48px;
+                font-size: 20px;
+            }
+
+            .material-info {
+                width: 100%;
+            }
+
+            .material-title {
+                font-size: 15px;
+            }
+
+            .material-meta {
+                font-size: 12px;
+                gap: 10px;
+            }
+
+            .material-actions {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 12px;
+            }
+
+            .material-actions .btn-action {
+                flex: 1;
+                justify-content: center;
+            }
+
+            .pagination {
+                gap: 6px;
+            }
+
+            .pagination button {
+                padding: 10px 14px;
+                font-size: 13px;
+            }
+
+            .pagination .page-info {
+                display: none;
+            }
+        }
+
+        /* Mobile Small (320px - 424px) */
+        @media (max-width: 424px) {
+            .page-title {
+                font-size: 16px;
+            }
+
+            .page-info {
+                font-size: 13px;
+            }
+
+            .material-meta {
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .material-actions {
+                flex-direction: column;
+            }
+
+            .material-actions .btn-action {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Desktop (1366px+) */
+        @media (min-width: 1366px) {
+            .content-area {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 40px;
+            }
+
+            .materials-grid {
+                gap: 20px;
+            }
+        }
+
+        /* Touch devices */
+        @media (hover: none) and (pointer: coarse) {
+            .nav-item,
+            .header-btn,
+            .btn-action,
+            .btn-search,
+            .filter-select {
+                min-height: 48px;
+            }
+
+            .material-card {
+                padding: 16px;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout-wrapper">
+        {% include '_student_sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="hamburger-menu" onclick="toggleMobileNav()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <h1 class="page-title">
+                        <i class="fas fa-book-open"></i>
+                        Study Materials
+                    </h1>
+                </div>
+                <div class="header-right">
+                    <a href="/student" class="header-btn">
+                        <i class="fas fa-home"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/logout" class="header-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <p class="page-info">{{ total_materials }} materials available</p>
+                
+                <div class="glass-card search-section">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search materials by title, description, or tags..." value="">
+                    </div>
+                    
+                    <div class="filter-row">
+                        <select id="typeFilter" class="filter-select">
+                            <option value="">All Types</option>
+                            {% for t in filter_types %}
+                            <option value="{{ t }}">{{ t|upper }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <select id="difficultyFilter" class="filter-select">
+                            <option value="">All Levels</option>
+                            {% for d in filter_difficulties %}
+                            <option value="{{ d }}">{{ d|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <select id="subjectFilter" class="filter-select">
+                            <option value="">All Subjects</option>
+                            {% for s in subjects %}
+                            <option value="{{ s.name }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <select id="sortFilter" class="filter-select">
+                            <option value="recent">Newest First</option>
+                            <option value="popular">Most Popular</option>
+                            <option value="rated">Highest Rated</option>
+                            <option value="title">A-Z</option>
+                        </select>
+                        
+                        <button class="btn-search" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Apply
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="materialsContainer" class="materials-grid">
+                    <div class="loading"><i class="fas fa-spinner"></i> Loading materials...</div>
+                </div>
+                
+                <div id="paginationContainer" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+
+        // Mobile Navigation - matching student dashboard
+        function toggleMobileNav() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mobileNav = document.getElementById('mobileNavOverlay');
+
+            hamburger.classList.toggle('active');
+            sidebar.classList.toggle('mobile-open');
+            if (mobileNav) mobileNav.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+        }
+
+        function closeMobileNav() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mobileNav = document.getElementById('mobileNavOverlay');
+
+            hamburger.classList.remove('active');
+            sidebar.classList.remove('mobile-open');
+            if (mobileNav) mobileNav.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav when clicking nav items
+        document.addEventListener('DOMContentLoaded', function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') === '#') return;
+                    if (window.innerWidth <= 1024) {
+                        closeMobileNav();
+                    }
+                });
+            });
+        });
+
+        function getFilters() {
+            return {
+                search: document.getElementById('searchInput').value,
+                type: document.getElementById('typeFilter').value,
+                difficulty: document.getElementById('difficultyFilter').value,
+                subject: document.getElementById('subjectFilter').value,
+                sort: document.getElementById('sortFilter').value
+            };
+        }
+
+        function applyFilters() {
+            currentPage = 1;
+            loadMaterials();
+        }
+
+        function loadMaterials() {
+            const container = document.getElementById('materialsContainer');
+            const pagination = document.getElementById('paginationContainer');
+            const filters = getFilters();
+            
+            container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading materials...</div>';
+            
+            const params = new URLSearchParams({
+                page: currentPage,
+                search: filters.search,
+                type: filters.type,
+                difficulty: filters.difficulty,
+                subject: filters.subject,
+                sort: filters.sort
+            });
+            
+            fetch('/api/study/materials/paginated?' + params.toString())
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        container.innerHTML = '<div class="no-materials"><i class="fas fa-exclamation-circle"></i><p>' + data.error + '</p></div>';
+                        return;
+                    }
+                    
+                    window.currentMaterials = data.results;
+                    renderMaterials(data.results);
+                    renderPagination(data.pagination);
+                })
+                .catch(err => {
+                    container.innerHTML = '<div class="no-materials"><i class="fas fa-exclamation-triangle"></i><p>Error loading materials</p><small>Please try again later</small></div>';
+                    console.error(err);
+                });
+        }
+
+        function renderMaterials(materials) {
+            const container = document.getElementById('materialsContainer');
+            
+            if (!materials || materials.length === 0) {
+                container.innerHTML = '<div class="no-materials"><i class="fas fa-folder-open"></i><p>No study materials found</p><small>Try adjusting your filters</small></div>';
+                return;
+            }
+            
+            const icons = {
+                'pdf': 'fa-file-pdf',
+                'doc': 'fa-file-word',
+                'docx': 'fa-file-word',
+                'ppt': 'fa-file-powerpoint',
+                'pptx': 'fa-file-powerpoint',
+                'video': 'fa-video',
+                'mp4': 'fa-video',
+                'notes': 'fa-sticky-note',
+                'image': 'fa-image',
+                'default': 'fa-file'
+            };
+            
+            container.innerHTML = materials.map(m => {
+                const icon = icons[m.type] || icons['default'];
+                const uploadedDate = m.created_at ? new Date(m.created_at).toLocaleDateString() : 'N/A';
+                const avgRating = m.rating ? parseFloat(m.rating).toFixed(1) : '0.0';
+                
+                return `
+                <div class="material-card">
+                    <div class="material-icon material-preview-btn" onclick="window.openPreviewModal('${m.id}', '${m.type}', '${m.file_path || ''}', '${m.video_url || ''}')">
+                        <i class="fas ${icon}"></i>
+                    </div>
+                    <div class="material-info material-preview-btn" onclick="window.openPreviewModal('${m.id}', '${m.type}', '${m.file_path || ''}', '${m.video_url || ''}')">
+                        <div class="material-title" title="${m.title || 'Untitled'}">${m.title || 'Untitled'}</div>
+                        <div class="material-meta">
+                            <span><i class="fas fa-tag"></i> ${m.type || 'file'}</span>
+                            <span><i class="fas fa-layer-group"></i> ${m.subject_name || 'General'}</span>
+                            <span><i class="fas fa-calendar"></i> ${uploadedDate}</span>
+                            ${m.view_count ? `<span><i class="fas fa-eye"></i> ${m.view_count}</span>` : ''}
+                            <span><i class="fas fa-star"></i> ${avgRating}</span>
+                        </div>
+                    </div>
+                    <div class="material-actions">
+                        <button onclick="window.openPreviewModal('${m.id}', '${m.type}', '${m.file_path || ''}', '${m.video_url || ''}')" class="btn-action" title="Preview"><i class="fas fa-eye"></i></button>
+                        <button onclick="window.openShareModal('${m.id}', '${(m.title || '').replace(/'/g, "\\'")}')" class="btn-action" title="Share"><i class="fas fa-share"></i></button>
+                        <a href="/study/download/${m.id}" class="btn-action download-btn"><i class="fas fa-download"></i> Download</a>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderPagination(pagination) {
+            const container = document.getElementById('paginationContainer');
+            
+            if (!pagination || pagination.total <= 30) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            html += `<button onclick="goToPage(${pagination.prev_page})" ${!pagination.has_prev ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i> Previous
+            </button>`;
+            
+            const maxVisible = 5;
+            let startPage = Math.max(1, pagination.page - Math.floor(maxVisible / 2));
+            let endPage = Math.min(pagination.total_pages, startPage + maxVisible - 1);
+            
+            if (endPage - startPage < maxVisible - 1) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const active = i === pagination.page ? 'current-page' : '';
+                html += `<button class="${active}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            html += `<button onclick="goToPage(${pagination.next_page})" ${!pagination.has_next ? 'disabled' : ''}>
+                Next <i class="fas fa-chevron-right"></i>
+            </button>`;
+            
+            html += `<span class="page-info">Page ${pagination.page} of ${pagination.total_pages}</span>`;
+            
+            container.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadMaterials();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMaterials();
+        });
+    </script>
+    
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+        <div class="modal-content" style="max-width:400px;padding:30px;background:white;border-radius:12px;position:relative;">
+            <span onclick="closeRatingModal()" style="position:absolute;top:15px;right:20px;font-size:28px;cursor:pointer;">&times;</span>
+            <h3 style="margin-bottom:10px;">Rate this Material</h3>
+            <p id="ratingMaterialTitle" style="color:#64748b;margin-bottom:20px;font-size:14px;"></p>
+            <div id="starRating" style="font-size:36px;margin-bottom:20px;cursor:pointer;">
+                <i class="fas fa-star" data-rating="1" onclick="setRating(1)" style="color:#ddd;transition:all 0.2s;"></i>
+                <i class="fas fa-star" data-rating="2" onclick="setRating(2)" style="color:#ddd;transition:all 0.2s;"></i>
+                <i class="fas fa-star" data-rating="3" onclick="setRating(3)" style="color:#ddd;transition:all 0.2s;"></i>
+                <i class="fas fa-star" data-rating="4" onclick="setRating(4)" style="color:#ddd;transition:all 0.2s;"></i>
+                <i class="fas fa-star" data-rating="5" onclick="setRating(5)" style="color:#ddd;transition:all 0.2s;"></i>
+            </div>
+            <textarea id="ratingComment" placeholder="Write your review (optional)" style="width:100%;height:80px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-family:inherit;font-size:14px;resize:none;margin-bottom:15px;"></textarea>
+            <button onclick="submitRating()" style="background:#4f46e5;color:white;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;width:100%;">Submit Rating</button>
+        </div>
+    </div>
+    
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+        <div class="modal-content" style="max-width:400px;padding:30px;background:white;border-radius:12px;position:relative;">
+            <span onclick="window.closeShareModal()" style="position:absolute;top:15px;right:20px;font-size:28px;cursor:pointer;">&times;</span>
+            <h3 style="margin-bottom:10px;">Share Material</h3>
+            <p id="shareMaterialTitle" style="color:#64748b;margin-bottom:20px;font-size:14px;"></p>
+            <div style="display:flex;gap:10px;margin-bottom:20px;">
+                <button onclick="window.copyShareLink()" style="flex:1;background:#4f46e5;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"><i class="fas fa-copy"></i> Copy</button>
+                <button onclick="window.shareWhatsApp()" style="flex:1;background:#25D366;color:white;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+            </div>
+            <input id="shareLink" type="text" readonly style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8f9fa;">
+        </div>
+    </div>
+    
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal" style="display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.9);align-items:center;justify-content:center;">
+        <span onclick="closePreviewModal()" style="position:absolute;top:20px;right:30px;font-size:32px;cursor:pointer;color:white;z-index:10;">&times;</span>
+        <div id="previewContent" style="width:90%;height:90%;max-width:1200px;">
+        </div>
+    </div>
+
+    <script>
+        console.log('Student Study JS loaded');
+        // Global functions - ensure they're defined on window
+        var currentRatingMaterialId = null;
+        var selectedRating = 0;
+        
+        window.openPreviewModal = function(materialId, type, filePath, videoUrl) {
+            console.log('openPreviewModal called', materialId, type, filePath);
+            const content = document.getElementById('previewContent');
+            let title = '';
+            const materials = window.currentMaterials || [];
+            const m = materials.find(x => x.id == materialId);
+            if (m) title = m.title;
+            
+            let fileSrc = '';
+            if (filePath) {
+                fileSrc = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+                if (fileSrc.startsWith('static/')) {
+                    fileSrc = '/' + fileSrc;
+                } else if (!fileSrc.startsWith('http') && !fileSrc.startsWith('/')) {
+                    fileSrc = '/static/' + fileSrc;
+                } else {
+                    fileSrc = '/' + fileSrc;
+                }
+            }
+            
+            if (type === 'video' || videoUrl) {
+                content.innerHTML = '<video controls style="width:100%;height:85%;"><source src="' + (videoUrl || fileSrc) + '"></video><div style="height:15%;display:flex;align-items:center;justify-content:center;gap:15px;background:#1e293b;padding:15px;"><a href="/study/download/' + materialId + '" class="btn-action download-btn" style="background:#4f46e5;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;"><i class="fas fa-download"></i> Download</a><button onclick="window.closePreviewModal(); setTimeout(() => window.openRatingModal(\'' + materialId + '\', \'' + (title||'').replace(/'/g,"\\'") + '\'), 100)" style="background:#f59e0b;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;"><i class="fas fa-star"></i> Rate</button></div>';
+            } else if (filePath) {
+                content.innerHTML = '<iframe src="' + fileSrc + '#toolbar=0&navpanes=1&view=FitV" style="width:100%;height:85%;border:none;"></iframe><p style="position:absolute;top:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);color:white;padding:8px 16px;border-radius:20px;font-size:12px;">Preview limited to 5 pages</p><div style="height:15%;display:flex;align-items:center;justify-content:center;gap:15px;background:#1e293b;padding:15px;"><a href="/study/download/' + materialId + '" class="btn-action download-btn" style="background:#4f46e5;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;"><i class="fas fa-download"></i> Download Full</a><button onclick="window.closePreviewModal(); setTimeout(() => window.openRatingModal(\'' + materialId + '\', \'' + (title||'').replace(/'/g,"\\'") + '\'), 100)" style="background:#f59e0b;color:white;border:none;padding:12px 24px;border-radius:8px;cursor:pointer;"><i class="fas fa-star"></i> Rate</button></div>';
+            }
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+        
+        function closePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+            if(document.getElementById('previewContent')) document.getElementById('previewContent').innerHTML = '';
+        }
+        
+        function openRatingModal(materialId, title) {
+            currentRatingMaterialId = materialId;
+            document.getElementById('ratingMaterialTitle').textContent = title;
+            document.getElementById('ratingModal').style.display = 'flex';
+            selectedRating = 0;
+            const stars = document.querySelectorAll('#starRating i');
+            stars.forEach(star => star.style.color = '#ddd');
+        }
+        
+        function closeRatingModal() {
+            document.getElementById('ratingModal').style.display = 'none';
+            currentRatingMaterialId = null;
+        }
+        
+        function setRating(rating) {
+            selectedRating = rating;
+            const stars = document.querySelectorAll('#starRating i');
+            stars.forEach((star, idx) => {
+                star.style.color = idx < rating ? '#f59e0b' : '#ddd';
+            });
+        }
+        
+        window.openShareModal = function(materialId, title) {
+            const link = window.location.origin + '/study/view/' + materialId;
+            document.getElementById('shareMaterialTitle').textContent = title;
+            document.getElementById('shareLink').value = link;
+            document.getElementById('shareModal').style.display = 'flex';
+        }
+        
+        window.closeShareModal = function() {
+            document.getElementById('shareModal').style.display = 'none';
+        }
+        
+        window.copyShareLink = function() {
+            const input = document.getElementById('shareLink');
+            input.select();
+            document.execCommand('copy');
+            alert('Link copied!');
+        }
+        
+        window.shareWhatsApp = function() {
+            const link = document.getElementById('shareLink').value;
+            const title = document.getElementById('shareMaterialTitle').textContent;
+            window.open('https://wa.me/?text=' + encodeURIComponent(title + ': ' + link), '_blank');
+        }
+        
+        window.submitRating = function() {
+            if (!selectedRating) { alert('Please select a rating'); return; }
+            fetch('/api/study/materials/' + currentRatingMaterialId + '/rate', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({rating: selectedRating})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.message) {
+                    alert('Thank you for your rating!');
+                    closeRatingModal();
+                    loadMaterials();
+                } else {
+                    alert(data.error || 'Error submitting rating');
+                }
+            })
+            .catch(err => {
+                alert('Error submitting rating');
+            });
+        };
+        
+        // Functions already exposed to window above
+        console.log('All functions initialized');
+    </script>
+</body>
+</html>

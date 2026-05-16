@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster | Enterprise Assessment Platform</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            --primary: #4f46e5; --primary-dark: #4338ca; --secondary: #06b6d4;
+            --dark-bg: #0f172a; --light-bg: #f8fafc; --text-main: #1e293b; --text-muted: #64748b;
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--light-bg); color: var(--text-main); overflow-x: hidden; }
+        h1, h2, h3, h4, .btn { font-family: 'Poppins', sans-serif; }
+        a { text-decoration: none; transition: 0.3s; }
+
+        /* --- NAVBAR --- */
+        nav {
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            padding: 15px 5%; display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        nav .logo { 
+            font-size: 24px; font-weight: 700; 
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        nav .links { display: flex; align-items: center; gap: 25px; }
+        nav .links a { color: var(--text-main); font-weight: 500; font-size: 15px; }
+        nav .links a:hover { color: var(--primary); }
+        
+        .btn-nav { padding: 10px 24px; border-radius: 50px; font-weight: 600; font-size: 14px; }
+        .btn-login { color: var(--primary); border: 1px solid var(--primary); }
+        .btn-login:hover { background: var(--primary); color: white; }
+        .btn-register { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
+
+        /* --- HERO --- */
+        .hero { position: relative; background: var(--dark-bg); color: white; padding: 100px 20px 140px; text-align: center; overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.6; }
+        .orb-1 { width: 300px; height: 300px; background: var(--primary); top: -50px; left: -50px; }
+        .orb-2 { width: 400px; height: 400px; background: var(--secondary); bottom: -100px; right: -100px; }
+        
+        .hero-content { position: relative; z-index: 2; max-width: 800px; margin: 0 auto; }
+        .hero h1 { font-size: 56px; line-height: 1.1; margin-bottom: 20px; }
+        .hero p { font-size: 20px; color: #cbd5e1; margin-bottom: 40px; font-weight: 300; }
+        
+        .cta-group { display: flex; justify-content: center; gap: 15px; }
+        .btn-cta { padding: 15px 35px; border-radius: 50px; font-size: 16px; font-weight: 600; cursor: pointer; border: none; transition: all 0.3s ease; }
+        .btn-primary { background: white; color: var(--primary); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(255,255,255,0.2); }
+
+        /* --- STATS --- */
+        .stats-wrapper { margin-top: -60px; position: relative; z-index: 5; padding: 0 5%; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 30px; max-width: 1100px; margin: 0 auto; }
+        .stat-card { background: white; padding: 30px; border-radius: 16px; text-align: center; box-shadow: var(--shadow-lg); transition: transform 0.3s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card h2 { font-size: 42px; color: var(--primary); margin-bottom: 5px; }
+
+        /* --- SECTIONS --- */
+        .section { padding: 80px 10%; }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .section-header h2 { font-size: 36px; color: var(--dark-bg); margin-bottom: 10px; }
+        .divider { width: 60px; height: 4px; background: var(--secondary); margin: 0 auto; border-radius: 2px; }
+
+        /* --- EVENTS GRID --- */
+        .events-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .event-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; position: relative; border: 1px solid #e2e8f0; }
+        .event-card:hover { transform: translateY(-5px); border-color: var(--primary); box-shadow: var(--shadow-lg); }
+        .event-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+        .card-body { padding: 30px; }
+        .card-link { display: inline-block; color: var(--primary); font-weight: 600; margin-top: 15px; }
+
+        /* --- FOOTER --- */
+        footer { background: var(--dark-bg); color: #94a3b8; padding: 60px 10% 20px; font-size: 14px; }
+        .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 40px; margin-bottom: 40px; }
+        .footer-col h4 { color: white; font-size: 18px; margin-bottom: 20px; }
+        .footer-col a { display: block; color: #94a3b8; margin-bottom: 10px; }
+        .footer-bottom { border-top: 1px solid #334155; padding-top: 20px; text-align: center; }
+
+        /* --- MODAL --- */
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 90%; max-width: 650px; border-radius: 16px; overflow: hidden; position: relative; animation: modalPop 0.3s ease-out; }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-body img { width: 100%; height: auto; display: block; }
+        .modal-footer { padding: 20px; text-align: center; background: #f8fafc; }
+        .btn-close-modal { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+    <nav>
+        <div class="logo">QuizMaster</div>
+        <div class="links">
+            <a href="#events">Events</a>
+            <a href="#about">About</a>
+            {% if session.get('role') == 'Admin' %}
+                <a href="/admin" style="color:var(--primary); font-weight:bold;">Admin Dashboard</a>
+            {% endif %}
+            <a href="/login" class="btn-nav btn-login">Login</a>
+            <a href="/register" class="btn-nav btn-register">Get Started</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="hero-content">
+            <h1>Master Your Skills.<br>Unlock Your Potential.</h1>
+            <p>The enterprise-grade platform for assessments, coding challenges, and certifications.</p>
+            <div class="cta-group">
+                <a href="/register" class="btn-cta btn-primary">Start Your Journey</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-wrapper">
+        <div class="stats-grid">
+            <div class="stat-card"><h2>{{ stats['students'] }}+</h2><p>Active Learners</p></div>
+            <div class="stat-card"><h2>{{ stats['exams'] }}+</h2><p>Exams Completed</p></div>
+            <div class="stat-card"><h2>{{ stats['quizzes'] }}</h2><p>Live Challenges</p></div>
+        </div>
+    </div>
+
+    <div class="section" id="events">
+        <div class="section-header">
+            <h2>Upcoming Events</h2>
+            <div class="divider"></div>
+        </div>
+        <div class="events-grid">
+            {% if events %}
+                {% for event in events %}
+                <div class="event-card">
+                    <div class="card-body">
+                        <h3>{{ event['title'] }}</h3>
+                        <p style="color:#64748b; margin-bottom:15px;"><i class="fas fa-tag"></i> {{ event['category'] }} &nbsp;|&nbsp; {{ event['duration_minutes'] }} mins</p>
+                        <a href="/login" class="card-link">Register Now <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                    <p class="text-muted">No public events scheduled currently.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section" id="about" style="background:white;">
+        <div class="section-header">
+            <h2>About QuizMaster</h2>
+            <div class="divider"></div>
+            <p style="max-width:700px; margin:20px auto 0;">
+                QuizMaster is a next-generation assessment platform designed to bridge the gap between learning and certification.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-col">
+                <h4 class="logo" style="color:white; font-size:24px; font-weight:bold;">QuizMaster</h4>
+                <p style="margin-top:15px;">Empowering students worldwide.</p>
+            </div>
+            <div class="footer-col"><h4>Platform</h4><a href="/login">Login</a><a href="/register">Register</a></div>
+            <div class="footer-col"><h4>Contact</h4><a href="#">rahullucky26555@gmail.com</a></div>
+        </div>
+        <div class="footer-bottom"><p>&copy; 2025 QuizMaster Solutions.</p></div>
+    </footer>
+
+    <div id="bannerModalBackdrop" class="modal-backdrop">
+        <div class="modal-content">
+            <button onclick="closeBannerPopup()" class="btn-close-modal">&times;</button>
+            <div class="modal-body"><img id="modalBannerImg" src="" alt="Event Banner"></div>
+            <div class="modal-footer">
+                <h4 id="modalBannerCaption" style="color:var(--text-main);"></h4>
+                <button onclick="closeBannerPopup()" style="margin-top:10px; padding:8px 20px; border-radius:6px; cursor:pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        {% if banner %}
+            const currentBannerSrc = "{{ banner['image_data'] }}";
+            const currentBannerCaption = "{{ banner['caption'] }}";
+        {% else %}
+            const currentBannerSrc = null; const currentBannerCaption = "";
+        {% endif %}
+
+        function openBannerPopup() {
+            if (!currentBannerSrc) return;
+            document.getElementById('modalBannerImg').src = currentBannerSrc;
+            document.getElementById('modalBannerCaption').innerText = currentBannerCaption;
+            document.getElementById('bannerModalBackdrop').style.display = 'flex';
+        }
+
+        function closeBannerPopup() { document.getElementById('bannerModalBackdrop').style.display = 'none'; }
+        
+        // Auto-Open on Load
+        window.onload = function() {
+            setTimeout(openBannerPopup, 1000); // 1 second delay
+        }
+
+        window.onclick = function(event) { if (event.target == document.getElementById('bannerModalBackdrop')) closeBannerPopup(); }
+
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; // F12
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,708 @@
+<!-- Student Sidebar Component -->
+<!-- Include this file in all student dashboard pages -->
+<!-- Required: user_full_name, user_email, user_department, user_study_year, user_semester, user_profile_image variables must be passed to template -->
+
+<!-- Mobile Navigation Overlay -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+
+<!-- Profile Modal -->
+<div class="profile-modal-overlay" id="profileModalOverlay" onclick="closeProfileModal()"></div>
+<div class="profile-modal" id="profileModal">
+    <div class="profile-modal-header">
+        <h4><i class="fas fa-user-circle"></i> My Profile</h4>
+        <button class="profile-modal-close" onclick="closeProfileModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <!-- Profile Tabs -->
+    <div class="profile-tabs">
+        <button class="profile-tab active" onclick="switchProfileTab('details')" id="profileTabDetails">
+            <i class="fas fa-user"></i> Profile Details
+        </button>
+        <button class="profile-tab" onclick="switchProfileTab('edit')" id="profileTabEdit">
+            <i class="fas fa-edit"></i> Edit Profile
+        </button>
+        <button class="profile-tab" onclick="switchProfileTab('password')" id="profileTabPassword">
+            <i class="fas fa-lock"></i> Change Password
+        </button>
+    </div>
+    
+    <!-- Profile Details Tab -->
+    <div class="profile-tab-content active" id="profileDetailsContent">
+        <div class="profile-modal-body">
+            <!-- Conditional Profile Avatar -->
+            <div class="profile-avatar-large">
+                {% if user_profile_image %}
+                    <img src="{{ user_profile_image }}" alt="Profile" class="profile-img">
+                {% else %}
+                    <span class="avatar-initials">{{ (user_full_name or 'S')[:1]|upper }}</span>
+                {% endif %}
+            </div>
+            <div class="profile-info-item">
+                <label><i class="fas fa-user"></i> Full Name</label>
+                <span>{{ user_full_name or 'Student' }}</span>
+            </div>
+            <div class="profile-info-item">
+                <label><i class="fas fa-envelope"></i> Email</label>
+                <span>{{ user_email or 'Not registered' }}</span>
+            </div>
+            <div class="profile-info-item">
+                <label><i class="fas fa-calendar"></i> Year</label>
+                <span class="profile-info-value">{{ user_study_year or 'Not assigned' }}</span>
+            </div>
+            <div class="profile-info-item">
+                <label><i class="fas fa-layer-group"></i> Semester</label>
+                <span class="profile-info-value" id="dynamicSemester">{{ computed_semester|default('II') }}</span>
+            </div>
+            <div class="profile-info-item">
+                <label><i class="fas fa-building"></i> Department</label>
+                <span>{{ user_department or 'Not assigned' }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Profile Tab -->
+    <div class="profile-tab-content" id="profileEditContent">
+        <form id="editProfileForm">
+            <div class="profile-modal-body">
+                <!-- Profile Image Upload -->
+                <div class="profile-image-upload">
+                    <div class="profile-avatar-large" id="editProfileAvatar">
+                        {% if user_profile_image %}
+                            <img src="{{ user_profile_image }}" alt="Profile" class="profile-img" id="avatarPreview">
+                        {% else %}
+                            <span class="avatar-initials" id="avatarPreview">{{ (user_full_name or 'S')[:1]|upper }}</span>
+                        {% endif %}
+                    </div>
+                    <label class="upload-btn">
+                        <input type="file" accept="image/*" id="profileImageInput" onchange="previewNewImage(event)">
+                        <i class="fas fa-camera"></i> Change Photo
+                    </label>
+                    <input type="hidden" name="profile_image" id="profileImageData">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" value="{{ user_full_name or '' }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" value="{{ user_email or '' }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Year/Sem <span style="color:red">*</span></label>
+                    <select name="year_sem" class="form-control req-student" id="editYearSem">
+                        <option value="" disabled selected>-- Select --</option>
+                        <option value="I/I sem" {% if user_study_year == 'I' and (user_semester|default('II')) == 'I' %}selected{% endif %}>I/I sem</option>
+                        <option value="I/II sem" {% if user_study_year == 'I' and (user_semester|default('II')) == 'II' %}selected{% endif %}>I/II sem</option>
+                        <option value="II/I sem" {% if user_study_year == 'II' and (user_semester|default('II')) == 'I' %}selected{% endif %}>II/I sem</option>
+                        <option value="II/II sem" {% if user_study_year == 'II' and (user_semester|default('II')) == 'II' %}selected{% endif %}>II/II sem</option>
+                        <option value="III/I sem" {% if user_study_year == 'III' and (user_semester|default('II')) == 'I' %}selected{% endif %}>III/I sem</option>
+                        <option value="III/II sem" {% if user_study_year == 'III' and (user_semester|default('II')) == 'II' %}selected{% endif %}>III/II sem</option>
+                        <option value="IV/I sem" {% if user_study_year == 'IV' and (user_semester|default('II')) == 'I' %}selected{% endif %}>IV/I sem</option>
+                        <option value="IV/II sem" {% if user_study_year == 'IV' and (user_semester|default('II')) == 'II' %}selected{% endif %}>IV/II sem</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <input type="text" class="form-control" value="{{ user_department or '' }}" readonly>
+                </div>
+            </div>
+            <div class="profile-modal-footer">
+                <button type="button" class="btn-profile-save" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Change Password Tab -->
+    <div class="profile-tab-content" id="profilePasswordContent">
+        <form id="changePasswordForm" onsubmit="changePassword(event)">
+            <div class="profile-modal-body">
+                <div class="form-group">
+                    <label class="form-label">Current Password</label>
+                    <input type="password" class="form-control" id="currentPassword" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input type="password" class="form-control" id="newPassword" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+            </div>
+            <div class="profile-modal-footer">
+                <button type="submit" class="btn-profile-save">Change Password</button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="profile-modal-footer-logout">
+        <a href="/logout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <i class="fas fa-graduation-cap"></i>
+            QuizMaster
+        </div>
+        <button class="sidebar-close" onclick="closeMobileNav()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <nav class="sidebar-nav">
+        <a href="/student" class="nav-item {% if request.path == '/student' or request.path == '/student/dashboard' %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <span>Dashboard</span>
+        </a>
+        
+        <a href="/student/study" class="nav-item {% if request.path == '/student/study' %}active{% endif %}">
+            <i class="fas fa-book"></i>
+            <span>Study Materials</span>
+        </a>
+        
+        <a href="/student/progress" class="nav-item {% if request.path == '/student/progress' %}active{% endif %}">
+            <i class="fas fa-chart-bar"></i>
+            <span>My Progress</span>
+        </a>
+    </nav>
+    
+    <div class="sidebar-footer">
+        <div class="sidebar-user" onclick="openProfileModal()" style="cursor: pointer;">
+            <div class="sidebar-user-avatar" id="sidebarAvatar">
+                {% if user_profile_image %}
+                    <img src="{{ user_profile_image }}" alt="Profile" class="sidebar-avatar-img">
+                {% else %}
+                    <span class="avatar-initials">{{ (user_full_name or user.full_name or session.get('full_name', 'S')[:1])|upper }}</span>
+                {% endif %}
+            </div>
+            <div class="sidebar-user-info">
+                <div class="sidebar-user-name">{{ user_full_name or user.full_name or session.get('full_name', 'Student') }}</div>
+                <div class="sidebar-user-role"><i class="fas fa-id-badge"></i> View Profile</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Profile Modal Styles -->
+<style>
+    /* Profile Image Upload */
+    .profile-image-upload {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .profile-image-upload .profile-avatar-large {
+        width: 100px;
+        height: 100px;
+        min-width: 100px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 36px;
+        margin: 0 auto 12px;
+        overflow: hidden;
+        text-transform: uppercase;
+        border: 3px solid var(--bg-primary);
+        box-shadow: 0 4px 12px var(--shadow-primary);
+    }
+    .profile-image-upload .profile-img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover !important;
+        object-position: center !important;
+        border-radius: 50%;
+    }
+    .profile-image-upload .upload-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-light);
+        border-radius: var(--border-radius);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+    .profile-image-upload .upload-btn:hover {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+    .profile-image-upload input[type="file"] {
+        display: none;
+    }
+    
+    /* Avatar Image - Full circle fill */
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        min-width: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 32px;
+        margin: 0 auto 20px;
+        overflow: hidden;
+        text-transform: uppercase;
+    }
+    .profile-avatar-large .avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        line-height: 80px;
+        text-align: center;
+    }
+    .profile-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover !important;
+        object-position: center !important;
+        border-radius: 50%;
+    }
+    .sidebar-avatar-img {
+        width: 48px;
+        height: 48px;
+        object-fit: cover !important;
+        object-position: center !important;
+        border-radius: 50%;
+    }
+    .sidebar-user-avatar {
+        width: 48px;
+        height: 48px;
+        min-width: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 18px;
+        overflow: hidden;
+        text-transform: uppercase;
+    }
+    .sidebar-user-avatar .avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        line-height: 48px;
+        text-align: center;
+    }
+    .profile-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        opacity: 0;
+        transition: opacity var(--transition-normal);
+    }
+    .profile-modal-overlay.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+    }
+    .profile-modal {
+        display: none;
+        background: var(--bg-primary);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px var(--shadow-medium);
+        width: 90%;
+        max-width: 420px;
+        overflow: hidden;
+        transform: scale(0.9);
+        transition: transform var(--transition-normal);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .profile-modal.show {
+        display: block;
+        transform: scale(1);
+    }
+    .profile-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border-light);
+        background: var(--gray-50);
+    }
+    .profile-modal-header h4 {
+        margin: 0;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .profile-modal-header h4 i {
+        color: var(--primary);
+    }
+    .profile-modal-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: var(--transition-fast);
+    }
+    .profile-modal-close:hover {
+        background: var(--gray-200);
+        color: var(--text-primary);
+    }
+    
+    /* Profile Tabs */
+    .profile-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-light);
+        background: var(--bg-secondary);
+    }
+    .profile-tab {
+        flex: 1;
+        padding: 14px 12px;
+        background: none;
+        border: none;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-bottom: 2px solid transparent;
+    }
+    .profile-tab:hover {
+        color: var(--text-primary);
+        background: var(--gray-50);
+    }
+    .profile-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+    .profile-tab i {
+        font-size: 12px;
+    }
+    
+    /* Profile Tab Content */
+    .profile-tab-content {
+        display: none;
+    }
+    .profile-tab-content.active {
+        display: block;
+    }
+    
+    .profile-modal-body {
+        padding: 24px;
+    }
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        min-width: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--accent));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 32px;
+        margin: 0 auto 20px;
+        overflow: hidden;
+        text-transform: uppercase;
+        line-height: 1;
+    }
+    .profile-avatar-large .avatar-initials {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        line-height: 80px;
+        text-align: center;
+    }
+    .profile-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        border-radius: 50%;
+    }
+    .profile-info-item {
+        text-align: left;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border-light);
+    }
+    .profile-info-item:last-child {
+        border-bottom: none;
+    }
+    .profile-info-item label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    .profile-info-item label i {
+        color: var(--primary);
+        width: 16px;
+    }
+    .profile-info-item span {
+        font-size: 15px;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    .profile-info-value {
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+    }
+    
+    /* Form Styles */
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--border-light);
+        border-radius: var(--border-radius);
+        font-size: 14px;
+        transition: var(--transition-fast);
+        background: var(--bg-primary);
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    .form-control[readonly] {
+        background: var(--gray-100);
+        color: var(--text-muted);
+        cursor: not-allowed;
+    }
+    
+    .profile-modal-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-light);
+        text-align: center;
+    }
+    .btn-profile-save {
+        padding: 12px 32px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition-fast);
+        width: 100%;
+    }
+    .btn-profile-save:hover {
+        background: var(--primary-dark);
+    }
+    .profile-modal-footer-logout {
+        padding: 16px 24px;
+        border-top: 1px solid var(--border-light);
+        text-align: center;
+        background: var(--gray-50);
+    }
+    .btn-logout {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 24px;
+        background: var(--error);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: var(--transition-fast);
+    }
+    .btn-logout:hover {
+        background: #dc2626;
+    }
+    .sidebar-user-role i {
+        color: var(--primary);
+        font-size: 12px;
+        margin-right: 4px;
+    }
+</style>
+
+<!-- Profile Modal Script -->
+<script>
+    function openProfileModal() {
+        document.getElementById('profileModalOverlay').classList.add('show');
+        document.getElementById('profileModal').classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeProfileModal() {
+        document.getElementById('profileModalOverlay').classList.remove('show');
+        document.getElementById('profileModal').classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    function switchProfileTab(tabName) {
+        document.querySelectorAll('.profile-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.profile-tab-content').forEach(content => content.classList.remove('active'));
+        
+        document.getElementById('profileTab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+        document.getElementById('profile' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Content').classList.add('active');
+    }
+    
+    // Image preview function
+    function previewNewImage(event) {
+        const input = event.target;
+        const preview = document.getElementById('avatarPreview');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.className = 'profile-img';
+                preview.style.width = '100px';
+                preview.style.height = '100px';
+                preview.style.objectFit = 'cover';
+                preview.style.borderRadius = '50%';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function saveProfile() {
+        const form = document.getElementById('editProfileForm');
+        const formData = new FormData(form);
+        
+        const yearSem = document.getElementById('editYearSem').value;
+        const profileImage = document.getElementById('profileImageInput').files[0];
+        
+        formData.set('year_sem', yearSem);
+        
+        fetch('/api/user/update-profile', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert('Profile updated successfully!');
+                closeProfileModal();
+                location.reload();
+            } else {
+                alert(result.message || 'Error updating profile');
+            }
+        })
+        .catch(err => {
+            alert('Error saving profile');
+            console.error(err);
+        });
+    }
+    function changePassword(event) {
+        event.preventDefault();
+        const newPass = document.getElementById('newPassword').value;
+        const confirmPass = document.getElementById('confirmPassword').value;
+        
+        if (newPass !== confirmPass) {
+            alert('New passwords do not match!');
+            return;
+        }
+        if (newPass.length < 6) {
+            alert('Password must be at least 6 characters');
+            return;
+        }
+        fetch('/api/student/change-password', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                current_password: document.getElementById('currentPassword').value,
+                new_password: newPass
+            })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                alert('Password changed successfully!');
+                closeProfileModal();
+            } else {
+                alert(result.message || 'Error changing password');
+            }
+        })
+        .catch(err => {
+            alert('Error changing password');
+            console.error(err);
+        });
+    }
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeProfileModal();
+    });
+    
+    // Dynamic Semester Calculation
+    // Auto-updates every 6 months based on academic calendar
+    // Academic year typically: July-Dec = Odd semester (I), Jan-June = Even semester (II)
+    function calculateDynamicSemester() {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const month = now.getMonth();
+        
+        // Academic calendar: July (6) to December (11) = Odd/First semester
+        // January (0) to May (4) = Even/Second semester
+        let autoSemester;
+        
+        if (month >= 6 && month <= 11) {
+            // July - December: Odd semester (I, III, V, VII)
+            autoSemester = 'I';
+        } else {
+            // January - June: Even semester (II, IV, VI, VIII)
+            autoSemester = 'II';
+        }
+        
+        // If user has manual override in session, use that instead
+        const manualSemester = '{{ user_semester or "" }}';
+        const displaySemester = manualSemester ? manualSemester : autoSemester;
+        
+        const semesterEl = document.getElementById('dynamicSemester');
+        if (semesterEl) {
+            semesterEl.textContent = manualSemester ? manualSemester + ' (Manual)' : displaySemester + ' (Auto)';
+        }
+    }
+    
+    // Run on page load
+    calculateDynamicSemester();
+</script>

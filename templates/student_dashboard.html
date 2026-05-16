@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal | QuizMaster</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+            --border-light: #e2e8f0;
+            --shadow-light: rgba(0, 0, 0, 0.04);
+            --shadow-medium: rgba(0, 0, 0, 0.08);
+            --shadow-primary: rgba(99, 102, 241, 0.15);
+            --sidebar-width: 280px;
+            --header-height: 72px;
+            --border-radius: 12px;
+            --transition-fast: 0.2s ease;
+            --transition-normal: 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 50%, #fef3c7 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .layout-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Mobile Navigation Overlay */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .mobile-nav-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border-light);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 24px var(--shadow-light);
+            transition: transform var(--transition-normal);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-logo {
+            font-family: 'Dancing Script', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-logo i {
+            color: var(--secondary);
+            font-size: 20px;
+        }
+
+        .sidebar-close {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-close:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            margin-bottom: 4px;
+            transition: var(--transition-fast);
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: var(--text-inverse);
+            box-shadow: 0 4px 12px var(--shadow-primary);
+        }
+
+        .nav-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 60%;
+            background: var(--text-inverse);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+            text-align: center;
+            flex-shrink: 0;
+            margin-right: 14px;
+        }
+
+        .nav-item span {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+        }
+
+        .sidebar-user {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px;
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            box-shadow: 0 2px 8px var(--shadow-light);
+            transition: var(--transition-fast);
+        }
+
+        .sidebar-user:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px var(--shadow-medium);
+        }
+
+        .sidebar-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse);
+            font-weight: 700;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-user-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user-name {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-role {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left var(--transition-normal);
+        }
+
+        /* Header */
+        .dashboard-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 30px;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px var(--shadow-light);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .hamburger-menu {
+            display: none;
+            flex-direction: column;
+            cursor: pointer;
+            padding: 10px;
+            background: none;
+            border: none;
+            border-radius: var(--border-radius);
+            transition: var(--transition-fast);
+            gap: 5px;
+        }
+
+        .hamburger-menu:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .hamburger-menu span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 1px;
+            transition: var(--transition-normal);
+            transform-origin: center;
+        }
+
+        .hamburger-menu.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .hamburger-menu.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger-menu.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            text-decoration: none;
+            box-shadow: 0 1px 3px var(--shadow-light);
+        }
+
+        .header-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--shadow-primary);
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px 6px 6px;
+            border-radius: 50px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-primary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            box-shadow: 0 1px 3px var(--shadow-light);
+        }
+
+        .profile-btn:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--shadow-primary);
+        }
+
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse);
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .profile-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: 320px;
+            background: var(--bg-primary);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px var(--shadow-medium);
+            border: 1px solid var(--border-light);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.95);
+            transition: var(--transition-normal);
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .dropdown-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .dropdown-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-inverse);
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .dropdown-user-info h5 {
+            margin: 0;
+            font-size: 17px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .dropdown-user-info p {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .dropdown-body {
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .dropdown-section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding: 0 6px;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .dropdown-item i {
+            width: 18px;
+            text-align: center;
+            font-size: 15px;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 16px 0;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            font-size: 14px;
+            transition: var(--transition-fast);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .profile-upload {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .profile-upload-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px dashed var(--gray-300);
+        }
+
+        .profile-upload-preview i {
+            font-size: 24px;
+            color: var(--text-muted);
+        }
+
+        .profile-upload-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            cursor: pointer;
+            font-size: 14px;
+            transition: var(--transition-fast);
+        }
+
+        .profile-upload-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition-fast);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--border-radius);
+            background: var(--bg-primary);
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            font-size: 14px;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Grid Systems */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+        }
+
+        .grid-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .grid-quiz {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+            width: 100%;
+        }
+
+        /* Cards */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.06);
+            padding: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(10px);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(31, 38, 135, 0.1);
+        }
+
+        .admit-card {
+            border-left: 5px solid var(--primary);
+            margin-bottom: 32px;
+            background: var(--bg-primary);
+        }
+
+        .seat-box {
+            background: var(--bg-tertiary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            text-align: center;
+        }
+
+        .timer-badge {
+            background: var(--bg-tertiary);
+            color: var(--gray-700);
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            margin: 16px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .btn-start {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transition-fast);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .btn-start:hover {
+            background: #4338ca;
+        }
+
+        .btn-locked {
+            width: 100%;
+            padding: 12px;
+            background: var(--gray-200);
+            color: var(--gray-400);
+            border: none;
+            border-radius: 8px;
+            cursor: not-allowed;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Table Styles */
+        .table-responsive {
+            border-radius: 16px;
+            overflow: hidden;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0;
+        }
+
+        .table-responsive table {
+            min-width: 600px;
+            width: 100%;
+            margin-bottom: 0 !important;
+        }
+
+        thead {
+            background: var(--bg-tertiary);
+        }
+
+        th {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            border-bottom: none !important;
+            padding: 16px !important;
+        }
+
+        td {
+            padding: 16px !important;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-100);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .info-badge {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-right: 6px;
+            display: inline-block;
+        }
+
+        .content-area {
+            padding: 30px;
+            flex: 1;
+        }
+
+        /* Responsive Design */
+
+        /* Tablet and below (1024px and below) */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-close {
+                display: block;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .hamburger-menu {
+                display: flex;
+            }
+
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Large tablet / Small laptop (768px - 1023px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .grid-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .grid-quiz {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Tablet Portrait (600px - 767px) */
+        @media (max-width: 767px) {
+            :root {
+                --header-height: 64px;
+            }
+
+            .dashboard-header {
+                padding: 0 16px;
+            }
+
+            .content-area {
+                padding: 20px 16px;
+            }
+
+            .header-btn span {
+                display: none;
+            }
+
+            .header-btn {
+                padding: 10px;
+            }
+
+            .profile-name {
+                display: none;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            .grid-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .grid-cards,
+            .grid-quiz {
+                grid-template-columns: 1fr;
+            }
+
+            .glass-card {
+                padding: 20px;
+            }
+
+            .dropdown-menu {
+                width: calc(100vw - 32px);
+                right: -8px;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            .glass-card.admit-card .grid-container {
+                grid-template-columns: 1fr;
+            }
+
+            .admit-card .text-end {
+                text-align: left !important;
+                margin-top: 16px;
+            }
+        }
+
+        /* Mobile Large (425px - 599px) */
+        @media (max-width: 599px) {
+            .grid-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .glass-card.admit-card {
+                padding: 16px;
+            }
+
+            .seat-box {
+                padding: 10px 16px;
+            }
+        }
+
+        /* Mobile Small (320px - 424px) */
+        @media (max-width: 424px) {
+            .grid-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .page-title {
+                font-size: 16px;
+            }
+
+            .profile-btn {
+                padding: 6px;
+            }
+
+            .dropdown-menu {
+                width: calc(100vw - 16px);
+                right: -8px;
+            }
+        }
+
+        /* Desktop (1366px+) */
+        @media (min-width: 1366px) {
+            .content-area {
+                max-width: 1400px;
+                margin: 0 auto;
+                padding: 40px;
+            }
+
+            .grid-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .grid-cards {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .grid-quiz {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Large Desktop (1920px+) */
+        @media (min-width: 1920px) {
+            .content-area {
+                max-width: 1800px;
+                padding: 48px;
+            }
+
+            .grid-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .grid-cards {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .grid-quiz {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Touch devices */
+        @media (hover: none) and (pointer: coarse) {
+
+            .nav-item,
+            .header-btn,
+            .btn-start,
+            .dropdown-item {
+                min-height: 48px;
+                padding: 14px;
+            }
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+
+<body oncontextmenu="return false">
+
+    <div class="layout-wrapper">
+        {% include '_student_sidebar.html' %}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="dashboard-header">
+                <div class="header-left">
+                    <button class="hamburger-menu" onclick="toggleMobileNav()">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <h1 class="page-title">Student Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="profile-dropdown">
+                        <button class="profile-btn"
+                            onclick="document.getElementById('profileDropdown').classList.toggle('show');">
+                            <div class="profile-avatar" id="headerAvatar">
+                                {{ user.full_name[:1]|upper }}
+                            </div>
+                            <span class="profile-name">{{ user.full_name }}</span>
+                            <i class="fas fa-chevron-down" style="color: var(--gray-400); font-size: 12px;"></i>
+                        </button>
+
+                        <div class="dropdown-menu" id="profileDropdown">
+                            <div class="dropdown-header">
+                                <div class="dropdown-avatar" id="dropdownAvatar">
+                                    {{ user.full_name[:1]|upper }}
+                                </div>
+                                <div class="dropdown-user-info">
+                                    <h5>{{ user.full_name }}</h5>
+                                    <p>{{ user.email if user.email else 'Student' }}</p>
+                                </div>
+                            </div>
+
+                            <div class="dropdown-body">
+                                <div class="tab-buttons">
+                                    <button class="tab-btn active" onclick="switchTab('edit')">Edit Profile</button>
+                                    <button class="tab-btn" onclick="switchTab('password')">Change Password</button>
+                                </div>
+
+                                <!-- Edit Profile Tab -->
+                                <div class="tab-content active" id="editProfileTab">
+                                    <form id="profileForm" onsubmit="saveProfile(event)">
+                                        <div class="profile-upload">
+                                            <div class="profile-upload-preview" id="profilePreview">
+                                                {% if user.avatar %}
+                                                <img src="{{ user.avatar }}" alt="Profile"
+                                                    style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                                {% else %}
+                                                <i class="fas fa-user"></i>
+                                                {% endif %}
+                                            </div>
+                                            <label class="profile-upload-btn">
+                                                <input type="file" accept="image/*" onchange="previewImage(event)"
+                                                    style="display: none;">
+                                                <i class="fas fa-camera"></i> Change Photo
+                                            </label>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Full Name</label>
+                                            <input type="text" class="form-control" value="{{ user.full_name }}"
+                                                readonly>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" class="form-control"
+                                                value="{{ user.email if user.email else '' }}" readonly>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Year/Sem <span style="color:red">*</span></label>
+                                            <select name="year_sem" class="form-control req-student" id="yearSemSelect">
+                                                <option value="" disabled selected>-- Select --</option>
+                                                <option value="I/I sem">I/I sem</option>
+                                                <option value="I/II sem">I/II sem</option>
+                                                <option value="II/I sem">II/I sem</option>
+                                                <option value="II/II sem">II/II sem</option>
+                                                <option value="III/I sem">III/I sem</option>
+                                                <option value="III/II sem">III/II sem</option>
+                                                <option value="IV/I sem">IV/I sem</option>
+                                                <option value="IV/II sem">IV/II sem</option>
+                                            </select>
+                                            <div class="form-hint">You can update year/semester once every 3 months
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Department</label>
+                                            <input type="text" class="form-control"
+                                                value="{{ user.department if user.department else '' }}" readonly>
+                                        </div>
+
+                                        <button type="submit" class="btn-primary">Save Changes</button>
+                                    </form>
+                                </div>
+
+                                <!-- Change Password Tab -->
+                                <div class="tab-content" id="passwordTab">
+                                    <form id="passwordForm" onsubmit="changePassword(event)">
+                                        <div class="form-group">
+                                            <label class="form-label">Current Password</label>
+                                            <input type="password" class="form-control" id="currentPassword" required>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">New Password</label>
+                                            <input type="password" class="form-control" id="newPassword" required
+                                                minlength="6">
+                                            <div class="form-hint">Minimum 6 characters</div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="form-label">Confirm New Password</label>
+                                            <input type="password" class="form-control" id="confirmPassword" required>
+                                        </div>
+
+                                        <button type="submit" class="btn-primary">Change Password</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="/logout" class="header-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </header>
+
+            <div class="content-area">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        // {% for category, message in messages %}
+                        Swal.fire({
+                            title: 'Notice',
+                            text: '{{ message }}',
+                            icon: '{{ "warning" if category == "warning" else "info" }}',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        // {% endfor %}
+                    });
+                </script>
+                {% endif %}
+                {% endwith %}
+
+                {% if center and user.seat_row and user.seat_col %}
+                <div class="glass-card admit-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="m-0 fw-bold" style="color: var(--primary);"><i class="fas fa-id-card me-2"></i> Exam
+                            Admit Card</h5>
+                        <button onclick="window.print()" class="btn btn-sm btn-light border"><i
+                                class="fas fa-print"></i></button>
+                    </div>
+                    <div class="grid-container">
+                        <div>
+                            <small class="text-uppercase text-muted fw-bold d-block"
+                                style="font-size: 11px; letter-spacing: 0.5px;">Center</small>
+                            <div class="fw-bold fs-5">{{ center.center_name }}</div>
+                            <div class="text-secondary small">{{ center.address }}</div>
+                        </div>
+                        <div>
+                            <small class="text-uppercase text-muted fw-bold d-block"
+                                style="font-size: 11px; letter-spacing: 0.5px;">City</small>
+                            <div class="fw-bold fs-5">{{ center.city }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="seat-box d-inline-block">
+                                <small class="text-muted d-block fw-bold" style="font-size: 10px;">SEAT NO</small>
+                                <div class="display-6 fw-bold" style="color: var(--primary);">R{{ user.seat_row }}-C{{
+                                    user.seat_col }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if winner_announce %}
+                <div class="alert d-flex align-items-center mb-4 shadow-sm"
+                    style="background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px;">
+                    <i class="fas fa-bullhorn me-3 fs-4" style="color: var(--warning);"></i>
+                    <div>
+                        <div class="small fw-bold text-uppercase" style="color: var(--warning);">Announcement</div>
+                        <div class="fw-bold">{{ winner_announce }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="grid-stats mb-5">
+                    <div class="glass-card text-center">
+                        <h2 class="fw-bold m-0" style="font-size: 28px;">{{ history|length }}</h2>
+                        <small class="text-muted fw-bold d-block mt-1">TOTAL EXAMS</small>
+                    </div>
+                    <div class="glass-card text-center">
+                        <h2 class="fw-bold m-0" style="font-size: 28px; color: var(--success);">{{
+                            history|selectattr('status', 'equalto', 'Completed')|list|length }}</h2>
+                        <small class="text-muted fw-bold d-block mt-1">COMPLETED</small>
+                    </div>
+                    <div class="glass-card text-center">
+                        <h2 class="fw-bold m-0" style="font-size: 28px; color: var(--warning);"><i
+                                class="fas fa-award"></i></h2>
+                        <small class="text-muted fw-bold d-block mt-1">CERTIFICATES</small>
+                    </div>
+                    <div class="glass-card text-center">
+                        {% set att_pct = (user.attendance_present / user.attendance_total * 100)|round(0)|int if
+                        user.attendance_total > 0 else 0 %}
+                        <h2 class="fw-bold m-0" style="font-size: 28px; color: var(--primary);">{{ att_pct }}%</h2>
+                        <small class="text-muted fw-bold d-block mt-1">ATTENDANCE</small>
+                        <small class="text-muted">({{ user.attendance_present }}/{{ user.attendance_total }})</small>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold text-secondary mb-3" style="font-size: 16px;">ACTIVE EXAMS</h5>
+                <div class="grid-quiz mb-5">
+                    {% for q in quizzes %}
+                    <div class="glass-card h-100"
+                        data-quiz-id="{{ q.quiz_id }}"
+                        data-seconds="{{ q.seconds_left }}"
+                        data-locked="{{ 'true' if q.is_locked else 'false' }}"
+                        data-time-msg="{{ q.time_msg }}">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="badge"
+                                style="background: var(--gray-100); color: var(--primary); border: 1px solid var(--gray-200);">{{
+                                q.category }}</span>
+                            <small class="text-muted fw-bold">{{ q.duration_minutes }} min</small>
+                        </div>
+                        <h4 class="fw-bold mb-2" style="font-size: 18px;">{{ q.title }}</h4>
+                        <p class="text-muted small mb-2">Total Marks: {{ q.real_marks }}</p>
+
+                        <div class="mb-3" style="font-size: 13px; color: var(--gray-500);">
+                            <div><i class="fas fa-users me-1"></i> {{ q.batch }} &bull; {{ q.department }}</div>
+                            <div class="mt-1"><i class="fas fa-graduation-cap me-1"></i> {{ q.year }} &bull; Q: {{
+                                q.q_count }} &bull; Marks: {{ q.real_marks }}</div>
+                        </div>
+
+                        <div class="timer-badge" id="timer-{{ q.quiz_id }}">Loading...</div>
+                        <div id="action-area-{{ q.quiz_id }}"><button class="btn-locked">Locked</button></div>
+                        <div id="instr-{{ q.quiz_id }}" style="display: none;">{{ q.instructions }}</div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4 col-12">No active exams found for your session.</div>
+                    {% endfor %}
+                </div>
+
+                <script>
+                    (function () {
+                        var cards = document.querySelectorAll('.grid-quiz .glass-card[data-quiz-id]');
+                        cards.forEach(function (card) {
+                            var qId = card.getAttribute('data-quiz-id');
+                            var seconds = parseInt(card.getAttribute('data-seconds'), 10);
+                            var isLocked = card.getAttribute('data-locked') === 'true';
+                            var timeMsg = card.getAttribute('data-time-msg');
+                            var timerEl = document.getElementById('timer-' + qId);
+                            var actionEl = document.getElementById('action-area-' + qId);
+
+                            function update() {
+                                if (seconds <= 0 && !isLocked) {
+                                    timerEl.innerHTML = '<span style="color: var(--success);">&#9679; Live Now</span>';
+                                    actionEl.innerHTML = '<button onclick="openExamModal(\'' + qId + '\')" class="btn-start">Start Exam</button>';
+                                } else if (isLocked && seconds <= 0) {
+                                    timerEl.innerHTML = '<span style="color: var(--error);">' + timeMsg + '</span>';
+                                    actionEl.innerHTML = '<button class="btn-locked">' + timeMsg + '</button>';
+                                } else {
+                                    var h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = seconds % 60;
+                                    timerEl.innerText = 'Starts in: ' + h + 'h ' + m + 'm ' + s + 's';
+                                    actionEl.innerHTML = '<button class="btn-locked">Wait for Start</button>';
+                                }
+                            }
+                            update();
+                            if (seconds > 0) {
+                                var interval = setInterval(function () {
+                                    seconds--;
+                                    update();
+                                    if (seconds <= 0) {
+                                        isLocked = false;
+                                        clearInterval(interval);
+                                        update();
+                                    }
+                                }, 1000);
+                            }
+                        });
+                    })();
+                </script>
+
+                <h5 class="fw-bold text-secondary mb-3" style="font-size: 16px;">PAST RESULTS</h5>
+                <div class="glass-card p-0 overflow-hidden">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Exam</th>
+                                    <th>Score</th>
+                                    <th>Status</th>
+                                    <th>Result</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for h in history %}
+                                <tr>
+                                    <td class="fw-bold ps-4">{{ h.title }}</td>
+                                    <td class="fw-bold" style="color: var(--primary);">{{ h.total_score }}</td>
+                                    <td>
+                                        {% if h.status == 'Completed' %}
+                                        <span class="badge"
+                                            style="background: var(--success); color: white;">Completed</span>
+                                        {% elif h.status == 'Terminated' %}
+                                        <span class="badge"
+                                            style="background: var(--error); color: white;">Terminated</span>
+                                        {% else %}
+                                        <span class="badge"
+                                            style="background: var(--warning); color: var(--gray-800);">Ongoing</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if h.status == 'Completed' %}
+                                        {% if h.total_marks == 1 %}
+                                        <a href="/download/cert/{{ h.attempt_id }}" target="_blank"
+                                            class="btn btn-sm rounded-pill px-3 fw-bold {{ 'btn-outline-primary' if h.certificate_approved else 'btn-light border text-muted' }}">
+                                            {% if h.certificate_approved %}<i class="fas fa-download me-1"></i>
+                                            Certificate
+                                            {% else %}<i class="fas fa-lock me-1"></i> View Status{% endif %}
+                                        </a>
+                                        {% else %}
+                                        <span class="badge" style="background: var(--gray-500); color: white;">No
+                                            Certificate</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <a href="/quiz/{{ h.attempt_id }}" class="btn btn-sm rounded-pill px-3"
+                                            style="background: var(--primary); color: white;">Resume</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">No history found.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exam Rules Modal -->
+    <div class="modal fade" id="examRulesModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header"
+                    style="background: var(--gray-800); color: white; border-radius: 16px 16px 0 0;">
+                    <h5 class="modal-title">Exam Rules</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul id="modalInstructions" class="list-group list-group-flush small mb-3"></ul>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="agreeCheck" onchange="toggleStartBtn()">
+                        <label class="form-check-label small">I agree to the rules and fullscreen mode.</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button id="finalStartBtn" class="btn btn-primary btn-sm disabled px-4"
+                        onclick="redirectNow()">Begin Exam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        var FINAL_URL = "";
+        var examModal = null;
+
+        window.addEventListener('load', () => {
+            var el = document.getElementById('examRulesModal');
+            if (el) examModal = new bootstrap.Modal(el);
+
+            if (!sessionStorage.getItem('welcomeConfetti')) {
+                if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                sessionStorage.setItem('welcomeConfetti', 'true');
+            }
+
+            loadProfileImage();
+        });
+
+        function openExamModal(quizId) {
+            FINAL_URL = "/quiz/" + quizId;
+            var instrDiv = document.getElementById('instr-' + quizId);
+            var rawInstr = instrDiv ? instrDiv.textContent : "Standard Rules Apply.";
+            var formattedList = rawInstr.split('\n').map(l => l.trim() ? `<li class="list-group-item border-0 ps-0"><i class="fas fa-angle-right me-2" style="color: var(--primary);"></i>${l}</li>` : '').join('');
+            document.getElementById('modalInstructions').innerHTML = formattedList;
+            document.getElementById('agreeCheck').checked = false;
+            document.getElementById('finalStartBtn').classList.add('disabled');
+            if (examModal) examModal.show();
+        }
+
+        function toggleStartBtn() {
+            var isChecked = document.getElementById('agreeCheck').checked;
+            var btn = document.getElementById('finalStartBtn');
+            if (isChecked) btn.classList.remove('disabled');
+            else btn.classList.add('disabled');
+        }
+
+        function redirectNow() {
+            if (FINAL_URL) window.location.href = FINAL_URL;
+        }
+
+        document.onkeydown = function (e) {
+            if (e.keyCode == 123) return false;
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+        };
+
+        // Profile Dropdown - Direct inline handler (works without JS loading)
+        // Keep as backup in case inline doesn't work
+        window.toggleProfileDropdown = function (e) {
+            if (e) e.stopPropagation();
+            var dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.classList.toggle('show');
+        };
+
+        // Ensure drop-down menu is hidden by default in CSS
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropdown = document.getElementById('profileDropdown');
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Close dropdown when clicking outside - Simplified to avoid conflicts
+        document.addEventListener('click', function (e) {
+            var dropdownMenu = document.getElementById('profileDropdown');
+            var profileBtn = document.querySelector('.profile-btn');
+            if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                // If click is NOT on the button or inside dropdown, close it
+                if (profileBtn && !profileBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                    dropdownMenu.classList.remove('show');
+                }
+            }
+        });
+
+        // Mobile Navigation
+        function toggleMobileNav() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mobileNav = document.getElementById('mobileNavOverlay');
+
+            hamburger.classList.toggle('active');
+            sidebar.classList.toggle('mobile-open');
+            if (mobileNav) mobileNav.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('mobile-open') ? 'hidden' : '';
+        }
+
+        function closeMobileNav() {
+            const hamburger = document.querySelector('.hamburger-menu');
+            const sidebar = document.getElementById('sidebar');
+            const mobileNav = document.getElementById('mobileNavOverlay');
+
+            hamburger.classList.remove('active');
+            sidebar.classList.remove('mobile-open');
+            if (mobileNav) mobileNav.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close mobile nav when clicking nav items
+        document.addEventListener('DOMContentLoaded', function () {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    if (this.getAttribute('href') === '#') return;
+                    if (window.innerWidth <= 1024) {
+                        closeMobileNav();
+                    }
+                });
+            });
+        });
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if (tab === 'edit') {
+                document.querySelector('.tab-btn:first-child').classList.add('active');
+                document.getElementById('editProfileTab').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:last-child').classList.add('active');
+                document.getElementById('passwordTab').classList.add('active');
+            }
+        }
+
+        // Profile Image
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('profilePreview').innerHTML = `<img src="${e.target.result}" alt="Profile">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function loadProfileImage() {
+            fetch('/api/user/profile-image')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.image) {
+                        const avatars = ['sidebarAvatar', 'headerAvatar', 'dropdownAvatar', 'profilePreview'];
+                        avatars.forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) {
+                                el.innerHTML = `<img src="${data.image}" alt="Profile">`;
+                            }
+                        });
+                    }
+                })
+                .catch(() => { });
+        }
+
+        // Save Profile
+        function saveProfile(event) {
+            event.preventDefault();
+
+            const formData = new FormData();
+            formData.append('year_sem', document.getElementById('yearSemSelect').value);
+
+            const fileInput = document.querySelector('input[type="file"]');
+            if (fileInput && fileInput.files[0]) {
+                formData.append('profile_image', fileInput.files[0]);
+            }
+
+            fetch('/api/user/update-profile', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        if (data.image) {
+                            loadProfileImage();
+                        }
+                        // Reload to update session data
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Failed to update profile',
+                        icon: 'error',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                });
+        }
+
+        // Change Password
+        function changePassword(event) {
+            event.preventDefault();
+
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'New passwords do not match',
+                    icon: 'error',
+                    confirmButtonColor: '#4f46e5'
+                });
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Password must be at least 6 characters',
+                    icon: 'error',
+                    confirmButtonColor: '#4f46e5'
+                });
+                return;
+            }
+
+            fetch('/api/user/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: 'Success',
+                            text: data.message,
+                            icon: 'success',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                        document.getElementById('passwordForm').reset();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message,
+                            icon: 'error',
+                            confirmButtonColor: '#4f46e5'
+                        });
+                    }
+                })
+                .catch(err => {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'An error occurred. Please try again.',
+                        icon: 'error',
+                        confirmButtonColor: '#4f46e5'
+                    });
+                });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Manage Exam Centers | QuizMaster</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* =====================================================
+   BASE + GLASS
+===================================================== */
+body {
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(135deg,#e0c3fc,#8ec5fc);
+    margin: 0;
+    padding: 24px;
+}
+
+.glass-card {
+    background: rgba(255,255,255,.7);
+    backdrop-filter: blur(14px);
+    border-radius: 18px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 32px rgba(31,38,135,.15);
+}
+
+.btn {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.btn.secondary { background:#64748b; }
+.btn.danger { background:#ef4444; }
+
+/* =====================================================
+   SEAT MAP
+===================================================== */
+.seat-grid {
+    display: grid;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 15px;
+}
+
+.seat {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: #e5e7eb;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.seat.filled { background:#10b981; color:white; }
+.seat.team { background:#3b82f6; color:white; }
+.seat.locked { background:#1f2937; color:white; cursor:not-allowed; }
+
+.seat:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background:#111827;
+    color:white;
+    padding:5px 8px;
+    border-radius:6px;
+    font-size:11px;
+    white-space:nowrap;
+    z-index:20;
+}
+
+/* =====================================================
+   MODALS
+===================================================== */
+.modal {
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    backdrop-filter: blur(6px);
+    align-items:center;
+    justify-content:center;
+    z-index:999;
+}
+
+.modal-content {
+    background:white;
+    border-radius:18px;
+    padding:26px;
+    width:420px;
+    max-width:95%;
+}
+
+.modal h3 { margin-top:0; }
+
+/* =====================================================
+   TABLE
+===================================================== */
+table { width:100%; border-collapse:collapse; }
+th,td { padding:12px; font-size:14px; }
+th { background:#f3f4f6; text-align:left; }
+tr { border-bottom:1px solid #eee; }
+
+/* =====================================================
+   LEGEND
+===================================================== */
+.legend { display:flex; gap:14px; font-size:12px; margin-top:10px; }
+.legend span { display:flex; gap:6px; align-items:center; }
+.legend i { width:14px; height:14px; border-radius:4px; display:inline-block; }
+</style>
+</head>
+
+<body>
+
+<!-- ================= CENTER MANAGEMENT ================= -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <h2 style="margin: 0;"><i class="fas fa-building"></i> Exam Center Management</h2>
+    <a href="{{ '/coordinator' if session.get('role') == 'Coordinator' else '/admin' }}" style="background: #4f46e5; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="glass-card">
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <form action="/admin/add_center" method="POST">
+            <h4>Add Center</h4>
+            <input name="name" placeholder="Center Name" required style="width:100%;margin-bottom:8px;">
+            <div style="display:flex;gap:10px;">
+                <input name="rows" type="number" placeholder="Rows" required>
+                <input name="cols" type="number" placeholder="Cols" required>
+            </div>
+            <input name="city" placeholder="City" required style="width:100%;margin:8px 0;">
+            <textarea name="address" placeholder="Address" required style="width:100%;"></textarea>
+            <button class="btn" style="width:100%;margin-top:10px;">Add Center</button>
+        </form>
+
+        <div style="background:#f8fafc;padding:20px;border-radius:14px;">
+            <h4><i class="fas fa-brain"></i> Smart Allocation</h4>
+            <p style="font-size:13px;color:#64748b;">
+                Automatically fills seats sequentially. Teams stay together.
+            </p>
+            <form action="/admin/auto_allocate" method="POST">
+                <button class="btn">Run Auto Allocation</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================= CENTER LIST ================= -->
+<div class="glass-card">
+<table>
+<thead>
+<tr><th>Center</th><th>Capacity</th><th>Filled</th><th>Layout</th><th>Actions</th></tr>
+</thead>
+<tbody>
+{% for c in centers %}
+<tr>
+<td><strong>{{ c.center_name }}</strong><br><small>{{ c.city }}</small></td>
+<td>{{ c.capacity }}</td>
+<td>{{ c.allocated_count }}</td>
+<td>{{ c.total_rows }} x {{ c.total_cols }}</td>
+<td>
+<button class="btn" style="padding:6px 10px;font-size:12px;"
+onclick="openSeatMap({{ c.center_id }}, '{{ c.center_name }}')">
+<i class="fas fa-th"></i> Seats
+</button>
+</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<!-- ================= SEAT MAP MODAL ================= -->
+<div class="modal" id="seatModal">
+<div class="modal-content">
+<div style="display:flex;justify-content:space-between;">
+<h3 id="seatTitle">Seat Map</h3>
+<button onclick="closeSeatModal()" style="background:none;border:none;font-size:22px;">&times;</button>
+</div>
+
+<div class="legend">
+<span><i style="background:#e5e7eb;"></i> Empty</span>
+<span><i style="background:#10b981;"></i> Student</span>
+<span><i style="background:#3b82f6;"></i> Team</span>
+<span><i style="background:#1f2937;"></i> Locked</span>
+</div>
+
+<div id="seatGrid" class="seat-grid"></div>
+</div>
+</div>
+
+<!-- ================= ASSIGN MODAL ================= -->
+<div class="modal" id="assignModal">
+<div class="modal-content">
+<h3>Assign Seat</h3>
+<input id="studentInput" placeholder="Student ID or Email" style="width:100%;margin-bottom:10px;">
+<button class="btn" onclick="assignSeat()">Assign</button>
+<button class="btn secondary" onclick="closeAssign()">Cancel</button>
+</div>
+</div>
+
+<script>
+let activeCenter = null;
+let activeSeat = null;
+
+function openSeatMap(centerId, name) {
+    activeCenter = centerId;
+    document.getElementById('seatTitle').innerText = name + ' – Seating';
+    document.getElementById('seatModal').style.display = 'flex';
+    loadSeats();
+}
+
+function closeSeatModal() {
+    document.getElementById('seatModal').style.display = 'none';
+}
+
+function loadSeats() {
+    fetch(`/api/get_seats/${activeCenter}`)
+    .then(r=>r.json())
+    .then(d=>{
+        const grid=document.getElementById('seatGrid');
+        grid.style.gridTemplateColumns=`repeat(${d.cols},42px)`;
+        grid.innerHTML='';
+        for(let r=1;r<=d.rows;r++){
+            for(let c=1;c<=d.cols;c++){
+                const seat=document.createElement('div');
+                seat.className='seat';
+                seat.innerText=`${r}-${c}`;
+                seat.onclick=()=>selectSeat(r,c);
+
+                const user=d.users.find(u=>u.seat_row===r && u.seat_col===c);
+                if(user){
+                    seat.dataset.tooltip=user.full_name+(user.team_name?` (${user.team_name})`:'');
+                    seat.classList.add(user.goal_type==='Team'?'team':'filled');
+                }
+                grid.appendChild(seat);
+            }
+        }
+    });
+}
+
+function selectSeat(r,c){
+    activeSeat={row:r,col:c};
+    document.getElementById('assignModal').style.display='flex';
+}
+
+function closeAssign(){
+    document.getElementById('assignModal').style.display='none';
+}
+
+function assignSeat(){
+    const student = document.getElementById('studentInput').value;
+    
+    // If input is empty, treat as "Unassign" (optional logic, requires backend support)
+    // For now, standard assignment:
+    fetch('/api/assign_seat', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            center_id: activeCenter,
+            seat_row: activeSeat.row,
+            seat_col: activeSeat.col,
+            student: student
+        })
+    }).then(() => { 
+        closeAssign(); 
+        loadSeats(); // Refresh grid
+        document.getElementById('studentInput').value = ""; // Clear input
+    });
+}
+</script>
+
+</body>
+</html>

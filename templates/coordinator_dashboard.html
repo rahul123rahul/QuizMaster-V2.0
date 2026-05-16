@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coordinator Dashboard | QuizMaster</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    /* --- 1. LIQUID GLASS THEME --- */
+    :root {
+        --bg-color: #eef2f3;
+        --glass-white: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --glass-blur: blur(12px);
+        --primary: #4f46e5;
+        --text: #1e293b;
+        --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    body {
+        min-height: 100vh; color: var(--text);
+        background: linear-gradient(-45deg, #e0c3fc, #8ec5fc, #e0c3fc, #90f7ec);
+        background-size: 400% 400%;
+        animation: waterFlow 15s ease infinite;
+    }
+
+    @keyframes waterFlow {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* --- 2. GLASS UTILITIES --- */
+    .glass-panel {
+        background: var(--glass-white);
+        backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+        border: 1px solid var(--glass-border); box-shadow: var(--shadow); border-radius: 16px;
+    }
+
+    /* --- 3. LAYOUT --- */
+    .layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+    /* --- 4. SIDEBAR --- */
+    .sidebar {
+        background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+        border-right: 1px solid rgba(255, 255, 255, 0.5); padding: 25px;
+        position: sticky; top: 0; height: 100vh; overflow-y: auto; display: flex; flex-direction: column;
+    }
+    .brand { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 30px; text-align: center; }
+    .nav-links { list-style: none; flex-grow: 1; }
+    .nav-item a {
+        display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin-bottom: 8px;
+        color: #64748b; text-decoration: none; border-radius: 12px; font-weight: 500; font-size: 14px; transition: all 0.2s ease;
+    }
+    .nav-item a:hover { background: rgba(255, 255, 255, 0.6); color: var(--primary); transform: translateX(5px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .nav-item a.active { background: rgba(255, 255, 255, 0.8); color: var(--primary); font-weight: 600; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.15); }
+    .logout-btn { margin-top: 20px; text-align: center; background: rgba(254, 202, 202, 0.4); color: #dc2626; padding: 10px; border-radius: 10px; font-weight: 600; text-decoration: none; }
+    .logout-btn:hover { background: rgba(254, 202, 202, 0.8); }
+
+    /* --- 5. CONTENT --- */
+    .content { padding: 30px 40px; overflow-x: hidden; }
+    .card { padding: 25px; margin-bottom: 25px; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(31, 38, 135, 0.15); background: rgba(255, 255, 255, 0.8); }
+    .card h3 { margin-bottom: 15px; color: #334155; font-size: 18px; }
+
+    .card-invite { border-left: 4px solid #3b82f6; background: rgba(219, 234, 254, 0.4); }
+
+    /* --- 6. FORMS --- */
+    input, select, textarea {
+        width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid rgba(203, 213, 225, 0.6);
+        background: rgba(255, 255, 255, 0.5); border-radius: 8px; font-size: 14px; transition: 0.2s;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    .form-row { display: flex; gap: 15px; }
+
+    /* --- 7. BUTTONS --- */
+    button, .btn {
+        padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none;
+        font-size: 14px; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s;
+    }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 15px rgba(79, 70, 229, 0.4); }
+    .btn-accent { background: linear-gradient(135deg, #14b8a6, #0d9488); color: white; }
+    .btn-dark { background: #334155; color: white; }
+
+    /* --- 8. TABLES --- */
+    .table-container { overflow-x: auto; border-radius: 10px; max-height: 400px; }
+    table { width: 100%; border-collapse: collapse; background: rgba(255,255,255,0.4); }
+    th { text-align: left; padding: 15px; background: rgba(241, 245, 249, 0.5); color: #475569; font-weight: 600; font-size: 13px; position: sticky; top: 0; backdrop-filter: blur(5px); }
+    td { padding: 14px 15px; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 14px; vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.6); }
+
+    /* --- 9. RESPONSIVE --- */
+    @media (max-width: 768px) {
+        .layout { grid-template-columns: 1fr; }
+        .sidebar { position: fixed; bottom: 0; top: auto; width: 100%; height: auto; flex-direction: row; padding: 10px; background: rgba(255, 255, 255, 0.95); z-index: 999; justify-content: space-around; border-top: 1px solid rgba(0,0,0,0.1); }
+        .brand, .logout-btn span, .nav-item span { display: none; }
+        .nav-links { display: flex; width: 100%; justify-content: space-between; }
+        .nav-item a { padding: 10px; font-size: 18px; margin: 0; justify-content: center; background: transparent; }
+        .logout-btn { margin: 0; padding: 10px; background: transparent; color: #dc2626; }
+        .content { padding: 20px 20px 100px 20px; }
+        .form-row { flex-direction: column; gap: 0; }
+    }
+</style>
+</head>
+<body oncontextmenu="return false">
+
+<div class="layout">
+    <nav class="sidebar">
+        <div class="brand"><i class="fas fa-layer-group"></i> Coordinator</div>
+        <ul class="nav-links">
+            <li class="nav-item"><a href="#invite" class="active"><i class="fas fa-link"></i> <span>Invite</span></a></li>
+            <li class="nav-item"><a href="/admin/sessions"><i class="fas fa-calendar-alt"></i> <span>Sessions</span></a></li>
+            <li class="nav-item"><a href="/admin/results"><i class="fas fa-poll"></i> <span>Results</span></a></li>
+            <li class="nav-item"><a href="#upload"><i class="fas fa-cloud-upload-alt"></i> <span>Upload</span></a></li>
+            <li class="nav-item"><a href="#manual"><i class="fas fa-pen"></i> <span>Manual Q</span></a></li>
+            <li class="nav-item"><a href="#questions"><i class="fas fa-book"></i> <span>Q-Bank</span></a></li>
+            <li class="nav-item"><a href="/coordinator/study"><i class="fas fa-book-open"></i> <span>Study Material</span></a></li>
+            <li class="nav-item"><a href="#students"><i class="fas fa-user-graduate"></i> <span>Students</span></a></li>
+            <li class="nav-item"><a href="/admin/students"><i class="fas fa-filter"></i> <span>Manage</span></a></li>
+        </ul>
+        <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+    </nav>
+
+    <main class="content">
+        <h2 style="margin-bottom: 25px; color:#334155;">👋 Welcome, {{ name }}</h2>
+
+        <!-- ANALYTICS CHART SECTION -->
+        <div class="glass-panel card" id="analytics">
+            <h3><i class="fas fa-chart-bar"></i> Result Analysis</h3>
+            <div style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;">
+                <select id="chartBatch" onchange="updateChart()" style="width:auto; min-width:150px; margin-bottom:0;">
+                    <option value="">All Batches</option>
+                    {% for b in batches %}
+                        <option value="{{ b.batch }}">{{ b.batch }}</option>
+                    {% endfor %}
+                </select>
+                <select id="chartYear" onchange="updateChart()" style="width:auto; min-width:150px; margin-bottom:0;">
+                    <option value="">All Years</option>
+                    <option value="I/I sem">I/I sem</option>
+                    <option value="I/II sem">I/II sem</option>
+                    <option value="II/I sem">II/I sem</option>
+                    <option value="II/II sem">II/II sem</option>
+                    <option value="III/I sem">III/I sem</option>
+                    <option value="III/II sem">III/II sem</option>
+                    <option value="IV/I sem">IV/I sem</option>
+                    <option value="IV/II sem">IV/II sem</option>
+                </select>
+            </div>
+            <div style="height: 300px;">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
+
+        <script>
+            let deptChart = null;
+
+            function updateChart() {
+                const batch = document.getElementById('chartBatch').value;
+                const year = document.getElementById('chartYear').value;
+
+                fetch(`/api/stats/dept_analytics?batch=${encodeURIComponent(batch)}&year=${encodeURIComponent(year)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const ctx = document.getElementById('deptChart').getContext('2d');
+                        
+                        if (deptChart) deptChart.destroy();
+
+                        deptChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: data.labels,
+                                datasets: [{
+                                    label: 'Average Score (%)',
+                                    data: data.values,
+                                    backgroundColor: 'rgba(79, 70, 229, 0.6)',
+                                    borderColor: 'rgba(79, 70, 229, 1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: { y: { beginAtZero: true, max: 100 } }
+                            }
+                        });
+                    });
+            }
+            // Load initial chart
+            document.addEventListener("DOMContentLoaded", updateChart);
+        </script>
+
+        <div class="glass-panel card card-invite" id="invite">
+            <h3>🔗 Invite Students</h3>
+            <p style="color:#64748b; font-size:13px; margin-bottom:15px;">Share this registration link with your students.</p>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="regLink" readonly style="flex:1; margin-bottom:0; background:#fff;">
+                <button onclick="copyLink()" class="btn btn-dark"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+            <p id="copyMsg" style="color:#10b981; font-size:13px; display:none; margin-top:8px; font-weight:600;">✅ Copied to clipboard!</p>
+        </div>
+
+        <div id="upload">
+            <div class="glass-panel card">
+                 <div class="card-header" style="font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--primary);"><i class="fas fa-file-word"></i> Bulk Upload</div>
+                 <form action="/upload_docx" method="POST" enctype="multipart/form-data" id="docxUploadForm">
+                     <div class="form-row">
+                         <div>
+                             <label>Batch</label>
+                             <select id="upload_batch" onchange="filterSessions()">
+                                 <option value="">All Batches</option>
+                                 {% for b in batches %}<option value="{{ b.batch }}">{{ b.batch }}</option>{% endfor %}
+                             </select>
+                         </div>
+                         <div>
+                             <label>Year/Sem</label>
+                             <select id="upload_year" onchange="filterSessions()">
+                                 <option value="">All Years</option>
+                                 <option value="I/I sem">I/I sem</option>
+                                 <option value="I/II sem">I/II sem</option>
+                                 <option value="II/I sem">II/I sem</option>
+                                 <option value="II/II sem">II/II sem</option>
+                                 <option value="III/I sem">III/I sem</option>
+                                 <option value="III/II sem">III/II sem</option>
+                                 <option value="IV/I sem">IV/I sem</option>
+                                 <option value="IV/II sem">IV/II sem</option>
+                             </select>
+                         </div>
+                     </div>
+ 
+                     <label>Session Name</label>
+                     <select name="quiz_id" id="upload_session_name" required onchange="updateExamTimings()">
+                         <option value="" disabled selected>-- Apply filters to see sessions --</option>
+                     </select>
+ 
+                     <label>Exam Timings</label>
+                     <input type="text" id="upload_timings" disabled>
+ 
+                     <label>Exam Module Name</label>
+                     <input type="text" name="module_name" placeholder="e.g. Aptitude, Reasoning, Coding..." required>
+ 
+                     <label>Upload .docx</label>
+                     <input type="file" name="file" accept=".docx" required>
+ 
+                     <button type="submit" class="btn btn-primary">Upload</button>
+                 </form>
+                 <div style="margin-top:10px; font-size:12px;"><a href="/download_format_docx" class="btn">
+                     <i class="fas fa-download"></i> Download Format (DOCX)
+                 </a></div>
+            </div>
+        </div>
+
+        <div class="glass-panel card" id="manual">
+            <div class="card-header" style="font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--primary);"><i class="fas fa-pen-nib"></i> Manual Entry</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; background: rgba(255,255,255,0.4); padding: 5px; border-radius: 10px;">
+                <div class="tab active" style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; background: white; color: var(--primary);" onclick="showTab('mcq', this)">MCQ</div>
+                <div class="tab" style="flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;" onclick="showTab('code', this)">Code</div>
+            </div>
+            <form action="/admin/add_manual_question" method="POST">
+                <div class="form-row">
+                    <div>
+                        <label>Batch</label>
+                        <select id="manual_batch" onchange="filterManualSessions()">
+                            <option value="">All Batches</option>
+                            {% for b in batches %}<option value="{{ b.batch }}">{{ b.batch }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label>Year/Sem</label>
+                        <select id="manual_year" onchange="filterManualSessions()">
+                            <option value="">All Years</option>
+                            <option value="I/I sem">I/I sem</option>
+                            <option value="I/II sem">I/II sem</option>
+                            <option value="II/I sem">II/I sem</option>
+                            <option value="II/II sem">II/II sem</option>
+                            <option value="III/I sem">III/I sem</option>
+                            <option value="III/II sem">III/II sem</option>
+                            <option value="IV/I sem">IV/I sem</option>
+                            <option value="IV/II sem">IV/II sem</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label>Session</label>
+                <select name="quiz_id" id="manual_session_name" required>
+                    <option value="" disabled selected>-- Select Session --</option>
+                    {% for q in quizzes %}<option value="{{ q.quiz_id }}">{{ q.title }}</option>{% endfor %}
+                </select>
+
+                <div class="form-row">
+                    <div><label>Question</label><input type="text" name="q_text" required></div>
+                    <div><label>Marks</label><input type="number" name="marks" value="1" required></div>
+                </div>
+
+                <div id="mcq-inputs">
+                    <input type="hidden" name="q_type" id="real-q-type" value="MCQ">
+                    <div class="form-row">
+                        <input type="text" name="opt_a" placeholder="Option A"><input type="text" name="opt_b" placeholder="Option B">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" name="opt_c" placeholder="Option C"><input type="text" name="opt_d" placeholder="Option D">
+                    </div>
+                    <label>Correct Option</label>
+                    <select name="correct_opt"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+                </div>
+
+                <div id="code-inputs" style="display:none;">
+                    <div class="form-row">
+                        <div><label>Input</label><textarea name="test_input"></textarea></div>
+                        <div><label>Output</label><textarea name="test_output"></textarea></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Question</button>
+            </form>
+        </div>
+
+        <div class="glass-panel card" id="questions">
+            <h3>📝 Question Bank Management</h3>
+            <select id="sessionFilter" onchange="filterQuestions()" style="width: auto; margin-bottom: 15px;">
+                <option value="all">Filter: Show All Questions</option>
+                <option value="0">General</option>
+                {% for z in quizzes %}<option value="{{ z.quiz_id }}">{{ z.title }}</option>{% endfor %}
+            </select>
+
+            <form id="bulkForm" action="/admin/delete_bulk_questions" method="POST">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><input type="checkbox" onclick="toggleAll(this)"></th>
+                                <th>Question</th>
+                                <th>Module</th>
+                                <th>Session</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in questions %}
+                            <tr class="q-row" data-session="{{ q.quiz_id_safe }}">
+                                <td><input type="checkbox" name="q_ids" value="{{ q.question_id }}"></td>
+                                <td>{{ q.question_text }}</td>
+                                <td><span style="font-size:11px; background:#eee; padding:2px 6px; border-radius:4px;">{{ q.module or 'General' }}</span></td>
+                                <td>{{ q.session_name }}</td>
+                            </tr>
+                            {% else %}
+                                <tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">No questions found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" onclick="if(confirm('Delete Selected?')) document.getElementById('bulkForm').submit()" style="margin-top:15px; background:none; border:1px solid #dc2626; color:#dc2626; padding:8px 15px; border-radius:6px;">Delete Selected</button>
+            </form>
+        </div>
+
+        <div class="glass-panel card" id="students">
+            <div style="display:flex; justify-content:space-between;">
+                <h3>👥 Recent Students</h3>
+                <a href="/admin/students" style="color:var(--primary); font-size:13px;">View All & Filter &rarr;</a>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for s in students[:10] %}
+                        <tr>
+                            <td>{{ s.full_name }}</td>
+                            <td>{{ s.email }}</td>
+                            <td>
+                                {% if s.is_blocked %}
+                                    <span style="color:#ef4444; background:rgba(239,68,68,0.1); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Blocked</span>
+                                {% else %}
+                                    <span style="color:#10b981; background:rgba(16,185,129,0.1); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">Active</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}<tr><td colspan="3" style="text-align:center;">No students found.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<script>
+    // 1. Auto Set Link
+    window.onload = function() {
+        var baseUrl = window.location.origin;
+        document.getElementById("regLink").value = baseUrl + "/register";
+    };
+
+    // 2. Copy Function
+    function copyLink() {
+        var copyText = document.getElementById("regLink");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(() => {
+            document.getElementById("copyMsg").style.display = "block";
+            setTimeout(() => document.getElementById("copyMsg").style.display = "none", 2000);
+        });
+    }
+
+    function showTab(type, el) {
+        document.querySelectorAll('.tab').forEach(t => t.style.background = 'transparent');
+        el.style.background = 'white';
+        el.style.color = 'var(--primary)';
+        if(type === 'mcq') {
+            document.getElementById('mcq-inputs').style.display='block';
+            document.getElementById('code-inputs').style.display='none';
+            document.getElementById('real-q-type').value='MCQ';
+        } else {
+            document.getElementById('mcq-inputs').style.display='none';
+            document.getElementById('code-inputs').style.display='block';
+            document.getElementById('real-q-type').value='CODE';
+        }
+    }
+
+    const allQuizzesForUpload = {{ quizzes | tojson }};
+
+    function filterSessions() {
+        const batch = document.getElementById('upload_batch').value;
+        const year = document.getElementById('upload_year').value;
+        const sessionSelect = document.getElementById('upload_session_name');
+
+        sessionSelect.innerHTML = '<option value="" disabled selected>-- Loading... --</option>';
+
+        let filtered = allQuizzesForUpload.filter(q => {
+            const batchMatch = !batch || q.batch === batch;
+            const yearMatch = !year || q.year === year;
+            return batchMatch && yearMatch;
+        });
+
+        let options = '<option value="" disabled selected>-- Select a Session --</option>';
+        filtered.forEach(q => {
+            options += `<option value="${q.quiz_id}">${q.title}</option>`;
+        });
+        sessionSelect.innerHTML = options;
+        updateExamTimings();
+    }
+
+    function updateExamTimings() {
+        const sessionSelect = document.getElementById('upload_session_name');
+        const selectedId = sessionSelect.value;
+        const timingsInput = document.getElementById('upload_timings');
+
+        if (selectedId) {
+            const selectedQuiz = allQuizzesForUpload.find(q => String(q.quiz_id) === selectedId);
+            timingsInput.value = selectedQuiz ? (selectedQuiz.start_time || 'Not Set') : '';
+        } else {
+            timingsInput.value = '';
+        }
+    }
+
+    function filterManualSessions() {
+        const batch = document.getElementById('manual_batch').value;
+        const year = document.getElementById('manual_year').value;
+        const sessionSelect = document.getElementById('manual_session_name');
+
+        sessionSelect.innerHTML = '<option value="" disabled selected>-- Loading... --</option>';
+
+        let filtered = allQuizzesForUpload.filter(q => {
+            const batchMatch = !batch || q.batch === batch;
+            const yearMatch = !year || q.year === year;
+            return batchMatch && yearMatch;
+        });
+
+        let options = '<option value="" disabled selected>-- Select a Session --</option>';
+        filtered.forEach(q => {
+            options += `<option value="${q.quiz_id}">${q.title}</option>`;
+        });
+        sessionSelect.innerHTML = options;
+    }
+    // 4. Filters
+    function filterQuestions() {
+        var sel = String(document.getElementById("sessionFilter").value);
+        var rows = document.getElementsByClassName("q-row");
+        for (var i=0; i<rows.length; i++) {
+            var rowSession = String(rows[i].getAttribute("data-session"));
+            rows[i].style.display = (sel === "all" || rowSession === sel) ? "" : "none";
+        }
+    }
+
+    function toggleAll(src) {
+        document.getElementsByName('q_ids').forEach(c => c.checked = src.checked);
+    }
+
+    // Mobile Nav
+    const links = document.querySelectorAll('.nav-item a');
+    links.forEach(l => l.addEventListener('click', () => {
+        links.forEach(i => i.classList.remove('active'));
+        l.classList.add('active');
+    }));
+
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123) return false; // F12
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
+    };
+</script>
+
+</body>
+</html>

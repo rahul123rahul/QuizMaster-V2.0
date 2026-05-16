@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Question | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 600px; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        label { font-weight: 600; font-size: 13px; color: #4b5563; display: block; margin-bottom: 5px; }
+        .btn { padding: 12px; width: 100%; background: #4f46e5; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #4338ca; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin-top:0; color:#1f2937;">Edit Question</h2>
+        <form action="/question/edit/{{ q.question_id }}" method="POST">
+            
+            <label>Question Text</label>
+            <input type="text" name="q_text" value="{{ q.question_text }}" required>
+
+            <label>Marks</label>
+            <input type="number" name="marks" value="{{ q.marks }}" min="1" required>
+
+            {% if q.question_type == 'MCQ' %}
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><label>Option A</label><input type="text" name="opt_a" value="{{ q.option_a }}"></div>
+                <div><label>Option B</label><input type="text" name="opt_b" value="{{ q.option_b }}"></div>
+                <div><label>Option C</label><input type="text" name="opt_c" value="{{ q.option_c }}"></div>
+                <div><label>Option D</label><input type="text" name="opt_d" value="{{ q.option_d }}"></div>
+            </div>
+
+            <label>Correct Option</label>
+            <select name="correct">
+                <option value="A" {% if q.correct_option == 'A' %}selected{% endif %}>Option A</option>
+                <option value="B" {% if q.correct_option == 'B' %}selected{% endif %}>Option B</option>
+                <option value="C" {% if q.correct_option == 'C' %}selected{% endif %}>Option C</option>
+                <option value="D" {% if q.correct_option == 'D' %}selected{% endif %}>Option D</option>
+            </select>
+            {% endif %}
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button type="submit" class="btn">Update Question</button>
+                <a href="{{ '/coordinator#questions' if session.get('role') == 'Coordinator' else '/admin#question-bank' }}" class="btn" style="background:#e5e7eb; color:#374151; text-align:center; text-decoration:none;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

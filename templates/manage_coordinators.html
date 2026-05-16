@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Coordinators</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f6f8; }
+        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 1000px; margin: 0 auto; }
+
+        /* Header & Filter Bar */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .filter-bar { display: flex; gap: 10px; background: #eee; padding: 15px; border-radius: 5px; margin-bottom: 20px; align-items: center; }
+
+        /* Inputs & Buttons */
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        .btn { padding: 8px 15px; text-decoration: none; color: white; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; display: inline-block; }
+        .btn-blue { background: #007bff; }
+        .btn-red { background: #dc3545; }
+        .btn-green { background: #28a745; }
+        .btn-gray { background: #6c757d; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background: #343a40; color: white; }
+        tr:hover { background: #f8f9fa; }
+
+        /* Modal */
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; }
+        .modal-content { background:#fff; margin:10% auto; padding:20px; width:350px; border-radius:5px; box-shadow:0 5px 15px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>👨‍🏫 Manage Coordinators <span style="font-size:16px; color:#777;">({{ coordinators|length }})</span></h2>
+        <a href="/admin" class="btn btn-gray">Back to Dashboard</a>
+    </div>
+
+    <form method="GET" action="/manage_coordinators" class="filter-bar">
+        <input type="text" name="search" placeholder="Search Name or Email..." value="{{ request.args.get('search', '') }}">
+
+        <select name="status">
+            <option value="">All Status</option>
+            <option value="active" {% if request.args.get('status')=='active' %}selected{% endif %}>Active Only</option>
+            <option value="blocked" {% if request.args.get('status')=='blocked' %}selected{% endif %}>Blocked Only</option>
+        </select>
+
+        <button type="submit" class="btn btn-blue">🔍 Search</button>
+        <a href="/manage_coordinators" class="btn btn-gray">Reset</a>
+
+        <button type="button" onclick="document.getElementById('addCoordinatorModal').style.display='block'" class="btn btn-green" style="margin-left: auto;">+ Add New</button>
+    </form>
+
+    <form id="bulkDeleteForm" action="/admin/bulk_delete_coordinators" method="POST">
+        <div style="margin-bottom:10px;">
+            <button type="button" onclick="submitBulkDelete()" class="btn btn-red" style="font-size:12px;">🗑 Delete Selected</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px;"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+                    <th><a href="/manage_coordinators?sort=full_name&order=ASC" style="color:white;">Name ⇅</a></th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in coordinators %}
+                <tr>
+                    <td><input type="checkbox" name="selected_ids" value="{{ c.user_id }}"></td>
+                    <td><strong>{{ c.full_name }}</strong></td>
+                    <td>{{ c.email }}</td>
+                    <td>
+                        {% if c.is_blocked == 1 %}
+                            <a href="/admin/toggle_status/{{ c.user_id }}/0" class="btn btn-red" style="padding:3px 8px; font-size:11px;">Blocked</a>
+                        {% else %}
+                            <a href="/admin/toggle_status/{{ c.user_id }}/1" class="btn btn-green" style="padding:3px 8px; font-size:11px;">Active</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-blue" style="padding:4px 10px; font-size:12px;"
+                                onclick="openEditModal('{{ c.user_id }}', '{{ c.full_name }}', '{{ c.email }}')">
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center; padding:20px;">No coordinators found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+</div>
+
+<div id="addCoordinatorModal" class="modal">
+    <div class="modal-content">
+        <h3>Add Coordinator</h3>
+        <form action="/admin/add_coordinator" method="POST">
+            <input type="text" name="full_name" placeholder="Name" required style="width:100%; margin-bottom:10px;">
+            <input type="email" name="email" placeholder="Email" required style="width:100%; margin-bottom:10px;">
+            <input type="password" name="password" placeholder="Password" required style="width:100%; margin-bottom:10px;">
+            <button type="submit" class="btn btn-green">Create</button>
+            <button type="button" onclick="document.getElementById('addCoordinatorModal').style.display='none'" class="btn btn-red" style="float:right;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<div id="editCoordinatorModal" class="modal">
+    <div class="modal-content">
+        <h3>Edit Coordinator</h3>
+        <form action="/admin/edit_coordinator" method="POST">
+            <input type="hidden" name="user_id" id="edit_user_id">
+            <label>Name:</label>
+            <input type="text" name="full_name" id="edit_name" required style="width:100%; margin-bottom:10px;">
+            <label>Email:</label>
+            <input type="email" name="email" id="edit_email" required style="width:100%; margin-bottom:10px;">
+            <label>New Password (Optional):</label>
+            <input type="text" name="password" placeholder="Leave blank to keep current" style="width:100%; margin-bottom:10px;">
+            <button type="submit" class="btn btn-blue">Save Changes</button>
+            <button type="button" onclick="document.getElementById('editCoordinatorModal').style.display='none'" class="btn btn-red" style="float:right;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleSelectAll(source) {
+        checkboxes = document.getElementsByName('selected_ids');
+        for(var i=0, n=checkboxes.length;i<n;i++) { checkboxes[i].checked = source.checked; }
+    }
+    function submitBulkDelete() {
+        var checkboxes = document.querySelectorAll('input[name="selected_ids"]:checked');
+        if (checkboxes.length === 0) { alert("Select at least one coordinator."); return; }
+        if (confirm("Delete selected coordinators?")) { document.getElementById('bulkDeleteForm').submit(); }
+    }
+    function openEditModal(id, name, email) {
+        document.getElementById('edit_user_id').value = id;
+        document.getElementById('edit_name').value = name;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('editCoordinatorModal').style.display = 'block';
+    }
+    // Close modals if clicked outside
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            event.target.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>

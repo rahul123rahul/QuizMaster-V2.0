@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --primary: #4f46e5;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+        }
+
+        body {
+            margin: 0; font-family: 'Outfit', sans-serif;
+            background: linear-gradient(120deg, #e0c3fc 0%, #8ec5fc 100%);
+            background-size: 200% 200%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-dark); min-height: 100vh;
+        }
+        @keyframes gradientBG { 0% {background-position: 0% 50%;} 50% {background-position: 100% 50%;} 100% {background-position: 0% 50%;} }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+
+        /* Header */
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h2 { margin: 0; font-size: 28px; color: #1e1b4b; display: flex; align-items: center; gap: 10px; }
+        
+        /* DYNAMIC BACK BUTTON STYLE */
+        .back-btn { text-decoration: none; color: white; background: var(--primary); padding: 10px 20px; border-radius: 12px; font-weight: 600; transition: 0.2s; box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3); }
+        .back-btn:hover { transform: translateY(-2px); background: #4338ca; }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 20px; margin-bottom: 30px; box-shadow: var(--glass-shadow);
+        }
+        .filter-form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px; gap: 15px; align-items: end; }
+
+        label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; margin-bottom: 5px; }
+        input, select {
+            width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.7); border-radius: 8px; outline: none;
+            font-family: 'Outfit'; font-size: 14px; box-sizing: border-box;
+        }
+        input:focus, select:focus { background: white; border-color: var(--primary); }
+
+        button.btn-filter {
+            width: 100%; padding: 10px; background: #0f172a; color: white;
+            border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        button.btn-filter:hover { background: #334155; }
+
+        /* Table Card */
+        .glass-card {
+            background: var(--glass-bg); backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 25px; box-shadow: var(--glass-shadow);
+        }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 15px; font-size: 12px; text-transform: uppercase; color: var(--text-light); border-bottom: 2px solid rgba(0,0,0,0.05); }
+        td { padding: 15px; font-size: 14px; border-bottom: 1px solid rgba(255,255,255,0.3); vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 35px; height: 35px; background: #e0e7ff; color: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        
+        .action-btn { padding: 6px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; transition: 0.2s; display: inline-block; }
+        .btn-edit { background: #eff6ff; color: var(--primary); border: 1px solid #bfdbfe; }
+        .btn-edit:hover { background: #3b82f6; color: white; }
+        .btn-del { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; margin-left: 5px; }
+        .btn-del:hover { background: #ef4444; color: white; }
+
+        .export-btn { float: right; margin-bottom: 15px; background: #10b981; color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        
+        /* Mobile Stack */
+        @media (max-width: 900px) {
+            .filter-form { grid-template-columns: 1fr; }
+        }
+
+        /* Modal for Bulk Update */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; justify-content: space-between; }
+        .close-btn { cursor: pointer; font-size: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="page-header">
+            <h2><i class="fas fa-users-cog"></i> Student Management</h2>
+            
+            <a href="{{ '/coordinator' if session['role'] == 'Coordinator' else '/admin' }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+        </div>
+
+        <div class="filter-bar">
+            <form action="/manage_students" method="GET" class="filter-form">
+                <div>
+                    <label>Search (Name/Email/Roll)</label>
+                    <input type="text" name="search" placeholder="Type keywords..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div>
+                    <label>Year/Sem</label>
+                    <select name="year">
+                        <option value="">All</option>
+                        <option value="I/I sem" {% if request.args.get('year') == 'I/I sem' %}selected{% endif %}>I/I</option>
+                        <option value="I/II sem" {% if request.args.get('year') == 'I/II sem' %}selected{% endif %}>I/II</option>
+                        <option value="II/I sem" {% if request.args.get('year') == 'II/I sem' %}selected{% endif %}>II/I</option>
+                        <option value="II/II sem" {% if request.args.get('year') == 'II/II sem' %}selected{% endif %}>II/II</option>
+                        <option value="III/I sem" {% if request.args.get('year') == 'III/I sem' %}selected{% endif %}>III/I</option>
+                        <option value="III/II sem" {% if request.args.get('year') == 'III/II sem' %}selected{% endif %}>III/II</option>
+                        <option value="IV/I sem" {% if request.args.get('year') == 'IV/I sem' %}selected{% endif %}>IV/I</option>
+                        <option value="IV/II sem" {% if request.args.get('year') == 'IV/II sem' %}selected{% endif %}>IV/II</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Department</label>
+                    <select name="department">
+                        <option value="">All</option>
+                        {% for d in departments %}
+                            <option value="{{ d.department }}" {% if request.args.get('department') == d.department %}selected{% endif %}>{{ d.department }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Batch</label>
+                    <select name="batch">
+                        <option value="">All</option>
+                        {% for b in batches %}
+                            <option value="{{ b.batch }}" {% if request.args.get('batch') == b.batch %}selected{% endif %}>{{ b.batch }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <button type="submit" class="btn-filter"><i class="fas fa-filter"></i> Apply</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="glass-card">
+            
+            <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <span style="font-weight:600; color:#64748b;">Found {{ students|length }} records</span>
+                
+                <div style="display:flex; gap:10px;">
+                    {% if session.get('role') == 'Admin' %}
+                        <button type="button" class="btn-edit" style="padding:8px 15px; border-radius:8px; cursor:pointer;" onclick="openBulkBatchModal()">
+                            <i class="fas fa-edit"></i> Update Batch
+                        </button>
+                        <button type="button" class="btn-del" style="padding:8px 15px; border-radius:8px; cursor:pointer;" onclick="if(confirm('Delete Selected?')) document.getElementById('bulkUserForm').submit()">
+                            <i class="fas fa-trash"></i> Delete Selected
+                        </button>
+                    {% endif %}
+
+                    <a href="/admin/export_students?{{ request.query_string.decode() }}" class="export-btn" style="margin:0;">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </a>
+                </div>
+            </div>
+
+            <form action="/admin/delete_bulk_users" method="POST" id="bulkUserForm">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                {% if session.get('role') == 'Admin' %}<th width="40"><input type="checkbox" onclick="toggleSelectAll(this)"></th>{% endif %}
+                                <th>User Profile</th>
+                                <th>Department</th>
+                                <th>Contact</th>
+                                <th>Details</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in students %}
+                            <tr style="{% if s.is_blocked == 1 %}background:rgba(254, 226, 226, 0.5);{% endif %}">
+                                
+                                {% if session.get('role') == 'Admin' %}
+                                    <td><input type="checkbox" name="user_ids" value="{{ s.user_id }}"></td>
+                                {% endif %}
+
+                                <td>
+                                    <div class="user-info">
+                                        <div class="avatar">{{ s.full_name[:1] }}</div>
+                                        <div>
+                                            <div style="font-weight:600; color:#1e293b;">{{ s.full_name }}</div>
+                                            <div style="font-size:12px; color:#64748b;">Roll: {{ s.roll_number }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span style="font-size:13px; font-weight:500;">{{ s.department }}</span>
+                                </td>
+                                <td>
+                                    <div>{{ s.email }}</div>
+                                    <div style="font-size:12px; color:#64748b;">{{ s.phone_number }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge" style="background:#e0e7ff; color:#3730a3;">{{ s.occupation }}</span>
+                                    <div style="font-size:11px; margin-top:2px;">
+                                        {% if s.enrolled_session %}Batch: {{ s.enrolled_session }}{% else %}No Batch{% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if s.is_blocked == 1 %}
+                                        <span class="badge" style="background:#fee2e2; color:#991b1b;">LOCKED</span>
+                                    {% else %}
+                                        <span class="badge" style="background:#dcfce7; color:#166534;">ACTIVE</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.get('role') == 'Admin' %}
+                                        {% if s.is_blocked == 1 %}
+                                            <a href="/admin/toggle_block/{{ s.user_id }}/0" title="Unlock" style="color:#166534; margin-right:10px;"><i class="fas fa-unlock"></i></a>
+                                        {% else %}
+                                            <a href="/admin/toggle_block/{{ s.user_id }}/1" title="Lock" style="color:#ef4444; margin-right:10px;" onclick="return confirm('Lock user?')"><i class="fas fa-lock"></i></a>
+                                        {% endif %}
+                                        <a href="/admin/edit_student/{{ s.user_id }}" class="action-btn btn-edit"><i class="fas fa-edit"></i></a>
+                                        <a href="/admin/delete_user/{{ s.user_id }}" class="action-btn btn-del" onclick="return confirm('Permanently delete?')"><i class="fas fa-trash"></i></a>
+                                    {% else %}
+                                        <span style="font-size:12px; color: #94a3b8;">No Actions</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" style="text-align:center; padding:40px;">No students found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- Bulk Update Batch Modal -->
+    <div id="bulkBatchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Bulk Update Batch</span>
+                <span class="close-btn" onclick="closeBulkBatchModal()">&times;</span>
+            </div>
+            <p style="font-size:13px; color:#64748b;">Select a new batch for the selected students.</p>
+            <select id="newBatchSelect" style="margin-bottom:15px;">
+                <option value="" disabled selected>-- Select Batch --</option>
+                {% for b in batches %}
+                    <option value="{{ b.batch }}">{{ b.batch }}</option>
+                {% endfor %}
+            </select>
+            <button type="button" class="btn-filter" onclick="submitBulkBatch()">Update</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleSelectAll(source) {
+            document.getElementsByName('user_ids').forEach(cb => cb.checked = source.checked);
+        }
+        function openBulkBatchModal() {
+            if(document.querySelectorAll('input[name="user_ids"]:checked').length === 0) { alert("Please select at least one student."); return; }
+            document.getElementById('bulkBatchModal').style.display = 'flex';
+        }
+        function closeBulkBatchModal() { document.getElementById('bulkBatchModal').style.display = 'none'; }
+        function submitBulkBatch() {
+            const batch = document.getElementById('newBatchSelect').value;
+            if(!batch) { alert("Please select a batch."); return; }
+            const form = document.getElementById('bulkUserForm');
+            form.action = "/admin/bulk_update_batch";
+            const input = document.createElement('input');
+            input.type = 'hidden'; input.name = 'new_batch'; input.value = batch;
+            form.appendChild(input);
+            form.submit();
+        }
+    </script>
+</body>
+</html>

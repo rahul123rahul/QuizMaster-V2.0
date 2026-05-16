@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials - QuizHub Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+        
+        .app-container { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 280px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        .role-admin { background: var(--primary); color: white; }
+        .role-coordinator { background: var(--info); color: white; }
+        .role-student { background: var(--success); color: white; }
+        
+        .nav-section { margin-bottom: 20px; }
+        .nav-section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.15);
+        }
+        
+        .nav-item i { width: 20px; text-align: center; }
+        
+        .logout-btn {
+            margin-top: auto;
+            color: var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        .logout-btn:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .page-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .page-title i { color: var(--primary); }
+        
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--glass-shadow);
+            margin-bottom: 25px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.4);
+            padding: 5px;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 20px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .tab:hover { background: rgba(255,255,255,0.5); }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        
+        .panel { display: none; }
+        .panel.active { display: block; }
+        
+        .upload-zone {
+            border: 2px dashed var(--primary);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(79, 70, 229, 0.05);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        .upload-zone:hover, .upload-zone.dragover {
+            background: rgba(79, 70, 229, 0.1);
+            border-color: var(--primary-dark);
+            transform: scale(1.01);
+        }
+        
+        .upload-zone i {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+        
+        .upload-zone h3 { font-size: 18px; margin-bottom: 8px; }
+        .upload-zone p { color: var(--text-light); font-size: 14px; }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group { margin-bottom: 15px; }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.8);
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .form-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        
+        .form-checkbox input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary { background: var(--text-light); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sm { padding: 8px 16px; font-size: 12px; }
+        .btn-icon { width: 36px; height: 36px; padding: 0; justify-content: center; }
+        
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.5);
+        }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        
+        th {
+            text-align: left;
+            padding: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-light);
+            background: rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        td {
+            padding: 15px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            vertical-align: middle;
+        }
+        
+        tr:hover { background: rgba(255,255,255,0.5); }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .badge-pdf { background: #fee2e2; color: #991b1b; }
+        .badge-doc { background: #dbeafe; color: #1e40af; }
+        .badge-video { background: #f3e8ff; color: #6b21a8; }
+        .badge-public { background: #dcfce7; color: #166534; }
+        .badge-private { background: #f1f5f9; color: #475569; }
+        
+        .rating { color: var(--warning); }
+        
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid rgba(255,255,255,0.6);
+            background: white;
+            border-radius: 30px;
+            font-size: 14px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: rgba(0,0,0,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active { display: flex; }
+        
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        @media (max-width: 900px) {
+            .app-container { flex-direction: column; }
+            .sidebar { 
+                width: 100%; 
+                height: auto; 
+                position: relative;
+                flex-direction: row;
+                flex-wrap: wrap;
+                padding: 15px;
+            }
+            .logo { display: none; }
+            .main-content { padding: 20px; }
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(79, 70, 229, 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: var(--text-dark);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo"><i class="fas fa-cube"></i> QuizMaster</div>
+            <span class="role-badge role-{{ role|lower }}">{{ role }}</span>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Navigation</div>
+                <a href="/{{ role|lower }}" class="nav-item"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+                <a href="/{{ role|lower }}/study" class="nav-item active"><i class="fas fa-book-open"></i> <span>Study Materials</span></a>
+                {% if role in ['Admin', 'Coordinator'] %}
+                <a href="/{{ role|lower }}/sessions" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>Sessions</span></a>
+                {% endif %}
+            </div>
+            
+            {% if role in ['Admin', 'Coordinator'] %}
+            <div class="nav-section">
+                <div class="nav-section-title">Management</div>
+                <a href="#" class="nav-item" onclick="switchTab('categories')"><i class="fas fa-folder"></i> <span>Categories</span></a>
+                <a href="#" class="nav-item" onclick="switchTab('analytics')"><i class="fas fa-chart-line"></i> <span>Analytics</span></a>
+                <a href="#" class="nav-item" onclick="switchTab('bulk')"><i class="fas fa-upload"></i> <span>Bulk Upload</span></a>
+            </div>
+            {% endif %}
+            
+            <a href="/logout" class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </div>
+        
+        <div class="main-content">
+            <div class="page-header">
+                <h1 class="page-title"><i class="fas fa-book-open"></i> Study Materials</h1>
+                {% if role in ['Admin', 'Coordinator'] %}
+                <button class="btn btn-primary" onclick="openUploadModal()">
+                    <i class="fas fa-plus"></i> Upload Material
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="glass-card">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="searchInput" 
+                           placeholder="Search materials by title, topic, tags..." onkeyup="searchMaterials()">
+                    <select class="form-select" style="width: auto;" id="filterType" onchange="searchMaterials()">
+                        <option value="">All Types</option>
+                        <option value="pdf">PDF</option>
+                        <option value="doc">Document</option>
+                        <option value="video">Video</option>
+                        <option value="notes">Notes</option>
+                    </select>
+                    <select class="form-select" style="width: auto;" id="filterDifficulty" onchange="searchMaterials()">
+                        <option value="">All Levels</option>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalMaterials">{{ materials|length }}</div>
+                        <div class="stat-label">Materials</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalViews">0</div>
+                        <div class="stat-label">Total Views</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalDownloads">0</div>
+                        <div class="stat-label">Downloads</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Avg Rating</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('materials')">Materials</div>
+                {% if role in ['Admin', 'Coordinator'] %}
+                <div class="tab" onclick="switchTab('subjects')">Subjects</div>
+                <div class="tab" onclick="switchTab('chapters')">Chapters</div>
+                <div class="tab" onclick="switchTab('topics')">Topics</div>
+                {% endif %}
+            </div>
+            
+            <div id="materials-panel" class="panel active">
+                {% if role in ['Admin', 'Coordinator'] %}
+                <div class="glass-card">
+                    <div class="upload-zone" id="uploadZone"
+                         ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+                         onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Drag & Drop Files Here</h3>
+                        <p>or click to browse. Supports PDF, DOC, PPT, Video, Images up to 1GB</p>
+                        <input type="file" id="fileInput" style="display: none;" multiple onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <div id="filePreviewContainer"></div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Title *</label>
+                            <input type="text" class="form-input" id="materialTitle" placeholder="Material title">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Topic</label>
+                            <select class="form-select" id="materialTopic">
+                                <option value="">Select Topic</option>
+                                {% for t in topics %}
+                                <option value="{{ t.id }}">{{ t.chapter_name }} - {{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="materialType">
+                                <option value="pdf">PDF</option>
+                                <option value="docx">Word Document</option>
+                                <option value="pptx">PowerPoint</option>
+                                <option value="video">Video</option>
+                                <option value="notes">Notes</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Difficulty</label>
+                            <select class="form-select" id="materialDifficulty">
+                                <option value="intermediate">Intermediate</option>
+                                <option value="beginner">Beginner</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-textarea" id="materialDescription" rows="3" placeholder="Material description..."></textarea>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="materialPublic">
+                            Make Public
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="materialFeatured">
+                            Featured
+                        </label>
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="aiTags" checked>
+                            Auto-generate AI Tags
+                        </label>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="uploadMaterial()">
+                        <i class="fas fa-upload"></i> Upload Material
+                    </button>
+                </div>
+                {% endif %}
+                
+                <div class="glass-card">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Type</th>
+                                    <th>Topic</th>
+                                    {% if role in ['Admin', 'Coordinator'] %}<th>Public</th>{% endif %}
+                                    <th>Views</th>
+                                    <th>Downloads</th>
+                                    <th>Rating</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialsTableBody">
+                                {% for m in materials %}
+                                <tr data-id="{{ m.id }}">
+                                    <td><input type="checkbox" class="material-checkbox" value="{{ m.id }}"></td>
+                                    <td>{{ m.id }}</td>
+                                    <td>
+                                        <strong>{{ m.title }}</strong>
+                                        {% if m.description %}
+                                        <div style="font-size: 11px; color: var(--text-light);">{{ m.description[:50] }}...</div>
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge badge-{{ m.type }}">{{ m.type }}</span></td>
+                                    <td>{{ m.topic_name }}</td>
+                                    {% if role in ['Admin', 'Coordinator'] %}
+                                    <td>{% if m.is_public %}<span class="badge badge-public">Yes</span>{% else %}<span class="badge badge-private">No</span>{% endif %}</td>
+                                    {% endif %}
+                                    <td>{{ m.view_count or 0 }}</td>
+                                    <td>{{ m.download_count or 0 }}</td>
+                                    <td>
+                                        <span class="rating">
+                                            {% if m.rating %}{{ "%.1f"|format(m.rating) }} <i class="fas fa-star"></i>{% else %}-{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>{{ m.created_at }}</td>
+                                    <td>
+                                        {% if m.file_path %}
+                                        <a href="/study/download/{{ m.id }}" class="btn btn-sm btn-primary" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if role in ['Admin', 'Coordinator'] %}
+                                        <button class="btn btn-sm btn-secondary" onclick="shareMaterial({{ m.id }})" title="Share">
+                                            <i class="fas fa-share-alt"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteMaterial({{ m.id }})" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="10" style="text-align: center; padding: 40px;">No materials found. Upload some!</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {% if role in ['Admin', 'Coordinator'] %}
+            <div id="categories-panel" class="panel">
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 15px;">Categories</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Category Name</label>
+                            <input type="text" class="form-input" id="categoryName" placeholder="Category name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Parent Category</label>
+                            <select class="form-select" id="categoryParent">
+                                <option value="">None</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="addCategory()">Add Category</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="analytics-panel" class="panel">
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 20px;">Analytics Dashboard</h3>
+                    <div class="stats-grid" id="analyticsStats">
+                        <div class="stat-card"><div class="stat-value">-</div><div class="stat-label">Loading...</div></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="bulk-panel" class="panel">
+                <div class="glass-card">
+                    <h3 style="margin-bottom: 15px;">Bulk Upload</h3>
+                    <div class="upload-zone" style="border-color: var(--success);"
+                         ondrop="handleBulkDrop(event)" ondragover="handleDragOver(event)">
+                        <i class="fas fa-layer-group" style="color: var(--success);"></i>
+                        <h3>Drop Multiple Files</h3>
+                        <p>Select topic and upload multiple files at once</p>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Target Topic</label>
+                            <select class="form-select" id="bulkTopic">
+                                <option value="">Select Topic</option>
+                                {% for t in topics %}
+                                <option value="{{ t.id }}">{{ t.chapter_name }} - {{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-success" onclick="bulkUpload()">
+                        <i class="fas fa-upload"></i> Upload All Files
+                    </button>
+                </div>
+            </div>
+            
+            <div id="subjects-panel" class="panel">
+                <div class="glass-card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Subject Name</label>
+                            <input type="text" class="form-input" id="subjectName" placeholder="Enter subject name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-input" id="subjectDesc" placeholder="Subject description">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="addSubject()">Add Subject</button>
+                        </div>
+                    </div>
+                    <div class="table-container" style="margin-top: 20px;">
+                        <table>
+                            <thead><tr><th>ID</th><th>Name</th><th>Description</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                {% for s in subjects %}
+                                <tr><td>{{ s.id }}</td><td>{{ s.name }}</td><td>{{ s.description or 'N/A' }}</td><td><button onclick="deleteSubject({{ s.id }})" class="btn btn-danger btn-sm">Delete</button></td></tr>
+                                {% else %}
+                                <tr><td colspan="4" style="text-align: center; padding: 30px;">No subjects found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="chapters-panel" class="panel">
+                <div class="glass-card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Subject</label>
+                            <select class="form-select" id="chapterSubject">
+                                {% for s in subjects %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Chapter Name</label>
+                            <input type="text" class="form-input" id="chapterName" placeholder="Enter chapter name">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="addChapter()">Add Chapter</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="topics-panel" class="panel">
+                <div class="glass-card">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Chapter</label>
+                            <select class="form-select" id="topicChapter">
+                                {% for c in chapters %}
+                                <option value="{{ c.id }}">{{ c.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Topic Name</label>
+                            <input type="text" class="form-input" id="topicName" placeholder="Enter topic name">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Tags</label>
+                            <input type="text" class="form-input" id="topicTags" placeholder="Important, Exam">
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="addTopic()">Add Topic</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <h3 id="uploadModalTitle">Uploading...</h3>
+            <div class="progress-bar" style="margin-top: 20px;">
+                <div class="progress-fill" id="uploadProgress" style="width: 0%;"></div>
+            </div>
+            <p style="margin-top: 10px;" id="uploadModalStatus">Processing file...</p>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+                if (t.textContent.toLowerCase().includes(tab) || 
+                    (tab === 'materials' && t.textContent === 'Materials')) t.classList.add('active');
+            });
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(tab + '-panel').classList.add('active');
+        }
+        
+        // Subject functions
+        function addSubject() {
+            const name = document.getElementById('subjectName').value;
+            const desc = document.getElementById('subjectDesc').value;
+            if(!name) return showToast('Please enter subject name', 'error');
+            
+            fetch('/api/study/subjects', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({name: name, description: desc || ''}) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                showToast(d.message || d.error || 'Success', d.error ? 'error' : 'success'); 
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            })
+            .catch(e => showToast('Error: ' + e, 'error'));
+        }
+        
+        function deleteSubject(id) {
+            if(!confirm('Delete subject? This will also delete all chapters and topics.')) return;
+            fetch('/api/study/subjects/'+id, {method:'DELETE'})
+            .then(r => r.json())
+            .then(d => {
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            });
+        }
+        
+        // Chapter functions
+        function addChapter() {
+            const subject_id = document.getElementById('chapterSubject').value;
+            const name = document.getElementById('chapterName').value;
+            if(!name || !subject_id) return showToast('Please select subject and enter chapter name', 'error');
+            
+            fetch('/api/study/chapters', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({subject_id: parseInt(subject_id), name: name, description: ''}) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            })
+            .catch(e => showToast('Error: ' + e, 'error'));
+        }
+        
+        function deleteChapter(id) {
+            if(!confirm('Delete chapter? This will also delete all topics.')) return;
+            fetch('/api/study/chapters/'+id, {method:'DELETE'})
+            .then(r => r.json())
+            .then(d => {
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            });
+        }
+        
+        // Topic functions
+        function addTopic() {
+            const chapter_id = document.getElementById('topicChapter').value;
+            const name = document.getElementById('topicName').value;
+            const tags = document.getElementById('topicTags').value;
+            
+            if(!name || !chapter_id) return showToast('Please select chapter and enter topic name', 'error');
+            
+            fetch('/api/study/topics', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({
+                    chapter_id: parseInt(chapter_id), 
+                    name: name, 
+                    tags: tags || '[]',
+                    description: ''
+                }) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            })
+            .catch(e => showToast('Error: ' + e, 'error'));
+        }
+        
+        function deleteTopic(id) {
+            if(!confirm('Delete topic?')) return;
+            fetch('/api/study/topics/'+id, {method:'DELETE'})
+            .then(r => r.json())
+            .then(d => {
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            });
+        }
+        
+        // Category functions
+        function addCategory() {
+            const name = document.getElementById('categoryName').value;
+            const parent_id = document.getElementById('categoryParent').value;
+            if(!name) return showToast('Please enter category name', 'error');
+            
+            fetch('/api/study/categories', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({name: name, parent_id: parent_id || null}) 
+            })
+            .then(r => r.json())
+            .then(d => { 
+                showToast(d.message || d.error, d.error ? 'error' : 'success');
+                if(!d.error) setTimeout(() => location.reload(), 1000);
+            })
+            .catch(e => showToast('Error: ' + e, 'error'));
+        }
+        
+        // File handling
+        let selectedFiles = [];
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        }
+        
+        function handleFileSelect(e) {
+            handleFiles(e.target.files);
+        }
+        
+        function handleFiles(files) {
+            for (let file of files) {
+                selectedFiles.push(file);
+            }
+            showToast(files.length + ' file(s) selected', 'success');
+        }
+        
+        // Upload Material
+        async function uploadMaterial() {
+            const title = document.getElementById('materialTitle').value;
+            const topic_id = document.getElementById('materialTopic').value;
+            const file = document.getElementById('fileInput').files[0] || selectedFiles[0];
+            
+            if (!title && !file) {
+                showToast('Please provide title and file', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            if (file) formData.append('file', file);
+            formData.append('title', title || file.name);
+            formData.append('topic_id', topic_id || '1');
+            formData.append('type', document.getElementById('materialType').value);
+            formData.append('difficulty', document.getElementById('materialDifficulty').value);
+            formData.append('description', document.getElementById('materialDescription').value);
+            formData.append('is_public', document.getElementById('materialPublic').checked);
+            formData.append('is_featured', document.getElementById('materialFeatured').checked);
+            formData.append('ai_tags', document.getElementById('aiTags').checked);
+            
+            document.getElementById('uploadModal').classList.add('active');
+            
+            try {
+                const response = await fetch('/api/study/materials/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Material uploaded successfully!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.error || 'Upload failed', 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            } finally {
+                document.getElementById('uploadModal').classList.remove('active');
+            }
+        }
+        
+        // Search
+        let searchTimeout;
+        function searchMaterials() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('searchInput').value;
+                const type = document.getElementById('filterType').value;
+                const difficulty = document.getElementById('filterDifficulty').value;
+                
+                const params = new URLSearchParams({ q: query });
+                if (type) params.append('type', type);
+                if (difficulty) params.append('difficulty', difficulty);
+                
+                try {
+                    const response = await fetch('/api/study/search?' + params);
+                    const data = await response.json();
+                    renderSearchResults(data.results);
+                } catch (e) {
+                    console.error('Search error:', e);
+                }
+            }, 500);
+        }
+        
+        function renderSearchResults(results) {
+            const tbody = document.getElementById('materialsTableBody');
+            if (!results || results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">No results found</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = results.map(m => `
+                <tr data-id="${m.id}">
+                    <td><input type="checkbox" class="material-checkbox" value="${m.id}"></td>
+                    <td>${m.id}</td>
+                    <td><strong>${m.title}</strong></td>
+                    <td><span class="badge badge-${m.type}">${m.type}</span></td>
+                    <td>${m.topic_name || 'N/A'}</td>
+                    <td>${m.is_public ? '<span class="badge badge-public">Yes</span>' : '<span class="badge badge-private">No</span>'}</td>
+                    <td>${m.view_count || 0}</td>
+                    <td>${m.download_count || 0}</td>
+                    <td>${m.rating ? m.rating.toFixed(1) + ' <i class="fas fa-star"></i>' : '-'}</td>
+                    <td>${m.created_at}</td>
+                    <td>
+                        ${m.file_path ? `<a href="/study/download/${m.id}" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Delete material
+        async function deleteMaterial(id) {
+            if (!confirm('Are you sure you want to delete this material?')) return;
+            
+            try {
+                const response = await fetch('/api/study/materials/' + id, { method: 'DELETE' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Material deleted', 'success');
+                    document.querySelector(`tr[data-id="${id}"]`).remove();
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+        
+        // Share material
+        async function shareMaterial(id) {
+            try {
+                const response = await fetch('/api/study/materials/' + id + '/share', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ access_type: 'public' })
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast('Share link created: ' + data.share_url, 'success');
+                } else {
+                    showToast(data.error, 'error');
+                }
+            } catch (e) {
+                showToast('Error: ' + e.message, 'error');
+            }
+        }
+        
+        // Load analytics
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/api/study/analytics/dashboard');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('totalViews').textContent = data.overview.total_views || 0;
+                    document.getElementById('totalDownloads').textContent = data.overview.total_downloads || 0;
+                }
+            } catch (e) {
+                console.error('Analytics error:', e);
+            }
+        }
+        
+        // Toast
+        function showToast(message, type = '') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast ' + type + ' show';
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadAnalytics);
+    </script>
+</body>
+</html>

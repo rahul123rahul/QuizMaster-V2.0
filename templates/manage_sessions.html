@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Sessions | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f3f4f6; margin: 0; padding: 30px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h2 { margin: 0; color: #1e293b; font-size: 28px; }
+        .back-btn { text-decoration: none; color: #f1f1f4; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+        /* Create Section Animation */
+        .create-trigger {
+            background: #4f46e5; color: white; border: none; padding: 12px 25px; 
+            border-radius: 12px; font-weight: 600; cursor: pointer; display: flex; 
+            align-items: center; gap: 10px; transition: 0.3s;
+        }
+        .create-trigger:hover { background: #4338ca; transform: translateY(-2px); }
+        
+        #createSection {
+            max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out, opacity 0.5s ease;
+            opacity: 0; margin-bottom: 20px;
+        }
+        #createSection.open { max-height: 600px; opacity: 1; margin-top: 20px; }
+
+        .glass-card {
+            background: white; border-radius: 16px; padding: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
+        }
+
+        /* Form Styling */
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-family: inherit; font-size: 14px; }
+        input:focus, select:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        /* Table Styling */
+        .table-container { overflow-x: auto; background: white; border-radius: 16px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th { text-align: left; padding: 15px; background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid #e2e8f0; }
+        td { padding: 10px 15px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        tr:hover { background: #f8fafc; }
+
+        /* Inline Edit Inputs */
+        .edit-input { border: 1px solid transparent; background: transparent; padding: 5px; border-radius: 4px; width: 100%; transition: 0.2s; }
+        .edit-input:focus, .edit-input:hover { border-color: #cbd5e1; background: white; }
+        
+        .btn-icon { background: none; border: none; cursor: pointer; font-size: 16px; padding: 5px; transition: 0.2s; }
+        .btn-save { color: #4f46e5; }
+        .btn-del { color: #ef4444; }
+        .btn-save:hover, .btn-del:hover { transform: scale(1.2); }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-decoration: none; display: inline-block; }
+        .badge-open { background: #dcfce7; color: #166534; }
+        .badge-closed { background: #fee2e2; color: #991b1b; }
+
+        /* Multi-select styles */
+        .dept-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .dept-tag { background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+        .dept-tag span { cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h2><i class="fas fa-calendar-alt"></i> Session Management</h2>
+            <a href="{{ '/coordinator' if session.get('role') == 'Coordinator' else '/admin' }}" class="back-btn" style="background-color:#4f46e5; border: 1px solid #4f46e5; padding: 8px 16px; border-radius: 8px;"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+
+        <button class="create-trigger" onclick="toggleCreate()">
+            <i class="fas fa-plus-circle"></i> Create New Session
+        </button>
+
+        <div id="createSection">
+            <div class="glass-card">
+                <form action="{{ url_for('admin.create_quiz_session') }}" method="POST">
+                    <div class="form-grid">
+                        <div><label>Event Title</label><input type="text" name="title" required placeholder="Ex: Final Exam"></div>
+                        <div>
+                            <label>Batch</label>
+                            <div id="batchSelectMode" style="display:flex;">
+                                <select id="batchSelect" name="batch" required style="border-radius:8px 0 0 8px; border-right:none;">
+                                    <option value="" disabled selected>Select</option>
+                                    {% for b in batches %}
+                                        <option value="{{ b.batch }}">{{ b.batch }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" onclick="toggleBatchInput(true)" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:0 8px 8px 0; cursor:pointer;"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div id="batchInputMode" style="display:none;">
+                                <input type="text" id="batchInput" name="batch" disabled placeholder="New Batch" style="border-radius:8px 0 0 8px; border-right:none;">
+                                <button type="button" onclick="toggleBatchInput(false)" style="width:40px; background:#ef4444; color:white; border:none; border-radius:0 8px 8px 0; cursor:pointer;"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Departments (Multi-Select)</label>
+                            <div style="display:flex; gap:5px;">
+                                <select id="deptSelect" style="margin-bottom:0;">
+                                    <option value="" disabled selected>Select Dept</option>
+                                    <option value="Civil">Civil</option>
+                                    <option value="Mechanical">Mechanical</option>
+                                    <option value="CSE">CSE</option>
+                                    <option value="CSE- Artificial Intelligence and Machine Learning">CSE- AIML</option>
+                                    <option value="CSE- Cyber Security">CSE- Cyber</option>
+                                    <option value="CSE- Data Science">CSE- DS</option>
+                                    <option value="AI&DS- Artificial Intelligence and Data Science">AI&DS</option>
+                                    <option value="ECE">ECE</option>
+                                </select>
+                                <select id="secSelect" style="margin-bottom:0; width:80px;">
+                                    <option value="" selected>All</option>
+                                    <option value="A">A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                </select>
+                                <button type="button" onclick="addDepartment()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="dept-tags" id="deptTags"></div>
+                            <input type="hidden" name="department" id="realDeptInput" required>
+                        </div>
+                        <div>
+                            <label>Year/Sem</label>
+                            <select name="year" required>
+                                <option value="" disabled selected>Select</option>
+                                <option value="I/I sem">I/I</option>
+                                <option value="I/II sem">I/II</option>
+                                <option value="II/I sem">II/I</option>
+                                <option value="II/II sem">II/II</option>
+                                <option value="III/I sem">III/I</option>
+                                <option value="III/II sem">III/II</option>
+                                <option value="IV/I sem">IV/I</option>
+                                <option value="IV/II sem">IV/II</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div><label>Start Time</label><input type="datetime-local" name="start_time" required></div>
+                        <div><label>Duration (min)</label><input type="number" name="duration" required placeholder="60"></div>
+                        <div>
+                            <label>Certificate</label>
+                            <select name="cert_status">
+                                <option value="1">Enabled</option>
+                                <option value="0">Disabled</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:end;"><button type="submit" class="create-trigger" style="width:100%; justify-content:center;">Create Session</button></div>
+                    </div>
+                    <input type="hidden" name="category" value="Exam">
+                </form>
+            </div>
+        </div>
+
+        <div class="table-container" style="margin-top: 30px;">
+            <table style="min-width: 1000px;">
+                <thead><tr><th>Event</th><th>Batch</th><th>Dept</th><th>Year</th><th>Time</th><th>Dur</th><th>Cert</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                    {% for q in quizzes %}
+                    <tr>
+                        <td>{{ q.title }}</td>
+                        <td>{{ q.batch }}</td>
+                        <td>
+                            {% set depts = q.department.split(',') if q.department else [] %}
+                            {% for d in depts %}
+                                <span class="badge" style="background:#e0e7ff; color:#4f46e5; margin-bottom:2px;">
+                                    {{ d.replace(':', ' - Sec: ') }}
+                                </span><br>
+                            {% endfor %}
+                            {% if q.section and q.section != 'All' %}<span class="badge" style="background:#f1f5f9; color:#64748b;">Global Sec: {{ q.section }}</span>{% endif %}
+                        </td>
+                        <td>{{ q.year }}</td>
+                        <td>{{ q.start_time }}</td>
+                        <td>{{ q.duration_minutes }}m</td>
+                        <td>
+                            {% if q.total_marks|string == '1' %}Enabled{% else %}Disabled{% endif %}
+                        </td>
+                        <td>
+                            {% if q.reg_status == 1 %}
+                                <a href="/admin/toggle_reg/{{ q.quiz_id }}/0" class="badge badge-open">OPEN</a>
+                            {% else %}
+                                <a href="/admin/toggle_reg/{{ q.quiz_id }}/1" class="badge badge-closed">CLOSED</a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/admin/edit_session/{{ q.quiz_id }}" class="btn-icon btn-save" title="Edit"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('admin.delete_session', quiz_id=q.quiz_id) }}" class="btn-icon btn-del" onclick="return confirm('Delete Session?')" title="Delete"><i class="fas fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="table-container" style="margin-top: 30px;">
+        <div style="padding: 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="margin:0; font-size: 20px;"><i class="fas fa-layer-group"></i> Manage Batches</h3>
+        </div>
+        <p style="font-size: 13px; color: #64748b; padding: 0 15px; margin-top: 10px;">Deleting a batch here is permanent. Ensure no active sessions or students are assigned to a batch before deleting it.</p>
+        
+        <div style="padding: 15px;">
+            <form action="/admin/add_batch" method="POST" style="display: flex; gap: 10px; align-items: flex-end;">
+                <div style="flex: 1;">
+                    <label style="font-size: 12px; font-weight: 600; color: #475569;">New Batch Name</label>
+                    <input type="text" name="batch_name" placeholder="e.g., 2024-2025" required style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                </div>
+                <button type="submit" class="create-trigger" style="width: auto; padding: 8px 20px;"><i class="fas fa-plus"></i> Add Batch</button>
+            </form>
+        </div>
+        
+        <table style="min-width: 400px; max-width: 600px;">
+            <thead><tr><th>Batch Name</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% if all_system_batches %}
+                    {% for b in all_system_batches %}
+                    <tr>
+                        <td>{{ b.batch_name }}</td>
+                        <td>
+                            {% if session.get('role') == 'Admin' %}
+                                <a href="/admin/delete_batch/{{ b.batch_id }}" class="btn-icon btn-del" onclick="return confirm('Are you sure? This will permanently delete the batch name.')" title="Delete Batch">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="2" style="text-align: center; color: #64748b; padding: 20px;">No batches found. Add one above.</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function toggleCreate() {
+            document.getElementById('createSection').classList.toggle('open');
+        }
+        function toggleBatchInput(showInput) {
+            if(showInput) {
+                document.getElementById('batchSelectMode').style.display = 'none'; document.getElementById('batchSelect').disabled = true;
+                document.getElementById('batchInputMode').style.display = 'flex'; document.getElementById('batchInput').disabled = false; document.getElementById('batchInput').focus();
+            } else {
+                document.getElementById('batchSelectMode').style.display = 'flex'; document.getElementById('batchSelect').disabled = false;
+                document.getElementById('batchInputMode').style.display = 'none'; document.getElementById('batchInput').disabled = true;
+            }
+        }
+
+        // Multi-Department Logic
+        let selectedDepts = [];
+
+        function addDepartment() {
+            const sel = document.getElementById('deptSelect');
+            const sec = document.getElementById('secSelect');
+            const val = sel.value;
+            const secVal = sec.value;
+            if (!val) return;
+            
+            let finalVal = val;
+            if (secVal && secVal !== 'All') finalVal += ':' + secVal;
+            
+            if (!selectedDepts.includes(finalVal)) {
+                selectedDepts.push(finalVal);
+                renderDepts();
+            }
+            sel.value = ""; 
+            sec.value = "";
+        }
+
+        function removeDept(val) {
+            selectedDepts = selectedDepts.filter(d => d !== val);
+            renderDepts();
+        }
+
+        function renderDepts() {
+            const container = document.getElementById('deptTags');
+            container.innerHTML = selectedDepts.map(d => `<div class="dept-tag">${d} <span onclick="removeDept('${d}')">&times;</span></div>`).join('');
+            document.getElementById('realDeptInput').value = selectedDepts.join(',');
+        }
+    </script>
+</body>
+</html>

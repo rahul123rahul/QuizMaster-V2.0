@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Session | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background: #f3f4f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 600px; max-width: 95%; }
+        h2 { margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+        .btn-primary { background: #4f46e5; color: white; }
+        .btn-secondary { background: #e2e8f0; color: #475569; text-decoration: none; display: block; text-align: center; margin-top: 10px; }
+        
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        /* Multi-select styles */
+        .dept-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .dept-tag { background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
+        .dept-tag span { cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2><i class="fas fa-edit"></i> Edit Session</h2>
+        <form action="/session/edit/{{ quiz.quiz_id }}" method="POST">
+            
+            <label>Event Title</label>
+            <input type="text" name="title" value="{{ quiz.title }}" required>
+
+            <div class="row">
+                <div>
+                    <label>Batch</label>
+                    <div id="batchSelectMode" style="display:flex;">
+                        <select id="batchSelect" name="batch" required style="border-radius:8px 0 0 8px; border-right:none;">
+                            {% for b in batches %}
+                                <option value="{{ b.batch }}" {% if quiz.batch == b.batch %}selected{% endif %}>{{ b.batch }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" onclick="toggleBatchInput(true)" style="width:40px; margin:0; margin-bottom:15px; background:#4f46e5; color:white; border-radius:0 8px 8px 0; padding:0;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div id="batchInputMode" style="display:none;">
+                        <input type="text" id="batchInput" name="batch" disabled placeholder="New Batch" style="border-radius:8px 0 0 8px; border-right:none; margin-bottom:15px;">
+                        <button type="button" onclick="toggleBatchInput(false)" style="width:40px; margin:0; margin-bottom:15px; background:#ef4444; color:white; border-radius:0 8px 8px 0; padding:0;"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div>
+                    <label>Department</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="deptSelect" style="margin-bottom:0;">
+                            <option value="" disabled selected>Select Dept</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="CSE">CSE</option>
+                            <option value="CSE- Artificial Intelligence and Machine Learning">CSE- AIML</option>
+                            <option value="CSE- Cyber Security">CSE- Cyber</option>
+                            <option value="CSE- Data Science">CSE- DS</option>
+                            <option value="AI&DS- Artificial Intelligence and Data Science">AI&DS</option>
+                            <option value="ECE">ECE</option>
+                        </select>
+                        <select id="secSelect" style="margin-bottom:0; width:80px;">
+                            <option value="" selected>All</option>
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+                        </select>
+                        <button type="button" onclick="addDepartment()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="dept-tags" id="deptTags"></div>
+                    <input type="hidden" name="department" id="realDeptInput" value="{{ quiz.department }}" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div>
+                    <label>Year/Sem</label>
+                    <select name="year" required>
+                        <option value="I/I sem" {% if quiz.year == 'I/I sem' %}selected{% endif %}>I/I</option>
+                        <option value="I/II sem" {% if quiz.year == 'I/II sem' %}selected{% endif %}>I/II</option>
+                        <option value="II/I sem" {% if quiz.year == 'II/I sem' %}selected{% endif %}>II/I</option>
+                        <option value="II/II sem" {% if quiz.year == 'II/II sem' %}selected{% endif %}>II/II</option>
+                        <option value="III/I sem" {% if quiz.year == 'III/I sem' %}selected{% endif %}>III/I</option>
+                        <option value="III/II sem" {% if quiz.year == 'III/II sem' %}selected{% endif %}>III/II</option>
+                        <option value="IV/I sem" {% if quiz.year == 'IV/I sem' %}selected{% endif %}>IV/I</option>
+                        <option value="IV/II sem" {% if quiz.year == 'IV/II sem' %}selected{% endif %}>IV/II</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Duration (min)</label>
+                    <input type="number" name="duration" value="{{ quiz.duration_minutes }}" required>
+                </div>
+            </div>
+
+            <label>Start Time</label>
+            <!-- Format datetime for input value -->
+            <input type="datetime-local" name="start_time" value="{{ quiz.start_time | replace(' ', 'T') }}" required>
+
+            <label>Certificate Generation</label>
+            <select name="cert_status">
+                <option value="1" {% if quiz.total_marks|string == '1' %}selected{% endif %}>Enabled</option>
+                <option value="0" {% if quiz.total_marks|string == '0' %}selected{% endif %}>Disabled</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ '/admin/sessions' }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script>
+        function toggleBatchInput(showInput) {
+            if(showInput) {
+                document.getElementById('batchSelectMode').style.display = 'none'; document.getElementById('batchSelect').disabled = true;
+                document.getElementById('batchInputMode').style.display = 'flex'; document.getElementById('batchInput').disabled = false; document.getElementById('batchInput').focus();
+            } else {
+                document.getElementById('batchSelectMode').style.display = 'flex'; document.getElementById('batchSelect').disabled = false;
+                document.getElementById('batchInputMode').style.display = 'none'; document.getElementById('batchInput').disabled = true;
+            }
+        }
+
+        // Multi-Department Logic
+        let selectedDepts = "{{ quiz.department or '' }}".split(',').filter(s => s && s.trim() !== '');
+
+        function addDepartment() {
+            const sel = document.getElementById('deptSelect');
+            const sec = document.getElementById('secSelect');
+            const val = sel.value;
+            const secVal = sec.value;
+            if (!val) return;
+            
+            let finalVal = val;
+            if (secVal && secVal !== 'All') finalVal += ':' + secVal;
+            
+            if (!selectedDepts.includes(finalVal)) {
+                selectedDepts.push(finalVal);
+                renderDepts();
+            }
+            sel.value = ""; 
+            sec.value = "";
+        }
+
+        function removeDept(val) {
+            selectedDepts = selectedDepts.filter(d => d !== val);
+            renderDepts();
+        }
+
+        function renderDepts() {
+            const container = document.getElementById('deptTags');
+            container.innerHTML = selectedDepts.map(d => `<div class="dept-tag">${d} <span onclick="removeDept('${d}')">&times;</span></div>`).join('');
+            document.getElementById('realDeptInput').value = selectedDepts.join(',');
+        }
+        
+        // Init
+        renderDepts();
+    </script>
+</body>
+</html>

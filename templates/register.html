@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.8);
+            --text-dark: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #a5b4fc, #c4b5fd, #a5f3fc);
+            background-size: 200% 200%;
+            animation: gradientFlow 10s ease infinite;
+            display: flex; justify-content: center; align-items: center; padding: 40px 20px;
+        }
+        @keyframes gradientFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* Container */
+        .register-container {
+            width: 100%; max-width: 650px;
+            background: var(--glass-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+
+        h2 { text-align: center; color: var(--text-dark); margin-bottom: 30px; font-weight: 700; }
+
+        /* Inputs */
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #475569; }
+
+        input, select {
+            width: 100%; padding: 12px 15px; border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1); background: rgba(255,255,255,0.6);
+            font-size: 14px; transition: 0.3s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2); }
+
+        /* Dynamic Sections */
+        .hidden-section { display: none; background: rgba(255,255,255,0.5); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px dashed #cbd5e1; }
+
+        /* Team Member Row */
+        .member-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+        /* Button */
+        .btn-submit {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-submit:hover { background: #4338ca; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3); }
+
+        /* Terms */
+        .terms-box { display: flex; align-items: center; gap: 10px; font-size: 13px; margin-bottom: 20px; color: #475569; }
+        .terms-box input { width: auto; }
+        .terms-link { color: var(--primary); text-decoration: underline; cursor: pointer; font-weight: 600; }
+
+        .login-link { text-align: center; margin-top: 20px; font-size: 14px; color: #64748b; }
+        .login-link a { color: var(--primary); text-decoration: none; font-weight: 600; }
+
+        .alert-error { background: #fee2e2; color: #b91c1c; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-size: 14px; }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+    <div class="register-container">
+        <h2>Create Account</h2>
+
+        {% if error %}
+        <div class="alert-error"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+        {% endif %}
+
+        <form action="/register" method="POST" id="regForm" onsubmit="return validateForm()">
+
+            <div class="input-group">
+                <label>Select Batch <span style="color:red">*</span></label>
+                <select name="session_select" required style="border: 2px solid var(--primary);">
+                    <option value="" disabled selected>-- Choose Your Batch --</option>
+                    {% for s in sessions %}
+                        <option value="{{ s.batch }}">{{ s.batch }}</option>
+                    {% else %}
+                        <option value="" disabled>No registration open</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Full Name <span style="color:red">*</span></label>
+                <input type="text" name="full_name" required placeholder="John Doe">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="input-group">
+                    <label>Email <span style="color:red">*</span></label>
+                    <input type="email" name="email" required placeholder="john@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Mobile <span style="color:red">*</span></label>
+                    <input type="text" name="mobile" required placeholder="10-digit Mobile">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Password <span style="color:red">*</span></label>
+                <input type="password" name="password" required placeholder="Create a strong password">
+            </div>
+
+            <div class="input-group">
+                <label>Occupation <span style="color:red">*</span></label>
+                <select name="occupation" id="occupation" onchange="toggleOccupation()" required>
+                    <option value="Student">Student</option>
+                    <option value="Employee">Employee</option>
+                </select>
+            </div>
+
+            <div id="student-fields" class="hidden-section" style="display:block;">
+                <div class="input-group"><label>College Name <span style="color:red">*</span></label><input type="text" name="college" class="req-student" required></div>
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label>Department <span style="color:red">*</span></label>
+                        <select name="department" class="req-student" required>
+                            <option value="" disabled selected>-- Select --</option>
+                            <option value="Civil">Civil</option>
+                            <option value="Mechanical">Mechanical</option>
+                            <option value="CSE">CSE</option>
+                            <option value="CSE- Artificial Intelligence and Machine Learning">CSE- Artificial Intelligence and Machine Learning</option>
+                            <option value="CSE- Cyber Security">CSE- Cyber Security</option>
+                            <option value="CSE- Data Science">CSE- Data Science</option>
+                            <option value="AI&DS- Artificial Intelligence and Data Science">AI&DS- Artificial Intelligence and Data Science</option>
+                            <option value="ECE">ECE</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Section <span style="color:red">*</span></label>
+                        <select name="section" class="req-student" required>
+                            <option value="" disabled selected>--</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Year/Sem <span style="color:red">*</span></label>
+                        <select name="year" class="req-student">
+                            <option value="" disabled selected>-- Select --</option>
+                            <option value="I/I sem">I/I sem</option>
+                            <option value="I/II sem">I/II sem</option>
+                            <option value="II/I sem">II/I sem</option>
+                            <option value="II/II sem">II/II sem</option>
+                            <option value="III/I sem">III/I sem</option>
+                            <option value="III/II sem">III/II sem</option>
+                            <option value="IV/I sem">IV/I sem</option>
+                            <option value="IV/II sem">IV/II sem</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group"><label>Roll Number <span style="color:red">*</span></label><input type="text" name="roll_number" class="req-student" required></div>
+            </div>
+
+            <div id="employee-fields" class="hidden-section">
+                <div class="input-group"><label>Designation <span style="color:red">*</span></label><input type="text" name="designation" class="req-employee" placeholder="Software Engineer..."></div>
+            </div>
+
+            <div class="input-group">
+                <label>Participation Type <span style="color:red">*</span></label>
+                <select name="goal_type" id="goal_type" onchange="toggleTeam()" required>
+                    <option value="Individual">Individual</option>
+                    <option value="Team">Team</option>
+                </select>
+            </div>
+
+            <div id="team-fields" class="hidden-section">
+                <div class="input-group"><label>Team Name <span style="color:red">*</span></label><input type="text" name="team_name" class="req-team"></div>
+
+                <label style="margin-bottom:10px; color:var(--primary);">Team Members Details <span style="color:red">*</span></label>
+                <p style="font-size:11px; margin-bottom:10px; color:#64748b;">Enter unique ID Card No or Doc No for all members. This ID must not be registered before.</p>
+
+                <div class="member-row">
+                    <input type="text" name="member_1" placeholder="Member 1 Name" class="req-team">
+                    <input type="text" name="id_1" placeholder="Member 1 Unique ID" class="req-team">
+                </div>
+                <div class="member-row">
+                    <input type="text" name="member_2" placeholder="Member 2 Name" class="req-team">
+                    <input type="text" name="id_2" placeholder="Member 2 Unique ID" class="req-team">
+                </div>
+                <div class="member-row">
+                    <input type="text" name="member_3" placeholder="Member 3 Name">
+                    <input type="text" name="id_3" placeholder="Member 3 Unique ID">
+                </div>
+                <div class="member-row">
+                    <input type="text" name="member_4" placeholder="Member 4 Name">
+                    <input type="text" name="id_4" placeholder="Member 4 Unique ID">
+                </div>
+            </div>
+
+            <div class="terms-box">
+                <input type="checkbox" id="termsCheck" required>
+                <span>I agree to the <span class="terms-link" onclick="showTerms()">Terms and Conditions</span></span>
+            </div>
+
+            <button type="submit" class="btn-submit">Register Now</button>
+        </form>
+
+        <div class="login-link">
+            Already have an account? <a href="/login">Login here</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 15px;">
+            <a href="/" style="color: #64748b; text-decoration: none; font-size: 13px;">Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        // TRACKING VARIABLE
+        let termsViewed = false;
+
+        // 1. Toggle Occupation Fields
+        function toggleOccupation() {
+            let val = document.getElementById('occupation').value;
+            let sFields = document.getElementById('student-fields');
+            let eFields = document.getElementById('employee-fields');
+
+            if (val === 'Student') {
+                sFields.style.display = 'block';
+                eFields.style.display = 'none';
+                document.querySelectorAll('.req-student').forEach(el => el.required = true);
+                document.querySelectorAll('.req-employee').forEach(el => el.required = false);
+            } else {
+                sFields.style.display = 'none';
+                eFields.style.display = 'block';
+                document.querySelectorAll('.req-student').forEach(el => el.required = false);
+                document.querySelectorAll('.req-employee').forEach(el => el.required = true);
+            }
+        }
+
+        // 2. Toggle Team Fields
+        function toggleTeam() {
+            let val = document.getElementById('goal_type').value;
+            let tFields = document.getElementById('team-fields');
+
+            if (val === 'Team') {
+                tFields.style.display = 'block';
+                document.querySelectorAll('.req-team').forEach(el => el.required = true);
+            } else {
+                tFields.style.display = 'none';
+                document.querySelectorAll('.req-team').forEach(el => el.required = false);
+            }
+        }
+
+        // 3. Show Terms Popup (And Mark as Viewed)
+        function showTerms() {
+            termsViewed = true; // Mark as read
+            document.getElementById('termsCheck').disabled = false; // Enable checkbox logic
+
+            Swal.fire({
+                title: 'Terms & Conditions',
+                html: `
+                    <div style="text-align:left; font-size:14px; max-height:300px; overflow-y:auto;">
+                        <p><strong>1. Eligibility:</strong> Only registered candidates with valid Unique IDs can participate.</p>
+                        <p><strong>2. Unique IDs:</strong> The ID number provided for team members must be unique and never registered for this event before.</p>
+                        <p><strong>3. Malpractice:</strong> Any attempt to switch tabs or use unauthorized tools will result in disqualification.</p>
+                        <p><strong>4. Privacy:</strong> Your data is stored securely and used only for exam purposes.</p>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'I Understand & Agree',
+                confirmButtonColor: '#4f46e5'
+            }).then((result) => {
+                // Auto-check the box if they click "I Understand"
+                if (result.isConfirmed) {
+                    document.getElementById('termsCheck').checked = true;
+                }
+            });
+        }
+
+        // 4. Force Read Logic on Checkbox Click
+        document.getElementById('termsCheck').addEventListener('click', function(e) {
+            if (!termsViewed) {
+                e.preventDefault(); // Stop the check
+                this.checked = false;
+                Swal.fire({
+                    title: 'Read Terms First',
+                    text: 'You must read the Terms & Conditions before agreeing.',
+                    icon: 'warning',
+                    confirmButtonText: 'Read Now'
+                }).then(() => {
+                    showTerms(); // Open the terms automatically
+                });
+            }
+        });
+
+        // 5. Final Form Validation
+        function validateForm() {
+            if(!termsViewed || !document.getElementById('termsCheck').checked) {
+                Swal.fire('Error', 'Please read and agree to the Terms and Conditions.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        // Initialize on load
+        toggleOccupation();
+        toggleTeam();
+
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false; // F12
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
+        };
+    </script>
+
+</body>
+</html>

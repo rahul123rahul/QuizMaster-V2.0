@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification | QuizMaster</title>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .verify-card {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e1e1e1;
+        }
+
+        .verify-card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #B8860B, #F39C12, #B8860B);
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .status-badge {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            display: inline-block;
+            margin: 20px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status-badge.verified::before {
+            content: "✓ ";
+            font-weight: 900;
+        }
+
+        .details-grid {
+            text-align: left;
+            margin: 30px 0;
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #F39C12;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .detail-row:last-child { border-bottom: none; }
+
+        .label { color: #777; font-size: 14px; font-weight: 500; }
+        .value { color: #333; font-weight: 600; font-size: 16px; }
+
+        .auth-images {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+            align-items: center;
+        }
+
+        .seal-img { width: 80px; height: 80px; object-fit: contain; opacity: 0.9; }
+        .sign-img { width: 120px; height: auto; object-fit: contain; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+
+        .btn-download {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-top: 30px;
+            background: #2c3e50;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn-download:hover { background: #34495e; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-card">
+        <div class="header-logo">QuizMaster</div>
+        <div style="font-size: 12px; color: #B8860B; letter-spacing: 1px;">OFFICIAL CREDENTIAL VERIFICATION</div>
+
+        <div class="status-badge verified">Verified Authentic</div>
+
+        <p style="color: #555; line-height: 1.6;">
+            This document certifies that the certificate holder has successfully met the rigorous requirements of the QuizMaster assessment program.
+        </p>
+
+        <div class="details-grid">
+            <div class="detail-row">
+                <span class="label">Certificate Holder</span>
+                <span class="value">{{ data['full_name'] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Course / Event</span>
+                <span class="value">{{ data['title'] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Score Achieved</span>
+                <span class="value" style="color: #27ae60;">{{ data['total_score'] }}%</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Issue Date</span>
+                <span class="value">{{ data['timestamp'] }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Certificate ID</span>
+                <span class="value">#{{ attempt_id }}</span>
+            </div>
+        </div>
+
+        <div class="auth-images">
+            <img src="/static/stamp.png" alt="Official Seal" class="seal-img">
+            <div style="text-align: center;">
+                <img src="/static/signature.png" alt="Director Signature" class="sign-img">
+                <div style="font-size: 10px; color: #777; margin-top: 5px;">Program Director</div>
+            </div>
+        </div>
+
+        <a href="/download_certificate/{{ attempt_id }}" class="btn-download">
+            Download Certificate Again
+        </a>
+
+        <div class="footer">
+            Verified by QuizMaster System • {{ data['timestamp'] }}
+        </div>
+    </div>
+</body>
+</html>

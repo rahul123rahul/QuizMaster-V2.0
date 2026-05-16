@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Question Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h3>🤖 AI Question Generator</h3>
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+<form id="genForm" action="{{ url_for('admin.ai_preview_admin_page') }}" method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Select Session (Quiz)</label>
+                    <select name="quiz_id" id="quiz_id" class="form-select" required>
+                        <option value="" disabled selected>-- Choose Session / Batch --</option>
+                        {% for q in quizzes %}
+                        <option value="{{ q.quiz_id }}">{{ q.title }} (Batch: {{ q.batch }} | Year: {{ q.study_year }})</option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Questions will be added to this session.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Prompt</label>
+                    <input type="text" name="topic" id="topic" class="form-control" placeholder="Required prompt, e.g. Python Lists, Thermodynamics, Indian History" required>
+                    <small class="text-muted">The entered prompt is required and will be used directly with Year/Sem, Session Title, No. of Questions, and Difficulty.</small>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Number of Questions</label>
+                        <input type="number" name="count" id="count" class="form-control" value="3" min="1" max="30" required>
+                        <small class="text-muted">Generator will return the exact entered count up to 30 questions.</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Difficulty</label>
+                        <select name="difficulty" class="form-select">
+                            <option value="Easy">Easy</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="Hard">Hard</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Hidden Input to store results -->
+                <input type="hidden" name="questions_data" id="questions_data">
+                <input type="hidden" name="preview_token" id="preview_token">
+
+                <button type="button" onclick="startGeneration()" class="btn btn-success w-100" id="btnGen">Generate Preview</button>
+            </form>
+
+            <!-- PROGRESS SECTION (Hidden by default) -->
+            <div id="progressSection" class="mt-4" style="display: none;">
+                <h5>Generating Questions... <span id="percentText" class="float-end">0%</span></h5>
+                <div class="progress mb-2" style="height: 25px;">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                </div>
+                <p class="text-muted text-center">Estimated Time Remaining: <span id="etaText" class="fw-bold">Calculating...</span></p>
+                <div id="genError" class="alert alert-danger mt-3" style="display:none;"></div>
+            </div>
+
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary w-100 mt-2">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+<script>
+async function startGeneration() {
+    const form = document.getElementById('genForm');
+    const button = document.getElementById('btnGen');
+    const generateBatchUrl = {{ url_for('admin.ai_preview_admin_page') | tojson }};
+    const count = parseInt(document.getElementById('count').value, 10) || 1;
+    const topic = document.getElementById('topic').value.trim();
+    const quiz_id = document.getElementById('quiz_id').value;
+    const difficulty = document.querySelector('[name="difficulty"]').value;
+
+    if(!quiz_id) { alert("Please select a Session."); return; }
+    if(!topic) { alert("Please enter a prompt."); return; }
+
+    // UI Updates
+    button.disabled = true;
+    button.innerText = 'Generating...';
+    form.style.display = 'none';
+    document.getElementById('progressSection').style.display = 'block';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('percentText').innerText = '0%';
+    document.getElementById('etaText').innerText = 'Calculating...';
+    document.getElementById('genError').style.display = 'none';
+    document.getElementById('genError').innerText = '';
+    
+    const progressBar = document.getElementById('progressBar');
+    const percentText = document.getElementById('percentText');
+    const etaText = document.getElementById('etaText');
+    let percent = 0;
+    const startedAt = Date.now();
+
+    const tick = setInterval(() => {
+        percent = Math.min(percent + 4, 92);
+        progressBar.style.width = percent + "%";
+        percentText.innerText = percent + "%";
+
+        const elapsed = Math.max(1, Math.round((Date.now() - startedAt) / 1000));
+        const projectedTotal = Math.min(30, Math.max(8, count * 5));
+        const remaining = Math.max(0, projectedTotal - elapsed);
+        etaText.innerText = remaining > 0 ? remaining + " seconds" : "Finishing...";
+    }, 350);
+
+    try {
+        const response = await fetch(generateBatchUrl, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ topic, quiz_id, difficulty, count })
+        });
+
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const html = await response.text();
+            throw new Error('Server returned HTML instead of JSON. The session may have expired or there was an error.');
+        }
+        
+        if (!response.ok) throw new Error(data.error || "API Error");
+
+        const generatedQuestions = Array.isArray(data.questions) ? data.questions : [];
+        if (generatedQuestions.length === 0) {
+            throw new Error("No questions were returned by the AI service.");
+        }
+
+        clearInterval(tick);
+        progressBar.style.width = '100%';
+        percentText.innerText = '100%';
+        etaText.innerText = 'Done';
+        document.getElementById('questions_data').value = JSON.stringify(generatedQuestions);
+        document.getElementById('preview_token').value = data.preview_token || '';
+        
+        if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+        } else {
+            form.submit();
+        }
+    } catch (err) {
+        clearInterval(tick);
+        console.error(err);
+        form.style.display = 'block';
+        button.disabled = false;
+        button.innerText = 'Generate Preview';
+        progressBar.style.width = '0%';
+        percentText.innerText = '0%';
+        etaText.innerText = 'Stopped';
+        document.getElementById('genError').innerText = err.message || 'Failed to generate questions.';
+        document.getElementById('genError').style.display = 'block';
+    }
+}
+</script>
+</body>
+</html>

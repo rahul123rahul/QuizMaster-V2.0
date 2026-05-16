@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Question Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-base: #060d1a;
+            --bg-surface: #0b1729;
+            --bg-elevated: #101f35;
+            --bg-overlay: #162944;
+            --glass: rgba(255,255,255,0.055);
+            --glass-border: rgba(255,255,255,0.09);
+            --glass-hover: rgba(255,255,255,0.085);
+            --text-primary: #e8f4ff;
+            --text-secondary: #8aaac8;
+            --text-muted: #4d6a84;
+            --accent-teal: #2de2c4;
+            --accent-gold: #ffc85a;
+            --accent-blue: #5b9cf6;
+            --accent-red: #ff6b6b;
+            --accent-teal-dim: rgba(45,226,196,0.12);
+            --accent-teal-border: rgba(45,226,196,0.25);
+            --accent-gold-dim: rgba(255,200,90,0.1);
+            --accent-blue-dim: rgba(91,156,246,0.1);
+            --accent-red-dim: rgba(255,107,107,0.1);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 22px;
+            --radius-xl: 28px;
+            --shadow-card: 0 8px 32px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2);
+            --shadow-glow: 0 0 40px rgba(45,226,196,0.08);
+            --transition: 0.2s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        :root[data-theme="light"] {
+            --bg-base: #f0f4f8;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f8fafc;
+            --bg-overlay: #edf2f7;
+            --glass: rgba(255,255,255,0.7);
+            --glass-border: rgba(0,0,0,0.07);
+            --glass-hover: rgba(255,255,255,0.9);
+            --text-primary: #0f1f35;
+            --text-secondary: #4a6378;
+            --text-muted: #8fa5b8;
+            --accent-teal-dim: rgba(20,180,150,0.08);
+            --accent-teal-border: rgba(20,180,150,0.2);
+            --shadow-card: 0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-primary);
+            background-color: var(--bg-base);
+            background-image:
+                radial-gradient(ellipse 80% 40% at 10% 0%, rgba(45,226,196,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 90% 100%, rgba(91,156,246,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 30% at 50% 50%, rgba(255,200,90,0.03) 0%, transparent 70%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .page { width: min(100%, 1600px); margin: 0 auto; }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+        }
+
+        .top-bar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 20px;
+            margin-bottom: 16px;
+            position: sticky;
+            top: 12px;
+            z-index: 20;
+        }
+
+        .top-bar-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+        .stat-chip {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+        }
+
+        .stat-chip.teal { background: var(--accent-teal-dim); border-color: var(--accent-teal-border); }
+        .stat-chip .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-chip .value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+
+        .divider-v { width: 1px; height: 32px; background: var(--glass-border); }
+
+        .top-bar-right { display: flex; gap: 10px; }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-ghost { background: var(--bg-elevated); color: var(--text-primary); border: 1px solid var(--glass-border); }
+        .btn-ghost:hover { background: var(--glass-hover); transform: translateY(-1px); }
+
+        .btn-primary { background: var(--accent-teal); color: #000; }
+        .btn-primary:hover { background: #3ee8cf; transform: translateY(-1px); }
+
+        .question-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+
+        .question-card:hover { border-color: var(--accent-teal-border); }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .question-num {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-teal-dim);
+            border: 1px solid var(--accent-teal-border);
+            border-radius: var(--radius-sm);
+            font-weight: 700;
+            color: var(--accent-teal);
+        }
+
+        .question-actions { display: flex; align-items: center; gap: 12px; }
+
+        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .checkbox-wrapper input { width: 18px; height: 18px; accent-color: var(--accent-teal); cursor: pointer; }
+
+        .marks-badge {
+            padding: 6px 12px;
+            background: var(--accent-gold-dim);
+            border: 1px solid rgba(255,200,90,0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-gold);
+        }
+
+        .question-text {
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-sm);
+        }
+
+        .options { display: grid; gap: 10px; }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+        }
+
+        .option.correct {
+            background: var(--accent-teal-dim);
+            border-color: var(--accent-teal-border);
+        }
+
+        .option-letter {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-overlay);
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .option.correct .option-letter { background: var(--accent-teal); color: #000; }
+
+        .option-text { flex: 1; font-size: 15px; color: var(--text-primary); }
+
+        .action-bar {
+            position: sticky;
+            bottom: 20px;
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        #themeToggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .table-wrap { max-height: min(68vh, 580px); overflow: auto; }
+        .table-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+        .table-wrap::-webkit-scrollbar-track { background: transparent; }
+        .table-wrap::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 4px; }
+
+        .info-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 20px; }
+        .info-chip { padding: 8px 16px; background: var(--bg-elevated); border-radius: 20px; font-size: 13px; color: var(--text-secondary); }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal {
+            background: var(--bg-surface);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-card);
+            width: min(90%, 700px);
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px;
+            line-height: 1;
+        }
+        
+        .modal-close:hover { color: var(--accent-red); }
+        
+        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
+        
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--glass-border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .param-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .param-item {
+            background: var(--bg-elevated);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+        }
+        
+        .param-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .param-value { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+        
+        .session-list {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+        }
+        
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--glass-border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .session-item:last-child { border-bottom: none; }
+        .session-item:hover { background: var(--bg-elevated); }
+        
+        .session-item input { width: 18px; height: 18px; accent-color: var(--accent-teal); }
+        
+        .session-info { flex: 1; }
+        .session-title { font-weight: 600; color: var(--text-primary); }
+        .session-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--glass-border);
+            border-top-color: var(--accent-teal);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            color: white;
+            font-weight: 600;
+            z-index: 2000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: var(--accent-teal); color: #000; }
+        .toast.error { background: var(--accent-red); }
+        
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<button id="themeToggle" class="btn btn-ghost">🌙</button>
+
+<div class="page">
+    <form action="{{ url_for('save_ai_questions') }}" method="POST" id="aiPreviewForm">
+        <input type="hidden" name="quiz_id" value="{{ quiz_id or '' }}">
+        <input type="hidden" name="session_title_select" value="{{ quiz_id or '' }}">
+        <input type="hidden" name="preview_token" value="{{ preview_token }}">
+        <input type="hidden" name="batch" value="{{ selected_batch }}">
+        <input type="hidden" name="branch" value="{{ selected_branch }}">
+        <input type="hidden" name="timing" value="{{ selected_timing }}">
+        <input type="hidden" name="session_title" value="{{ selected_session }}">
+        <input type="hidden" name="year_sem" value="{{ generation_context.get('year_sem', '') if generation_context else '' }}">
+        <input type="hidden" name="prompt" value="{{ generation_prompt }}">
+        <input type="hidden" name="difficulty" value="{{ generation_context.get('difficulty', 'Medium') if generation_context else 'Medium' }}">
+        <input type="hidden" name="generation_prompt" value="{{ generation_prompt }}">
+        <input type="hidden" name="module_name" id="moduleNameInput" value="">
+
+        <header class="card top-bar">
+            <div class="top-bar-left">
+                <div class="stat-chip teal">
+                    <span class="label">Questions</span>
+                    <span class="value" id="totalCount">{{ questions|length }}</span>
+                </div>
+                <div class="stat-chip">
+                    <span class="label">Selected</span>
+                    <span class="value" id="selectedCount">{{ questions|length }}</span>
+                </div>
+                <div class="divider-v"></div>
+                {% if selected_batch %}
+                <div class="stat-chip" id="chipBatch">
+                    <span class="label">Batch</span>
+                    <span class="value" id="displayBatch">{{ selected_batch }}</span>
+                </div>
+                {% endif %}
+                {% if selected_session %}
+                <div class="stat-chip" id="chipSession">
+                    <span class="label">Session</span>
+                    <span class="value" id="displaySession">{{ selected_session }}</span>
+                </div>
+                {% endif %}
+                {% if selected_branch %}
+                <div class="stat-chip" id="chipBranch">
+                    <span class="label">Dept</span>
+                    <span class="value" id="displayBranch">{{ selected_branch }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="top-bar-right">
+                <button type="button" class="btn btn-primary" id="saveBtn" onclick="openModal()">
+                    <i class="fas fa-save"></i> Save to Quiz
+                </button>
+                <button type="submit" class="btn btn-ghost" formaction="{{ url_for('export_ai_preview_docx') }}" formmethod="POST" id="docxBtn">
+                    <i class="fas fa-file-word"></i> Export DOCX
+                </button>
+                <a href="/admin/ai_generate" class="btn btn-ghost">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </header>
+
+        <div class="info-row">
+            <span class="info-chip"><i class="fas fa-tag"></i> {{ generation_prompt }}</span>
+            <span class="info-chip"><i class="fas fa-layer-group"></i> {{ existing_modules|length if existing_modules else 0 }} existing modules</span>
+        </div>
+
+        <div class="table-wrap">
+            {% for q in questions %}
+            <div class="question-card">
+                <div class="question-header">
+                    <div class="question-num">{{ loop.index }}</div>
+                    <div class="question-actions">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" name="selected_row_ids" value="{{ loop.index0 }}" checked>
+                            <span>Select</span>
+                        </label>
+                        <span class="marks-badge">{{ q.marks|default(1) }} mark(s)</span>
+                    </div>
+                </div>
+                <div class="question-text">
+                    <input type="hidden" name="row_uid" value="{{ loop.index0 }}">
+                    <input type="hidden" name="question_text" value="{{ q.question }}">
+                    {{ q.question }}
+                </div>
+                <div class="options">
+                    {% set options = [('A', q.a), ('B', q.b), ('C', q.c), ('D', q.d)] %}
+                    {% for opt_letter, opt_text in options %}
+                    {% if opt_text %}
+                    <div class="option {% if q.correct == opt_letter %}correct{% endif %}">
+                        <span class="option-letter">{{ opt_letter }}</span>
+                        <span class="option-text">{{ opt_text }}</span>
+                        <input type="hidden" name="option_{{ opt_letter|lower }}" value="{{ opt_text }}">
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    <input type="hidden" name="correct_option" value="{{ q.correct }}">
+                    <input type="hidden" name="marks" value="{{ q.marks|default(1) }}">
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="action-bar">
+            <button type="button" class="btn btn-primary" id="openSaveModal">
+                <i class="fas fa-save"></i> Save {{ questions|length }} Questions
+            </button>
+            <a href="/admin/ai_generate" class="btn btn-ghost">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Save Modal -->
+<div class="modal-overlay" id="saveModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2><i class="fas fa-save"></i> Save Questions</h2>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="param-grid">
+                <div class="param-item">
+                    <div class="param-label">Topic / Prompt</div>
+                    <div class="param-value">{{ generation_prompt }}</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-label">Difficulty</div>
+                    <div class="param-value">{{ generation_context.get('difficulty', 'Medium') if generation_context else 'Medium' }}</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-label">Questions Selected</div>
+                    <div class="param-value" id="modalQuestionCount">{{ questions|length }}</div>
+                </div>
+                <div class="param-item">
+                    <div class="param-label">Batch</div>
+                    <div class="param-value">{{ selected_batch or 'All Batches' }}</div>
+                </div>
+            </div>
+            
+            <div class="param-label" style="margin-bottom: 10px;">Select Target Sessions (Multi-select)</div>
+            <div id="sessionListContainer">
+                <div class="loading-spinner" style="margin: 20px auto;"></div>
+            </div>
+            
+            <div id="selectedSessionsInfo" style="margin-top: 15px; display: none;">
+                <span class="info-chip" id="selectedCountBadge">0 selected</span>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmSaveBtn" onclick="confirmSave()">
+                <i class="fas fa-check"></i> Confirm & Add to Question Bank
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+const PREVIEW_TOKEN = '{{ preview_token }}';
+
+// Modal Functions
+function openModal() {
+    document.getElementById('saveModal').classList.add('active');
+    loadSessions();
+}
+
+function closeModal() {
+    document.getElementById('saveModal').classList.remove('active');
+}
+
+// Load Sessions
+async function loadSessions() {
+    const container = document.getElementById('sessionListContainer');
+    container.innerHTML = '<div class="loading-spinner" style="margin: 20px auto;"></div>';
+    
+    try {
+        const response = await fetch('/api/get_sessions');
+        const data = await response.json();
+        
+        if (!data.sessions || data.sessions.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 20px;">No sessions available. Create a session first.</p>';
+            return;
+        }
+        
+        container.innerHTML = data.sessions.map(s => `
+            <label class="session-item">
+                <input type="checkbox" name="target_sessions" value="${s.quiz_id}">
+                <div class="session-info">
+                    <div class="session-title">${s.title || 'Untitled'}</div>
+                    <div class="session-meta">Batch: ${s.batch || 'N/A'} | Year: ${s.year || 'N/A'}</div>
+                </div>
+            </label>
+        `).join('');
+        
+    } catch (error) {
+        container.innerHTML = `<p style="text-align:center; color: var(--accent-red); padding: 20px;">Error loading sessions: ${error.message}</p>`;
+    }
+}
+
+// Update selected count
+document.addEventListener('change', function(e) {
+    if (e.target.name === 'target_sessions') {
+        const count = document.querySelectorAll('input[name="target_sessions"]:checked').length;
+        document.getElementById('selectedCountBadge').textContent = count + ' selected';
+        document.getElementById('selectedSessionsInfo').style.display = count > 0 ? 'block' : 'none';
+    }
+});
+
+// Confirm Save
+async function confirmSave() {
+    const selectedSessions = Array.from(document.querySelectorAll('input[name="target_sessions"]:checked')).map(cb => cb.value);
+    
+    if (selectedSessions.length === 0) {
+        showToast('Please select at least one session', 'error');
+        return;
+    }
+    
+    const btn = document.getElementById('confirmSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="loading-spinner"></div> Saving...';
+    
+    // Get selected questions
+    const selectedQuestions = [];
+    document.querySelectorAll('input[name="selected_row_ids"]:checked').forEach((cb, index) => {
+        const card = cb.closest('.question-card');
+        const qText = card.querySelector('input[name="question_text"]').value;
+        const optA = card.querySelector('input[name="option_a"]').value;
+        const optB = card.querySelector('input[name="option_b"]').value;
+        const optC = card.querySelector('input[name="option_c"]').value;
+        const optD = card.querySelector('input[name="option_d"]').value;
+        const correct = card.querySelector('input[name="correct_option"]').value;
+        const marks = card.querySelector('input[name="marks"]').value;
+        
+        selectedQuestions.push({
+            question_text: qText,
+            option_a: optA,
+            option_b: optB,
+            option_c: optC,
+            option_d: optD,
+            correct_option: correct,
+            marks: parseInt(marks) || 1
+        });
+    });
+    
+    if (selectedQuestions.length === 0) {
+        showToast('Please select at least one question', 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Confirm & Add to Question Bank';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/save_questions_to_sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                preview_token: PREVIEW_TOKEN,
+                session_ids: selectedSessions,
+                questions: selectedQuestions
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showToast(`Successfully saved ${result.total_inserted} questions to ${result.sessions_count} session(s)!`, 'success');
+            setTimeout(() => {
+                closeModal();
+                window.location.href = '/admin/ai_generate';
+            }, 2000);
+        } else {
+            showToast(result.error || 'Failed to save questions', 'error');
+        }
+    } catch (error) {
+        showToast('Error: ' + error.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Confirm & Add to Question Bank';
+    }
+}
+
+// Toast Notification
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = 'toast ' + type + ' show';
+    setTimeout(() => toast.classList.remove('show'), 4000);
+}
+
+// Theme Toggle
+document.getElementById('themeToggle').addEventListener('click', function() {
+    const html = document.documentElement;
+    if (html.getAttribute('data-theme') === 'light') {
+        html.removeAttribute('data-theme');
+        this.textContent = '🌙';
+    } else {
+        html.setAttribute('data-theme', 'light');
+        this.textContent = '☀️';
+    }
+});
+
+// Question Count Update
+const checkboxes = document.querySelectorAll('input[name="selected_row_ids"]');
+const selectedCount = document.getElementById('selectedCount');
+
+function updateCount() {
+    const checked = document.querySelectorAll('input[name="selected_row_ids"]:checked').length;
+    selectedCount.textContent = checked;
+    document.getElementById('modalQuestionCount').textContent = checked;
+}
+checkboxes.forEach(cb => cb.addEventListener('change', updateCount));
+
+// Open Modal on Save Button Click
+document.getElementById('openSaveModal').addEventListener('click', openModal);
+
+// Close modal on overlay click
+document.getElementById('saveModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
