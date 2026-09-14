@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
     <title>QuizMaster | Enterprise SaaS Assessment &amp; Examination Infrastructure</title>
     <meta name="description" content="QuizMaster is an enterprise SaaS assessment platform powered by Nexhydigital.in for universities, corporate training, live coding evaluations, and tamper-evident certifications.">
     
@@ -17,6 +21,11 @@
            LIGHT THEME DESIGN SYSTEM (Engineered by Senior UI/UX Designer)
            ========================================================================== */
         :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+
             --bg-body: #f8fafc;
             --bg-surface: #ffffff;
             --bg-elevated: #f1f5f9;
@@ -41,8 +50,8 @@
             --text-muted: #64748b;
             --text-subtle: #94a3b8;
             
-            --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             
             --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
             --shadow-sm: 0 2px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
@@ -64,19 +73,30 @@
             box-sizing: border-box;
             font-family: var(--font-sans);
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html {
             scroll-behavior: smooth;
             background-color: var(--bg-body);
             color: var(--text-body);
+            text-size-adjust: 100%;
+            -webkit-text-size-adjust: 100%;
         }
 
         body {
             background-color: var(--bg-body);
             color: var(--text-body);
             overflow-x: hidden;
+            width: 100%;
+            max-width: 100%;
             line-height: 1.65;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding-left: var(--sal);
+            padding-right: var(--sar);
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Ambient light gradient background */
@@ -117,10 +137,10 @@
            NAVBAR (Crisp Light Theme Glassmorphism)
            ========================================================================== */
         nav {
-            background: rgba(255, 255, 255, 0.88);
+            background: rgba(255, 255, 255, 0.92);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            padding: 16px 5%;
+            padding: calc(14px + var(--sat)) 5% 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -129,12 +149,15 @@
             z-index: 1000;
             border-bottom: 1px solid var(--border-light);
             box-shadow: var(--shadow-xs);
+            width: 100%;
         }
 
         .nav-brand-container {
             display: flex;
             align-items: center;
             gap: 12px;
+            text-decoration: none;
+            flex-shrink: 0;
         }
 
         .brand-icon-box {
@@ -148,6 +171,7 @@
             color: white;
             font-size: 18px;
             box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+            flex-shrink: 0;
         }
 
         .nav-logo-text {
@@ -181,7 +205,7 @@
         .nav-links {
             display: flex;
             align-items: center;
-            gap: 28px;
+            gap: 24px;
         }
 
         .nav-links a {
@@ -191,6 +215,7 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            padding: 6px 0;
         }
 
         .nav-links a:hover {
@@ -200,7 +225,203 @@
         .nav-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+        }
+
+        /* Mobile Hamburger Toggle Button */
+        .nav-mobile-toggle {
+            display: none;
+            width: 42px;
+            height: 42px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-light);
+            background: #ffffff;
+            color: var(--text-heading);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 5px;
+            box-shadow: var(--shadow-xs);
+            transition: var(--transition);
+            margin-left: 8px;
+            padding: 0;
+            z-index: 1002;
+        }
+
+        .nav-mobile-toggle:hover {
+            background: var(--bg-elevated);
+            border-color: #cbd5e1;
+        }
+
+        .nav-mobile-toggle .bar {
+            width: 20px;
+            height: 2px;
+            background-color: var(--text-heading);
+            border-radius: 2px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nav-mobile-toggle.active .bar:nth-child(1) {
+            transform: translateY(7px) rotate(45deg);
+        }
+
+        .nav-mobile-toggle.active .bar:nth-child(2) {
+            opacity: 0;
+            transform: scaleX(0.2);
+        }
+
+        .nav-mobile-toggle.active .bar:nth-child(3) {
+            transform: translateY(-7px) rotate(-45deg);
+        }
+
+        /* Mobile Slide-In Navigation Drawer */
+        .mobile-nav-drawer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+            visibility: hidden;
+            transition: visibility 0.3s;
+        }
+
+        .mobile-nav-drawer.open {
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        .mobile-nav-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-nav-drawer.open .mobile-nav-backdrop {
+            opacity: 1;
+        }
+
+        .mobile-nav-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: min(88vw, 360px);
+            height: 100%;
+            height: 100dvh;
+            background: #ffffff;
+            box-shadow: -10px 0 30px rgba(15, 23, 42, 0.18);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: calc(20px + var(--sat)) 24px calc(24px + var(--sab));
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            transform: translateX(100%);
+            transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2;
+        }
+
+        .mobile-nav-drawer.open .mobile-nav-panel {
+            transform: translateX(0);
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .mobile-nav-close {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-light);
+            color: var(--text-body);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .mobile-nav-close:hover {
+            color: var(--text-heading);
+            background: var(--bg-muted);
+        }
+
+        .mobile-nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 20px 0;
+        }
+
+        .mobile-nav-links a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 13px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-body);
+            transition: var(--transition);
+            min-height: 48px;
+        }
+
+        .mobile-nav-links a i {
+            width: 20px;
+            text-align: center;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .mobile-nav-links a:hover,
+        .mobile-nav-links a:active {
+            background: var(--primary-soft);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .mobile-nav-cta-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .mobile-nav-cta-stack .btn {
+            width: 100%;
+            padding: 13px;
+            font-size: 14px;
+            min-height: 46px;
+        }
+
+        .mobile-nav-footer-sub {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .mobile-nav-footer-sub a {
+            color: var(--primary);
+            font-weight: 700;
         }
 
         .btn {
@@ -1420,25 +1641,346 @@
         }
 
         /* ==========================================================================
-           RESPONSIVE BREAKPOINTS
+           AUTO-DEVICE COMPACTABLE RESPONSIVE ENGINE
+           Mobile (Android, iOS Safari) | Tablet | Laptop | Desktop | Ultra-wide
            ========================================================================== */
-        @media (max-width: 992px) {
-            .hero-title { font-size: 42px; }
-            .stats-grid-wrapper { grid-template-columns: 1fr; gap: 20px; }
-            .exam-mock-layout { grid-template-columns: 1fr; }
-            .nexhy-deliverables-grid { grid-template-columns: repeat(2, 1fr); }
-            .footer-top-grid { grid-template-columns: 1fr 1fr; }
-            .nav-links { display: none; }
+
+        /* 1. Large Laptops and Standard Desktop Monitors (<= 1200px) */
+        @media (max-width: 1200px) {
+            .hero-title {
+                font-size: clamp(2.5rem, 4.5vw, 3.25rem);
+            }
+            .nexhy-showcase-card {
+                padding: 44px 36px;
+            }
+            .nexhy-deliverables-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+            .stats-glass-card {
+                padding: 32px 30px;
+            }
+            .stats-grid-wrapper {
+                gap: 24px;
+            }
+            .footer-top-grid {
+                grid-template-columns: 1.5fr 1fr 1fr 1fr;
+                gap: 30px;
+            }
         }
 
+        /* 2. Tablets Landscape & Standard Tablets (<= 1024px) */
+        @media (max-width: 1024px) {
+            nav {
+                padding: calc(12px + var(--sat)) 4% 12px;
+            }
+            .nav-links {
+                display: none;
+            }
+            .nav-mobile-toggle {
+                display: inline-flex;
+            }
+            .hero-section {
+                padding: 50px 5% 90px;
+            }
+            .stats-outer-container {
+                margin-top: -45px;
+            }
+            .exam-mock-layout {
+                grid-template-columns: 1fr;
+            }
+            .capabilities-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .solutions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .events-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .seat-mock-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .showcase-nav-pills {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                padding: 4px 4px 12px;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .showcase-nav-pills::-webkit-scrollbar {
+                display: none;
+            }
+            .showcase-tab-btn {
+                white-space: nowrap;
+                flex-shrink: 0;
+            }
+            .footer-top-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 36px;
+            }
+        }
+
+        /* 3. Tablets Portrait & Large Mobile Devices (<= 768px) */
+        @media (max-width: 768px) {
+            section {
+                padding: 65px 4%;
+            }
+            .hero-section {
+                padding: 40px 4% 80px;
+            }
+            .hero-spotlight {
+                width: 100%;
+                height: 300px;
+            }
+            .hero-badge-wrap {
+                font-size: 12px;
+                padding: 6px 14px;
+                gap: 8px;
+                margin-bottom: 20px;
+                max-width: 100%;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .hero-title {
+                font-size: clamp(2rem, 5.2vw, 2.75rem);
+                margin-bottom: 18px;
+                line-height: 1.2;
+            }
+            .hero-subtitle {
+                font-size: 16px;
+                margin-bottom: 30px;
+                line-height: 1.6;
+            }
+            .hero-cta-group {
+                gap: 12px;
+                margin-bottom: 36px;
+            }
+            .hero-trust-bar {
+                gap: 16px;
+                font-size: 12px;
+            }
+            .trust-item {
+                font-size: 12px;
+            }
+            .stats-outer-container {
+                margin-top: -35px;
+                padding: 0 4%;
+            }
+            .stats-glass-card {
+                padding: 24px 20px;
+                border-radius: var(--radius-md);
+            }
+            .stats-header-micro {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                margin-bottom: 20px;
+                padding-bottom: 14px;
+                font-size: 11px;
+            }
+            .stats-grid-wrapper {
+                grid-template-columns: 1fr;
+                gap: 18px;
+            }
+            .metric-card {
+                padding: 8px 14px;
+                border-left-width: 3px;
+            }
+            .metric-number-display {
+                font-size: 40px;
+            }
+            .stats-footer-note {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                margin-top: 20px;
+                padding-top: 16px;
+            }
+            .section-header-block {
+                margin-bottom: 38px;
+            }
+            .section-title {
+                font-size: 28px;
+                line-height: 1.25;
+            }
+            .section-desc {
+                font-size: 15px;
+            }
+            .mock-window-body {
+                padding: 18px;
+            }
+            .exam-mock-main {
+                padding: 18px;
+            }
+            .exam-mock-sidebar {
+                padding: 16px;
+            }
+            .palette-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
+            }
+            .nexhy-showcase-card {
+                padding: 32px 20px;
+                border-radius: var(--radius-md);
+            }
+            .nexhy-card-header {
+                flex-direction: column;
+                margin-bottom: 24px;
+                gap: 18px;
+            }
+            .nexhy-main-title {
+                font-size: 26px;
+            }
+            .nexhy-main-desc {
+                font-size: 14px;
+            }
+            .nexhy-deliverables-grid {
+                grid-template-columns: 1fr;
+                gap: 14px;
+                margin-top: 24px;
+            }
+            .capabilities-grid,
+            .solutions-grid,
+            .events-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .footer-top-grid {
+                grid-template-columns: 1fr;
+                gap: 32px;
+                margin-bottom: 40px;
+            }
+            .footer-bottom-bar {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+        }
+
+        /* 4. Android & iPhone Mobile Devices (<= 640px) */
         @media (max-width: 640px) {
-            .hero-title { font-size: 32px; }
-            .hero-subtitle { font-size: 16px; }
-            .metric-number-display { font-size: 38px; }
-            .nexhy-deliverables-grid { grid-template-columns: 1fr; }
-            .nexhy-showcase-card { padding: 32px 24px; }
-            .footer-top-grid { grid-template-columns: 1fr; }
-            .showcase-tab-btn { font-size: 12px; padding: 8px 14px; }
+            nav {
+                padding: calc(10px + var(--sat)) 4% 10px;
+            }
+            .nav-logo-title {
+                font-size: 18px;
+            }
+            .brand-icon-box {
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+            }
+            .nav-saas-pill {
+                font-size: 8.5px;
+            }
+            .nav-actions .btn {
+                display: none;
+            }
+            .nav-mobile-toggle {
+                display: inline-flex;
+                margin-left: auto;
+            }
+            .hero-section {
+                padding: 32px 4% 65px;
+            }
+            .hero-title {
+                font-size: clamp(1.85rem, 6.8vw, 2.35rem);
+                letter-spacing: -0.025em;
+            }
+            .hero-subtitle {
+                font-size: 14.5px;
+                margin-bottom: 26px;
+            }
+            .hero-cta-group {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            .hero-cta-group .btn {
+                width: 100%;
+                padding: 13px 20px;
+                font-size: 14.5px;
+                min-height: 48px;
+            }
+            .hero-trust-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding: 16px;
+                background: #ffffff;
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-sm);
+                box-shadow: var(--shadow-xs);
+            }
+            .seat-mock-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .cert-mock-preview {
+                padding: 24px 16px;
+            }
+            .cert-mock-badge {
+                position: static;
+                display: inline-block;
+                margin-bottom: 16px;
+            }
+            .modal-content {
+                width: 95%;
+            }
+        }
+
+        /* 5. Compact Mobile Screens (<= 380px: iPhone SE, Galaxy A-series) */
+        @media (max-width: 380px) {
+            .hero-title {
+                font-size: 1.65rem;
+            }
+            .metric-number-display {
+                font-size: 34px;
+            }
+            .seat-mock-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .pal-btn {
+                height: 28px;
+                font-size: 11px;
+            }
+            .cap-card,
+            .sol-card,
+            .event-card {
+                padding: 22px 18px;
+            }
+        }
+
+        /* 6. Landscape Orientation on Mobile & Small Tablets */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .hero-section {
+                padding: 24px 5% 50px;
+            }
+            .hero-title {
+                font-size: 26px;
+                margin-bottom: 12px;
+            }
+            .hero-subtitle {
+                font-size: 13px;
+                margin-bottom: 18px;
+            }
+            .hero-cta-group {
+                flex-direction: row;
+                margin-bottom: 20px;
+            }
+            .hero-cta-group .btn {
+                width: auto;
+                min-height: 42px;
+                padding: 10px 18px;
+            }
+            .stats-outer-container {
+                margin-top: -20px;
+            }
+            .mobile-nav-panel {
+                width: min(92vw, 420px);
+            }
         }
     </style>
 </head>
@@ -1480,8 +2022,61 @@
 
             <a href="/login" class="btn btn-ghost"><i class="fas fa-arrow-right-to-bracket"></i> Login</a>
             <a href="/register" class="btn btn-primary"><i class="fas fa-rocket"></i> Get Started</a>
+
+            <!-- Mobile Hamburger Button -->
+            <button class="nav-mobile-toggle" id="mobileNavToggle" aria-label="Toggle navigation menu" onclick="toggleMobileNav()">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </button>
         </div>
     </nav>
+
+    <!-- Mobile Slide-In Navigation Drawer -->
+    <div class="mobile-nav-drawer" id="mobileNavDrawer">
+        <div class="mobile-nav-backdrop" onclick="closeMobileNav()"></div>
+        <div class="mobile-nav-panel">
+            <div class="mobile-nav-header">
+                <div class="nav-brand-container">
+                    <div class="brand-icon-box">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="nav-logo-text">
+                        <span class="nav-logo-title">Quiz<span>Master</span></span>
+                        <span class="nav-saas-pill">Enterprise SaaS Portal</span>
+                    </div>
+                </div>
+                <button class="mobile-nav-close" onclick="closeMobileNav()" aria-label="Close menu">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="mobile-nav-links">
+                <a href="#capabilities" onclick="closeMobileNav()"><i class="fas fa-cubes"></i> Capabilities</a>
+                <a href="#showcase" onclick="closeMobileNav()"><i class="fas fa-desktop"></i> Platform Tour</a>
+                <a href="#nexhy-digital" onclick="closeMobileNav()"><i class="fas fa-microchip"></i> Nexhy Digital Stack</a>
+                <a href="#events" onclick="closeMobileNav()"><i class="fas fa-bolt"></i> Live Arenas</a>
+                <a href="#solutions" onclick="closeMobileNav()"><i class="fas fa-university"></i> Institutional Solutions</a>
+                <a href="#faq" onclick="closeMobileNav()"><i class="fas fa-circle-question"></i> FAQ &amp; Support</a>
+            </div>
+
+            <div class="mobile-nav-cta-stack">
+                {% if session.get('role') == 'Admin' %}
+                    <a href="/admin" class="btn btn-admin"><i class="fas fa-shield-halved"></i> Admin Control</a>
+                {% elif session.get('role') == 'Coordinator' %}
+                    <a href="/coordinator/dashboard" class="btn btn-admin"><i class="fas fa-user-tie"></i> Coordinator Portal</a>
+                {% elif session.get('role') == 'Student' %}
+                    <a href="/student/dashboard" class="btn btn-primary"><i class="fas fa-user-graduate"></i> My Dashboard</a>
+                {% endif %}
+                <a href="/login" class="btn btn-ghost"><i class="fas fa-arrow-right-to-bracket"></i> Login</a>
+                <a href="/register" class="btn btn-primary"><i class="fas fa-rocket"></i> Get Started Free</a>
+            </div>
+
+            <div class="mobile-nav-footer-sub">
+                <span>Proudly powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer">Nexhydigital.in</a></span>
+            </div>
+        </div>
+    </div>
 
     <!-- HERO SECTION -->
     <div class="hero-section">
@@ -2220,7 +2815,39 @@
         })();
 
         /* --------------------------------------------------------------------------
-           2. PRODUCT SHOWCASE TAB SWITCHER
+           2. MOBILE NAVIGATION DRAWER TOGGLE
+           -------------------------------------------------------------------------- */
+        function toggleMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const toggle = document.getElementById('mobileNavToggle');
+            if (!drawer || !toggle) return;
+            const isOpen = drawer.classList.contains('open');
+            if (isOpen) {
+                closeMobileNav();
+            } else {
+                drawer.classList.add('open');
+                toggle.classList.add('active');
+                document.body.style.overflow = 'hidden'; // Prevent body scroll while menu is open
+            }
+        }
+
+        function closeMobileNav() {
+            const drawer = document.getElementById('mobileNavDrawer');
+            const toggle = document.getElementById('mobileNavToggle');
+            if (drawer) drawer.classList.remove('open');
+            if (toggle) toggle.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Auto close mobile drawer when window resized to desktop
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 1024) {
+                closeMobileNav();
+            }
+        });
+
+        /* --------------------------------------------------------------------------
+           3. PRODUCT SHOWCASE TAB SWITCHER
            -------------------------------------------------------------------------- */
         function switchShowcaseTab(tabId, btnElement) {
             document.querySelectorAll('.showcase-panel').forEach(panel => {
@@ -2235,7 +2862,7 @@
         }
 
         /* --------------------------------------------------------------------------
-           3. FAQ ACCORDION TOGGLE
+           4. FAQ ACCORDION TOGGLE
            -------------------------------------------------------------------------- */
         function toggleFaq(el) {
             const item = el.closest('.faq-item');
@@ -2247,7 +2874,7 @@
         }
 
         /* --------------------------------------------------------------------------
-           4. BANNER MODAL (Existing Feature Preservation)
+           5. BANNER MODAL (Existing Feature Preservation)
            -------------------------------------------------------------------------- */
         {% if banner %}
             const currentBannerSrc = "{{ banner['image_data'] }}";

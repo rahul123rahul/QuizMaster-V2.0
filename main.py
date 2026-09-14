@@ -22,10 +22,12 @@ load_dotenv()
 app = Flask(__name__)
 
 # Production Secret Key Handling
-flask_secret = os.getenv('FLASK_SECRET_KEY')
-if not flask_secret or flask_secret in ('change-me', 'dev-secret-change-me'):
-    flask_secret = os.getenv('FLASK_SECRET_KEY', 'qm-prod-' + secrets.token_hex(24))
+flask_secret = (os.getenv('SECRET_KEY') or os.getenv('FLASK_SECRET_KEY') or '').strip()
+if not flask_secret or flask_secret in ('change-me', 'dev-secret-change-me', 'your-secret-key-here'):
+    flask_secret = 'qm-prod-secure-key-9b8c7d6e5f4a3b2c1d0e8f7a6b5c4d3e'
+
 app.secret_key = flask_secret
+app.config['SECRET_KEY'] = flask_secret
 
 is_dev = os.getenv('FLASK_DEBUG', '0') == '1'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
@@ -142,6 +144,11 @@ def internal_server_error(e):
     if request.path.startswith('/api/') or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html):
         return jsonify({'success': False, 'error': 'Internal server error', 'status': 500}), 500
     return render_template('error.html', error_title='Server Error', error_message='An unexpected internal error occurred. Please try again later.'), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    """Silence browser favicon requests."""
+    return '', 204
 
 @app.route('/health')
 def health_check():

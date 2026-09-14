@@ -1,6 +1,6 @@
 -- ============================================================================
 -- QUIZMASTER COMPLETE DATABASE DUMP (MySQL / MariaDB Compatible)
--- Generated At: 2026-09-14 17:53:51 UTC
+-- Generated At: 2026-09-14 18:29:42 UTC
 -- Includes ALL 27 Tables, Columns, Constraints, and Complete Live Data Rows
 -- ============================================================================
 
