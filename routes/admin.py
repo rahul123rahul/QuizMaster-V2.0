@@ -1172,6 +1172,7 @@ def question_bank():
     total_marks = 0
     published_count = 0
     draft_count = 0
+    adv_settings = DEFAULT_ADVANCE_SETTINGS.copy()
 
     try:
         with conn.cursor() as cursor:
@@ -1184,11 +1185,11 @@ def question_bank():
             except Exception:
                 batches = []
 
-            cursor.execute('SELECT DISTINCT module FROM Questions WHERE module IS NOT NULL AND module != ""')
+            cursor.execute("SELECT DISTINCT module FROM Questions WHERE module IS NOT NULL AND module != ''")
             m_rows = cursor.fetchall()
             unique_modules = [m['module'] for m in m_rows if m.get('module')]
 
-            cursor.execute('SELECT DISTINCT subject FROM Questions WHERE subject IS NOT NULL AND subject != ""')
+            cursor.execute("SELECT DISTINCT subject FROM Questions WHERE subject IS NOT NULL AND subject != ''")
             s_rows = cursor.fetchall()
             unique_subjects = [s['subject'] for s in s_rows if s.get('subject')]
 
@@ -1218,21 +1219,23 @@ def question_bank():
                 params.append(difficulty_filter)
 
             if status_filter and status_filter != 'all':
-                base_query += ' AND (q.status = %s OR (%s="Published" AND (q.status IS NULL OR q.status="")))'
+                base_query += " AND (q.status = %s OR (%s='Published' AND (q.status IS NULL OR q.status='')))"
                 params.append(status_filter)
                 params.append(status_filter)
 
             if category_filter and category_filter != 'all':
                 if category_filter in ['mscq_single', 'single_choice']:
-                    base_query += ' AND (q.question_type = "mscq_single" OR q.question_type = "single_choice" OR q.question_type = "mcq_single" OR q.question_type = "MCQ" OR q.question_type = "mcq")'
+                    base_query += " AND (q.question_type = 'mscq_single' OR q.question_type = 'single_choice' OR q.question_type = 'mcq_single' OR q.question_type = 'MCQ' OR q.question_type = 'mcq')"
                 elif category_filter in ['mscq_multiple', 'multiple_select']:
-                    base_query += ' AND (q.question_type = "mscq_multiple" OR q.question_type = "multiple_select" OR q.question_type = "mcq_multiple")'
+                    base_query += " AND (q.question_type = 'mscq_multiple' OR q.question_type = 'multiple_select' OR q.question_type = 'mcq_multiple')"
                 elif category_filter in ['mscq_select', 'dropdown']:
-                    base_query += ' AND (q.question_type = "mscq_select" OR q.question_type = "dropdown")'
+                    base_query += " AND (q.question_type = 'mscq_select' OR q.question_type = 'dropdown')"
                 elif category_filter in ['fill_blank', 'fillInTheBlanks']:
-                    base_query += ' AND (q.question_type = "fill_blank" OR q.question_type = "fillInTheBlanks")'
+                    base_query += " AND (q.question_type = 'fill_blank' OR q.question_type = 'fillInTheBlanks')"
                 elif category_filter in ['true_false', 'trueFalse']:
-                    base_query += ' AND (q.question_type = "true_false" OR q.question_type = "trueFalse")'
+                    base_query += " AND (q.question_type = 'true_false' OR q.question_type = 'trueFalse')"
+                elif category_filter in ['coding', 'code']:
+                    base_query += " AND (q.question_type = 'coding' OR q.module = 'Coding')"
                 else:
                     base_query += ' AND q.question_type = %s'
                     params.append(category_filter)
@@ -1410,15 +1413,17 @@ def question_repository():
 
             if category_filter and category_filter != 'all':
                 if category_filter == 'mscq_single':
-                    base_query += ' AND (q.question_type = "mscq_single" OR q.question_type = "single_choice" OR q.question_type = "MCQ")'
+                    base_query += " AND (q.question_type = 'mscq_single' OR q.question_type = 'single_choice' OR q.question_type = 'MCQ')"
                 elif category_filter == 'mscq_multiple':
-                    base_query += ' AND (q.question_type = "mscq_multiple" OR q.question_type = "multiple_select")'
+                    base_query += " AND (q.question_type = 'mscq_multiple' OR q.question_type = 'multiple_select')"
                 elif category_filter == 'mscq_select':
-                    base_query += ' AND (q.question_type = "mscq_select")'
+                    base_query += " AND (q.question_type = 'mscq_select')"
                 elif category_filter == 'fill_blank':
-                    base_query += ' AND (q.question_type = "fill_blank" OR q.question_type = "fillInTheBlanks")'
+                    base_query += " AND (q.question_type = 'fill_blank' OR q.question_type = 'fillInTheBlanks')"
                 elif category_filter == 'true_false':
-                    base_query += ' AND (q.question_type = "true_false" OR q.question_type = "trueFalse")'
+                    base_query += " AND (q.question_type = 'true_false' OR q.question_type = 'trueFalse')"
+                elif category_filter in ['coding', 'code']:
+                    base_query += " AND (q.question_type = 'coding' OR q.module = 'Coding')"
 
             if search_query:
                 base_query += ' AND (q.question_text LIKE %s OR q.question_id LIKE %s)'

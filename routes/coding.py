@@ -20,6 +20,14 @@ except ImportError:
 
 coding_bp = Blueprint('coding', __name__, url_prefix='/admin/coding')
 
+@coding_bp.before_request
+def check_coding_admin():
+    if not session.get('user_id') or session.get('role') not in ['Admin', 'Coordinator']:
+        if request.path.startswith('/admin/coding/api/') or request.method == 'POST':
+            return jsonify({'success': False, 'error': 'Access denied. Admin or Coordinator role required.'}), 403
+        flash('Access denied. Admin or Coordinator role required.', 'error')
+        return redirect(url_for('auth.login'))
+
 # Supported languages & boilerplates
 SUPPORTED_LANGUAGES = ['python', 'c', 'cpp', 'java', 'javascript']
 
@@ -447,11 +455,17 @@ def save_coding_question_to_db(q_data, quiz_id=None, question_id=None):
         meta_json_str = json.dumps(meta_payload)
 
         q_quiz_id = quiz_id if quiz_id is not None else q_data.get('quiz_id')
-        if q_quiz_id is None:
-            # Pick first available quiz_id or 1
+        cursor.execute('SELECT quiz_id FROM Quizzes WHERE quiz_id = %s', (q_quiz_id,))
+        if not cursor.fetchone():
             cursor.execute('SELECT quiz_id FROM Quizzes ORDER BY quiz_id ASC LIMIT 1')
             q_row = cursor.fetchone()
-            q_quiz_id = q_row['quiz_id'] if q_row else 1
+            if q_row:
+                q_quiz_id = q_row['quiz_id']
+            else:
+                cursor.execute("INSERT INTO Quizzes (title, batch, department, total_marks, duration) VALUES ('Coding Challenges', 'All', 'General', 100, 60)")
+                cursor.execute('SELECT quiz_id FROM Quizzes ORDER BY quiz_id DESC LIMIT 1')
+                q_row = cursor.fetchone()
+                q_quiz_id = q_row['quiz_id'] if q_row else 1
 
         tags_str = ', '.join(q_data.get('tags', [])) if isinstance(q_data.get('tags'), list) else str(q_data.get('tags', ''))
 
@@ -518,6 +532,10 @@ def save_coding_question_to_db(q_data, quiz_id=None, question_id=None):
                 q_data.get('explanation', '')
             ))
             saved_id = cursor.lastrowid
+            if not saved_id:
+                cursor.execute('SELECT question_id FROM Questions ORDER BY question_id DESC LIMIT 1')
+                last_q = cursor.fetchone()
+                saved_id = last_q['question_id'] if last_q else None
 
     conn.commit()
     conn.close()
@@ -531,19 +549,28 @@ def save_coding_question_to_db(q_data, quiz_id=None, question_id=None):
 def coding_builder():
     """Main Coding Question Builder workspace."""
     conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute('SELECT quiz_id, title FROM Quizzes ORDER BY quiz_id DESC')
-        sessions_list = cursor.fetchall()
+    if not conn:
+        flash('Database connection error.', 'error')
+        return redirect('/admin')
 
-        # Get all coding questions
-        cursor.execute('''
-            SELECT * FROM Questions 
-            WHERE question_type='coding' OR module='Coding'
-            ORDER BY question_id DESC
-        ''')
-        q_rows = cursor.fetchall()
+    sessions_list = []
+    q_rows = []
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT quiz_id, title FROM Quizzes ORDER BY quiz_id DESC')
+            sessions_list = cursor.fetchall()
 
-    conn.close()
+            # Get all coding questions
+            cursor.execute('''
+                SELECT * FROM Questions 
+                WHERE question_type='coding' OR module='Coding'
+                ORDER BY question_id DESC
+            ''')
+            q_rows = cursor.fetchall()
+    except Exception as e:
+        flash(f'Error loading coding questions: {str(e)}', 'error')
+    finally:
+        conn.close()
 
     questions = [format_row_to_coding_dict(r) for r in q_rows]
 
@@ -814,7 +841,6 @@ def api_bulk_create():
 
     # Commit all in single transaction
     saved_ids = []
-    conn = get_db_connection()
     try:
         for q_data in validated_list:
             s_id = save_coding_question_to_db(q_data, quiz_id=quiz_id)
