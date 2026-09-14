@@ -101,17 +101,39 @@ class PostgresConnectionWrapper:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
 
+_LAST_CONNECTION_ERROR = None
+
 def is_postgres_configured():
     """Detects whether PostgreSQL / Supabase credentials are provided."""
-    db_url = os.getenv('DATABASE_URL', '') or os.getenv('SUPABASE_DB_URL', '')
-    if db_url.startswith('postgres://') or db_url.startswith('postgresql://'):
-        return True
+    for key in ('DATABASE_URL', 'POSTGRES_URL', 'SUPABASE_DB_URL'):
+        val = os.getenv(key, '').strip()
+        if val.startswith('postgres://') or val.startswith('postgresql://'):
+            return True
     db_type = os.getenv('DB_TYPE', '').lower()
     if db_type in ('postgres', 'postgresql', 'supabase'):
         return True
     port = str(os.getenv('DB_PORT', '3306'))
     host = os.getenv('DB_HOST', '').lower()
     return port in ('5432', '6543') or 'supabase.co' in host
+
+def _parse_postgres_url(raw_url):
+    """
+    Safely parses PostgreSQL connection URIs, including passwords with unescaped '@' symbols.
+    """
+    if not raw_url:
+        return None
+    raw_url = raw_url.strip()
+    m = re.match(r'^(?:postgresql|postgres)://([^:]+):(.+)@([^:/@]+)(?::(\d+))?/(.+)$', raw_url)
+    if m:
+        u, p, h, port, db = m.groups()
+        return {
+            'user': urllib.parse.unquote(u),
+            'password': urllib.parse.unquote(p),
+            'host': h,
+            'port': int(port) if port else 5432,
+            'dbname': db.split('?')[0]
+        }
+    return None
 
 # ==============================================================================
 # DATABASE CONNECTION FACTORY (DUAL: MySQL & PostgreSQL / Supabase)
@@ -122,43 +144,69 @@ def get_db_connection():
     1. Supabase / PostgreSQL (if DATABASE_URL, port 5432, or supabase host configured)
     2. MySQL / MariaDB (default if host is localhost or port 3306)
     """
+    global _LAST_CONNECTION_ERROR
+    _LAST_CONNECTION_ERROR = None
+
     if is_postgres_configured():
         return _get_postgres_connection()
     return _get_mysql_connection()
 
 def _get_postgres_connection():
+    global _LAST_CONNECTION_ERROR
     try:
         import psycopg2
-    except ImportError:
-        print("[ERROR] psycopg2 is not installed. Please run: pip install psycopg2-binary")
+    except ImportError as e:
+        _LAST_CONNECTION_ERROR = "psycopg2 is not installed. Please add psycopg2-binary to requirements.txt"
+        print(f"[ERROR] {_LAST_CONNECTION_ERROR}")
         return None
 
-    db_url = os.getenv('DATABASE_URL', '') or os.getenv('SUPABASE_DB_URL', '')
+    db_url = os.getenv('DATABASE_URL', '') or os.getenv('POSTGRES_URL', '') or os.getenv('SUPABASE_DB_URL', '')
     
     try:
         if db_url:
-            # Handle special characters (like @ in password) if raw URI is provided
-            conn = psycopg2.connect(db_url, connect_timeout=15)
+            parsed = _parse_postgres_url(db_url)
+            if parsed:
+                conn = psycopg2.connect(
+                    host=parsed['host'],
+                    port=parsed['port'],
+                    dbname=parsed['dbname'],
+                    user=parsed['user'],
+                    password=parsed['password'],
+                    sslmode='require',
+                    connect_timeout=15
+                )
+            else:
+                conn = psycopg2.connect(db_url, sslmode='require', connect_timeout=15)
         else:
+            host = os.getenv('DB_HOST', 'localhost')
+            port = int(os.getenv('DB_PORT', '5432'))
+            dbname = os.getenv('DB_NAME', 'postgres')
+            user = os.getenv('DB_USER', 'postgres')
+            password = os.getenv('DB_PASSWORD', '')
+            
             conn = psycopg2.connect(
-                host=os.getenv('DB_HOST', 'localhost'),
-                port=int(os.getenv('DB_PORT', '5432')),
-                dbname=os.getenv('DB_NAME', 'postgres'),
-                user=os.getenv('DB_USER', 'postgres'),
-                password=os.getenv('DB_PASSWORD', ''),
+                host=host,
+                port=port,
+                dbname=dbname,
+                user=user,
+                password=password,
+                sslmode='require' if 'supabase.co' in host.lower() else 'prefer',
                 connect_timeout=15
             )
         return PostgresConnectionWrapper(conn)
     except Exception as e:
+        _LAST_CONNECTION_ERROR = str(e)
         print(f"[ERROR] PostgreSQL/Supabase database connection failed: {e}")
         return None
 
 def _get_mysql_connection():
+    global _LAST_CONNECTION_ERROR
     try:
         import pymysql
         import pymysql.cursors
-    except ImportError:
-        print("[ERROR] pymysql is not installed. Please run: pip install pymysql")
+    except ImportError as e:
+        _LAST_CONNECTION_ERROR = "pymysql is not installed."
+        print(f"[ERROR] {_LAST_CONNECTION_ERROR}")
         return None
 
     ssl_config = None
@@ -183,6 +231,7 @@ def _get_mysql_connection():
         )
         return connection
     except Exception as e:
+        _LAST_CONNECTION_ERROR = str(e)
         print(f"[ERROR] MySQL database connection failed: {e}")
         return None
 
@@ -195,7 +244,8 @@ def ping_db():
     start = time.time()
     conn = get_db_connection()
     if not conn:
-        return False, "Failed to establish database connection."
+        err = _LAST_CONNECTION_ERROR or "Check database environment variables."
+        return False, f"Connection failed: {err}"
     try:
         with conn.cursor() as cursor:
             cursor.execute("SELECT 1 AS alive")
@@ -206,9 +256,10 @@ def ping_db():
                 return True, f"Database ({engine}) healthy (ping: {latency_ms}ms)"
         return False, "Unexpected ping query result."
     except Exception as e:
-        return False, str(e)
+        return False, f"Query error: {e}"
     finally:
         conn.close()
+
 
 # 2. EMAIL CONFIGURATION (BREVO API)
 BREVO_API_KEY = os.getenv('BREVO_API_KEY', '')
