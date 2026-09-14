@@ -25,7 +25,7 @@
             <label>Marks</label>
             <input type="number" name="marks" value="{{ q.marks }}" min="1" required>
 
-            {% if q.question_type == 'MCQ' %}
+            {% if q.question_type == 'MCQ' or q.question_type == 'mcq_single' %}
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <div><label>Option A</label><input type="text" name="opt_a" value="{{ q.option_a }}"></div>
                 <div><label>Option B</label><input type="text" name="opt_b" value="{{ q.option_b }}"></div>
@@ -44,7 +44,7 @@
 
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button type="submit" class="btn">Update Question</button>
-                <a href="{{ '/coordinator#questions' if session.get('role') == 'Coordinator' else '/admin#question-bank' }}" class="btn" style="background:#e5e7eb; color:#374151; text-align:center; text-decoration:none;">Cancel</a>
+                <a href="/admin/question_bank" class="btn" style="background:#e5e7eb; color:#374151; text-align:center; text-decoration:none;">Cancel</a>
             </div>
         </form>
     </div>

@@ -187,26 +187,56 @@ def generate_certificate_pdf(student_name, course_name, score, date, attempt_id,
 
     # --- 6. IMAGES & VALIDATION ---
     try:
+        # Dynamic lookup from official_assets manager
+        try:
+            from official_assets_manager import get_active_official_asset
+            active_sig = get_active_official_asset('program_director_signature')
+            active_seal = get_active_official_asset('official_seal')
+        except Exception as asset_err:
+            print(f"Notice: Could not load active official asset: {asset_err}")
+            active_sig = None
+            active_seal = None
+
         # --- A. Signature Image ---
-        # Absolute path as requested
-        sig_path = "/home/Rahul02100/Quize/quize/static/signature.png"
+        sig_drawn = False
+        if active_sig and active_sig.get('full_path') and os.path.exists(active_sig['full_path']):
+            try:
+                c.drawImage(active_sig['full_path'], width - 290, footer_y, width=160, height=60, mask='auto')
+                sig_drawn = True
+            except Exception as e:
+                print(f"Could not render active signature image: {e}")
 
-        if os.path.exists(sig_path):
-            c.drawImage(sig_path, width - 290, footer_y, width=160, height=60, mask='auto')
-        else:
-            print(f"Warning: Signature not found at {sig_path}")
+        if not sig_drawn:
+            # Local fallback if any static signature.png exists
+            local_sig = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'signature.png')
+            if os.path.exists(local_sig):
+                try:
+                    c.drawImage(local_sig, width - 290, footer_y, width=160, height=60, mask='auto')
+                except Exception:
+                    pass
 
-        # --- B. Gold Seal (Bottom Center) ---
+        # --- B. Official Seal (Bottom Center) ---
         seal_y = 60
-        c.setFillColor(colors.HexColor('#B8860B')) # Gold
-        c.circle(width/2, seal_y, 30, fill=1, stroke=0)
-        c.setFillColor(colors.HexColor('#FAFAFA')) # White inner
-        c.circle(width/2, seal_y, 25, fill=1, stroke=0)
+        seal_drawn = False
+        if active_seal and active_seal.get('full_path') and os.path.exists(active_seal['full_path']):
+            try:
+                seal_size = 64
+                c.drawImage(active_seal['full_path'], (width / 2) - (seal_size / 2), seal_y - (seal_size / 2) + 2, width=seal_size, height=seal_size, mask='auto')
+                seal_drawn = True
+            except Exception as e:
+                print(f"Could not render active official seal image: {e}")
 
-        c.setFont(fonts["BodySerif"], 8)
-        c.setFillColor(colors.HexColor('#B8860B'))
-        c.drawCentredString(width/2, seal_y + 3, "OFFICIAL")
-        c.drawCentredString(width/2, seal_y - 7, "SEAL")
+        if not seal_drawn:
+            # Standard programmatic Gold Seal fallback
+            c.setFillColor(colors.HexColor('#B8860B')) # Gold
+            c.circle(width/2, seal_y, 30, fill=1, stroke=0)
+            c.setFillColor(colors.HexColor('#FAFAFA')) # White inner
+            c.circle(width/2, seal_y, 25, fill=1, stroke=0)
+
+            c.setFont(fonts["BodySerif"], 8)
+            c.setFillColor(colors.HexColor('#B8860B'))
+            c.drawCentredString(width/2, seal_y + 3, "OFFICIAL")
+            c.drawCentredString(width/2, seal_y - 7, "SEAL")
 
         # --- C. QR Code (Centered ABOVE the Seal) ---
         # UPDATED: Only generate QR if show_qr is True

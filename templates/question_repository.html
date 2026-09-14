@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Repository | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #3730a3;
+            --primary-subtle: rgba(79, 70, 229, 0.08);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --text-dark: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.94);
+            --glass-border: rgba(226, 232, 240, 0.9);
+            --glass-shadow: 0 10px 30px 0 rgba(31, 38, 135, 0.06);
+            --surface-card: #ffffff;
+            --border-color: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 40%, #f0fdf4 100%);
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* --- GLOBAL NAVIGATION SIDEBAR --- */
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .nav-item {
+            position: relative;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.12);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid var(--primary);
+        }
+
+        .logout { margin-top: auto; color: #ef4444; }
+        .logout:hover { color: #dc2626; background: rgba(254, 226, 226, 0.8); }
+
+        /* --- MAIN WRAPPER --- */
+        .main-wrapper {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+            max-width: 1650px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- TOP HEADER --- */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title-area h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title-area p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        .btn-outline-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary-subtle);
+        }
+
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+        /* --- STATS SUMMARY BAR --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-badge-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .stat-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
+        .stat-lbl { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px; }
+
+        /* --- QUESTION MANAGEMENT SECTION --- */
+        .management-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .manage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 240px;
+        }
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            padding-left: 38px !important;
+        }
+
+        .filter-select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 11px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            outline: none;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        .bulk-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            padding: 10px 16px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .bulk-bar.show { display: flex; }
+
+        .q-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .q-table th {
+            text-align: left;
+            padding: 12px 14px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            border-bottom: 1.5px solid var(--border-color);
+            background: rgba(248, 250, 252, 0.85);
+        }
+        .q-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .q-table tr:hover td {
+            background: rgba(248, 250, 252, 0.6);
+        }
+
+        .badge-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-published { background: #dcfce7; color: #15803d; }
+        .status-draft { background: #fef3c7; color: #b45309; }
+
+        /* --- MODAL DIALOGS --- */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-backdrop.show { display: flex; }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-dialog-large {
+            max-width: 1050px;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 20px 20px 0 0;
+        }
+        .modal-header h3 { font-size: 18px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        .modal-close:hover { color: var(--text-dark); }
+        .modal-body { padding: 22px 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8fafc;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Format selector cards in Export modal */
+        .format-card-btn {
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 14px;
+            padding: 14px 10px;
+            text-align: center;
+            cursor: pointer;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        .format-card-btn:hover {
+            border-color: var(--primary-light);
+            background: var(--primary-subtle);
+        }
+        .format-card-btn.active {
+            border: 2px solid var(--primary);
+            background: rgba(79, 70, 229, 0.08);
+        }
+
+        /* Pre-Import Preview Table */
+        .preview-stat-chips {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .stat-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .chip-total { background: #e2e8f0; color: #334155; }
+        .chip-valid { background: #dcfce7; color: #166534; }
+        .chip-invalid { background: #fee2e2; color: #991b1b; }
+
+        .import-preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            max-height: 350px;
+        }
+        .import-preview-table th {
+            background: #f1f5f9;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1.5px solid var(--border-color);
+        }
+        .import-preview-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+        .import-preview-table tr.row-invalid {
+            background: #fff1f2;
+        }
+
+        /* Responsive Auto-Fit Styles */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        @media (max-width: 991px) {
+            body {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                left: 0;
+                right: 0;
+                flex-direction: row;
+                padding: 6px 10px;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                background: rgba(255, 255, 255, 0.96);
+                backdrop-filter: blur(20px);
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+                z-index: 1000;
+            }
+            .sidebar .logo {
+                display: none;
+            }
+            .sidebar .nav-container {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 4px;
+                padding: 0;
+                width: 100%;
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sidebar .nav-container::-webkit-scrollbar {
+                display: none;
+            }
+            .sidebar .nav-item {
+                flex-direction: column;
+                gap: 3px;
+                font-size: 10px;
+                padding: 6px 8px;
+                margin: 0;
+                justify-content: center;
+                border-radius: 10px;
+                min-width: 58px;
+                text-align: center;
+                border-left: none !important;
+            }
+            .sidebar .nav-item i {
+                font-size: 17px;
+                margin: 0 auto;
+            }
+            .sidebar .nav-item span {
+                font-size: 10px;
+                display: block;
+                font-weight: 600;
+            }
+            .sidebar .nav-item.logout {
+                margin-top: 0;
+            }
+            .sidebar .nav-item.active {
+                background: rgba(79, 70, 229, 0.1);
+                color: var(--primary);
+                border-bottom: 2px solid var(--primary);
+            }
+            .main-wrapper {
+                padding: 16px 14px 85px 14px !important;
+                max-width: 100%;
+                width: 100%;
+            }
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+            .top-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .header-actions {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-actions .btn {
+                flex: 1 1 auto;
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                width: 100%;
+            }
+            .filter-select {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+    <!-- GLOBAL SIDEBAR -->
+    <div class="sidebar">
+        <a href="/admin" class="logo"><i class="fas fa-cube"></i> QuizMaster</a>
+        <div class="nav-container">
+            <a href="/admin" class="nav-item"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+            <a href="/admin/sessions" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>Sessions</span></a>
+            <a href="/admin/manage_centers" class="nav-item"><i class="fas fa-map-marker-alt"></i> <span>Centers</span></a>
+            <a href="/admin/content" class="nav-item"><i class="fas fa-layer-group"></i> <span>Content</span></a>
+            <a href="/admin/coding" class="nav-item"><i class="fas fa-code"></i> <span>Coding</span></a>
+            <a href="/admin/repository" class="nav-item active"><i class="fas fa-database"></i> <span>Question Repository</span></a>
+            <a href="/admin/study" class="nav-item"><i class="fas fa-book-open"></i> <span>Study Material</span></a>
+            <a href="/admin/results" class="nav-item"><i class="fas fa-poll"></i> <span>Results</span></a>
+            <a href="/admin/students" class="nav-item"><i class="fas fa-user-graduate"></i> <span>Students</span></a>
+            <a href="/admin/coordinators" class="nav-item"><i class="fas fa-user-shield"></i> <span>Coords</span></a>
+            <a href="/logout" class="nav-item logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-wrapper">
+
+        <!-- FLASH NOTIFICATIONS -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding:12px 18px; border-radius:12px; margin-bottom:18px; font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; background:{% if category=='error' or category=='danger' %}#fee2e2; color:#991b1b; border:1px solid #fca5a5;{% else %}#dcfce7; color:#166534; border:1px solid #86efac;{% endif %}">
+                        <i class="fas {% if category=='error' or category=='danger' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- TOP PAGE HEADER -->
+        <div class="top-header">
+            <div class="header-title-area">
+                <h1><i class="fas fa-database" style="color:var(--primary);"></i> Question Repository</h1>
+                <p>Central repository to browse, search, filter, export, and batch-manage assessment questions.</p>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/content" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> + Add New Question
+                </a>
+                <button onclick="openImportModal()" class="btn btn-secondary">
+                    <i class="fas fa-file-import" style="color:var(--info);"></i> Import Questions
+                </button>
+                <button onclick="openExportModal()" class="btn btn-secondary">
+                    <i class="fas fa-file-export" style="color:var(--warning);"></i> Export Questions
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS SUMMARY BAR -->
+        <div class="stats-row">
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    <div class="stat-val">{{ total_all_questions or total_questions }}</div>
+                    <div class="stat-lbl">Total Questions</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#dcfce7; color:#15803d;"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="stat-val">{{ published_count }}</div>
+                    <div class="stat-lbl">Published</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#fef3c7; color:#b45309;"><i class="fas fa-pen-fancy"></i></div>
+                <div>
+                    <div class="stat-val">{{ draft_count }}</div>
+                    <div class="stat-lbl">Drafts</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce;"><i class="fas fa-shapes"></i></div>
+                <div>
+                    <div class="stat-val">5</div>
+                    <div class="stat-lbl">Question Types</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#e0f2fe; color:#0369a1;"><i class="fas fa-award"></i></div>
+                <div>
+                    <div class="stat-val">{{ total_marks }}</div>
+                    <div class="stat-lbl">Total Marks Pool</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- REPOSITORY MANAGEMENT TABLE SECTION -->
+        <div class="management-section">
+            <div class="manage-header">
+                <div>
+                    <h3 style="font-size:17px; font-weight:800; color:var(--text-dark);">
+                        <i class="fas fa-list-alt" style="color:var(--primary);"></i> Question Records ({{ total_questions }} Found)
+                    </h3>
+                    <p style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">Filter, edit, preview, and batch-manage assessment questions.</p>
+                </div>
+                <div>
+                    <a href="/admin/content" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-drafting-compass"></i> Open Question Builder
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtering bar -->
+            <div class="filter-bar">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="tableSearchInput" class="form-control search-input" placeholder="Search question statement or ID..." onkeyup="filterQuestionsTable()">
+                </div>
+
+                <select id="tableTypeFilter" class="filter-select" onchange="filterQuestionsTable()">
+                    <option value="all">All 5 Types</option>
+                    <option value="mscq_single">Single Choice ({{ category_counts.get('mscq_single', 0) }})</option>
+                    <option value="mscq_multiple">Multiple Choice ({{ category_counts.get('mscq_multiple', 0) }})</option>
+                    <option value="mscq_select">Select Dropdown ({{ category_counts.get('mscq_select', 0) }})</option>
+                    <option value="fill_blank">Fill in the Blanks ({{ category_counts.get('fill_blank', 0) }})</option>
+                    <option value="true_false">True / False ({{ category_counts.get('true_false', 0) }})</option>
+                </select>
+
+                <select id="tableSessionFilter" class="filter-select" onchange="filterQuestionsTable()">
+                    <option value="all">All Assessment Sessions</option>
+                    {% for qz in quizzes %}
+                        <option value="{{ qz.quiz_id }}">{{ qz.title }}</option>
+                    {% endfor %}
+                </select>
+
+                <select id="tableStatusFilter" class="filter-select" onchange="filterQuestionsTable()">
+                    <option value="all">All Statuses</option>
+                    <option value="Published">Published</option>
+                    <option value="Draft">Draft</option>
+                </select>
+            </div>
+
+            <!-- Bulk Actions Bar -->
+            <div class="bulk-bar" id="bulkBar">
+                <span id="bulkCountLabel">0 questions selected</span>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="executeBulkStatus('Published')" class="btn btn-secondary btn-sm"><i class="fas fa-check"></i> Set Published</button>
+                    <button onclick="executeBulkStatus('Draft')" class="btn btn-secondary btn-sm"><i class="fas fa-pen"></i> Set Draft</button>
+                    <button onclick="executeBulkDelete()" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i> Delete Selected</button>
+                </div>
+            </div>
+
+            <!-- Repository Table -->
+            <div style="overflow-x:auto;">
+                <table class="q-table" id="questionsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:30px;"><input type="checkbox" onchange="toggleSelectAll(this)" id="masterCheckbox"></th>
+                            <th style="width:60px;">#ID</th>
+                            <th style="width:140px;">Type</th>
+                            <th>Question Statement</th>
+                            <th style="width:130px;">Target Session</th>
+                            <th style="width:90px;">Marks</th>
+                            <th style="width:90px;">Status</th>
+                            <th style="width:130px; text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if questions %}
+                            {% for q in questions %}
+                                <tr class="q-row" data-type="{{ q.question_type }}" data-quiz-id="{{ q.quiz_id }}" data-status="{{ q.status }}" data-text="{{ q.question_text | lower }}">
+                                    <td><input type="checkbox" class="q-row-cb" value="{{ q.question_id }}" onchange="updateBulkBar()"></td>
+                                    <td><strong>#{{ q.question_id }}</strong></td>
+                                    <td>
+                                        {% if q.question_type == 'mscq_single' or q.question_type == 'single_choice' or q.question_type == 'MCQ' %}
+                                            <span class="badge-type" style="background:#ede9fe; color:#6d28d9;"><i class="fas fa-dot-circle"></i> Single</span>
+                                        {% elif q.question_type == 'mscq_multiple' or q.question_type == 'multiple_select' %}
+                                            <span class="badge-type" style="background:#e0e7ff; color:#4338ca;"><i class="fas fa-check-square"></i> Multi</span>
+                                        {% elif q.question_type == 'mscq_select' %}
+                                            <span class="badge-type" style="background:#fce7f3; color:#be185d;"><i class="fas fa-caret-square-down"></i> Select</span>
+                                        {% elif q.question_type == 'fill_blank' or q.question_type == 'fillInTheBlanks' %}
+                                            <span class="badge-type" style="background:#fef3c7; color:#b45309;"><i class="fas fa-pen-nib"></i> Blanks</span>
+                                        {% elif q.question_type == 'true_false' or q.question_type == 'trueFalse' %}
+                                            <span class="badge-type" style="background:#dcfce7; color:#047857;"><i class="fas fa-toggle-on"></i> True/False</span>
+                                        {% else %}
+                                            <span class="badge-type" style="background:#f1f5f9; color:#475569;">{{ q.question_type }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div style="font-weight:700; color:var(--text-dark);">
+                                            {{ q.question_text[:95] }}{% if q.question_text|length > 95 %}...{% endif %}
+                                        </div>
+                                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                                            Ans: <strong style="color:var(--text-secondary);">{{ q.correct_option or '-' }}</strong>
+                                            {% if q.negative_marks %}&bull; <span style="color:#ef4444;">-{{ q.negative_marks }} deduction</span>{% endif %}
+                                        </div>
+                                    </td>
+                                    <td><span style="font-weight:600; color:var(--text-secondary);">{{ q.session_name or q.quiz_id }}</span></td>
+                                    <td>
+                                        <span style="color:#10b981; font-weight:700;">+{{ q.marks or 1 }}</span>
+                                        {% if q.negative_marks %}
+                                            <span style="color:#ef4444; font-size:11px; font-weight:600;">(-{{ q.negative_marks }})</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge-status {% if q.status == 'Published' %}status-published{% else %}status-draft{% endif %}">
+                                            {{ q.status or 'Published' }}
+                                        </span>
+                                    </td>
+                                    <td style="text-align:right; white-space:nowrap;">
+                                        <button onclick="previewQuestionModal({{ q.question_id }})" class="btn btn-secondary btn-sm" title="Preview" style="padding:4px 8px;">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <a href="/admin/content?edit={{ q.question_id }}" class="btn btn-secondary btn-sm" title="Edit Question in Builder" style="padding:4px 8px; color:var(--primary);">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button onclick="confirmDeleteQuestion({{ q.question_id }}, '{{ q.question_text | escape }}')" class="btn btn-secondary btn-sm" title="Delete" style="padding:4px 8px; color:#ef4444;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="8" style="text-align:center; padding:36px; color:var(--text-muted);">
+                                    <i class="fas fa-folder-open" style="font-size:32px; margin-bottom:8px; display:block;"></i>
+                                    No questions found in this assessment repository. Click "+ Add New Question" or import questions to get started.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
+    </div>
+
+    <!-- MODAL: EXPORT QUESTIONS (CHOOSE FORMAT: WORD, JSON, CSV) -->
+    <div class="modal-backdrop" id="exportModal">
+        <div class="modal-dialog" style="max-width:540px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-export" style="color:var(--primary);"></i> Export Questions</h3>
+                <button class="modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:16px;">
+                    Choose the format you want to export your questions to:
+                </p>
+
+                <div style="margin-bottom:18px;">
+                    <label class="form-label" style="font-weight:700; margin-bottom:8px; display:block;">Select Format *</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <label id="lblFmtWord" class="format-card-btn active" onclick="highlightExportCard('docx')">
+                            <input type="radio" name="exportFormatRadio" value="docx" checked style="display:none;">
+                            <div style="font-size:26px; color:#2563eb; margin-bottom:6px;"><i class="fas fa-file-word"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">Word (.docx)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Formatted Doc</div>
+                        </label>
+                        <label id="lblFmtJson" class="format-card-btn" onclick="highlightExportCard('json')">
+                            <input type="radio" name="exportFormatRadio" value="json" style="display:none;">
+                            <div style="font-size:26px; color:#d97706; margin-bottom:6px;"><i class="fas fa-file-code"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">JSON (.json)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Data Schema</div>
+                        </label>
+                        <label id="lblFmtCsv" class="format-card-btn" onclick="highlightExportCard('csv')">
+                            <input type="radio" name="exportFormatRadio" value="csv" style="display:none;">
+                            <div style="font-size:26px; color:#059669; margin-bottom:6px;"><i class="fas fa-file-csv"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">CSV (.csv)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Spreadsheet</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label" style="font-weight:700; margin-bottom:6px; display:block;">Filter by Assessment Session</label>
+                    <select id="export_quiz_filter" class="form-control">
+                        <option value="all">All Assessment Sessions</option>
+                        {% for qz in quizzes %}
+                            <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="triggerExportDownload()">
+                    <i class="fas fa-download"></i> Download Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MULTI-FORMAT IMPORT (DOCX, JSON, CSV) -->
+    <div class="modal-backdrop" id="importModal">
+        <div class="modal-dialog modal-dialog-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-import" style="color:var(--primary);"></i> Import Assessment Questions</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Download Sample Templates Section -->
+                <div style="background:#f8fafc; border:1.5px solid var(--border-color); border-radius:14px; padding:14px 18px; margin-bottom:18px;">
+                    <div style="font-size:13px; font-weight:800; color:var(--text-dark); margin-bottom:6px;">
+                        <i class="fas fa-download" style="color:var(--primary);"></i> Download Working Sample Templates:
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+                        Choose your preferred format. Word (.docx) format uses clean question tables recognizable by the importer.
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <a href="/admin/api/questions/sample/docx" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-word" style="color:#2563eb;"></i> Word Sample (.docx)
+                        </a>
+                        <a href="/admin/api/questions/sample/json" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-code" style="color:#d97706;"></i> JSON Sample (.json)
+                        </a>
+                        <a href="/admin/api/questions/sample/csv" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-csv" style="color:#059669;"></i> CSV Sample (.csv)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Step 1: Upload & Target Session -->
+                <form id="importUploadForm" onsubmit="handleAnalyzeImportFile(event)">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+                        <div>
+                            <label class="form-label" style="font-weight:700; margin-bottom:6px; display:block;">Target Assessment Session *</label>
+                            <select id="import_quiz_id" class="form-control" required>
+                                <option value="">-- Select Target Assessment --</option>
+                                {% for qz in quizzes %}
+                                    <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label" style="font-weight:700; margin-bottom:6px; display:block;">Select File (.docx, .json, .csv) *</label>
+                            <input type="file" id="import_file" class="form-control" accept=".docx,.json,.csv" required>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary btn-sm" id="btnAnalyzeFile">
+                            <i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Step 2: Pre-Import Preview Table -->
+                <div id="importPreviewArea" style="display:none; margin-top:18px; border-top:1px solid var(--border-color); padding-top:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:14px; font-weight:800; color:var(--text-dark);">
+                            <i class="fas fa-list-check"></i> Validation Preview Results
+                        </h4>
+                        <div class="preview-stat-chips" id="previewStatChips"></div>
+                    </div>
+
+                    <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border-color); border-radius:12px;">
+                        <table class="import-preview-table" id="importPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">#</th>
+                                    <th style="width:100px;">Type</th>
+                                    <th>Question</th>
+                                    <th style="width:80px;">Correct</th>
+                                    <th style="width:70px;">Marks</th>
+                                    <th style="width:80px;">Status</th>
+                                    <th>Diagnostics / Errors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewTbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Close</button>
+                <button type="button" class="btn btn-success" id="btnConfirmImport" style="display:none;" onclick="confirmAndSaveImportedQuestions()">
+                    <i class="fas fa-check-circle"></i> Confirm & Import Valid Questions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PREVIEW QUESTION MODAL -->
+    <div class="modal-backdrop" id="previewModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye" style="color:var(--primary);"></i> Question Preview</h3>
+                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="previewModalContent"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePreviewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DELETE CONFIRMATION MODAL -->
+    <div class="modal-backdrop" id="deleteConfirmModal">
+        <div class="modal-dialog" style="max-width:440px;">
+            <div class="modal-header">
+                <h3 style="color:#ef4444;"><i class="fas fa-exclamation-triangle"></i> Delete Question</h3>
+                <button class="modal-close" onclick="closeDeleteConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; margin-bottom:12px;">Are you sure you want to permanently delete this question?</p>
+                <div id="deleteQuestionSnippet" style="font-size:13px; font-weight:700; background:#f8fafc; padding:10px; border-radius:8px; color:var(--text-secondary);"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
+                <form id="deleteFormDirect" method="POST" action="">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash"></i> Delete Permanently</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        let parsedValidQuestionsCache = [];
+        let currentExportFmt = 'docx';
+
+        // --- EXPORT MODAL & DOWNLOAD ---
+        function openExportModal() {
+            document.getElementById('exportModal').classList.add('show');
+            highlightExportCard(currentExportFmt);
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('show');
+        }
+
+        function highlightExportCard(fmt) {
+            currentExportFmt = fmt;
+            ['docx', 'json', 'csv'].forEach(f => {
+                const capitalF = f.charAt(0).toUpperCase() + f.slice(1);
+                const lbl = document.getElementById(`lblFmt${capitalF}`);
+                if (!lbl) return;
+                if (f === fmt) {
+                    lbl.classList.add('active');
+                } else {
+                    lbl.classList.remove('active');
+                }
+            });
+        }
+
+        function triggerExportDownload() {
+            const quizFilter = document.getElementById('export_quiz_filter')?.value || 'all';
+            let url = `/admin/api/questions/export?format=${currentExportFmt}`;
+            if (quizFilter && quizFilter !== 'all') {
+                url += `&quiz_id=${quizFilter}`;
+            }
+            closeExportModal();
+            window.location.href = url;
+        }
+
+        // --- IMPORT MODAL & ANALYZE ---
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('show');
+        }
+
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+        }
+
+        function handleAnalyzeImportFile(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('import_file');
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a file to import.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const btn = document.getElementById('btnAnalyzeFile');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing File...';
+
+            fetch('/admin/api/questions/import_preview', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions';
+
+                if (!data.success) {
+                    alert('Import Analysis Failed: ' + data.error);
+                    return;
+                }
+
+                parsedValidQuestionsCache = data.valid_questions || [];
+                renderImportPreview(data);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions';
+                alert('Network error: ' + err);
+            });
+        }
+
+        function renderImportPreview(data) {
+            const previewArea = document.getElementById('importPreviewArea');
+            const chips = document.getElementById('previewStatChips');
+            const tbody = document.getElementById('importPreviewTbody');
+            const btnConfirm = document.getElementById('btnConfirmImport');
+
+            const summary = data.summary || { total: 0, valid: 0, invalid: 0 };
+            chips.innerHTML = `
+                <span class="stat-chip chip-total">Total: ${summary.total}</span>
+                <span class="stat-chip chip-valid"><i class="fas fa-check"></i> Valid: ${summary.valid}</span>
+                <span class="stat-chip chip-invalid"><i class="fas fa-exclamation"></i> Invalid: ${summary.invalid}</span>`;
+
+            let rowsHtml = '';
+            const allItems = [...(data.valid_questions || []), ...(data.invalid_questions || [])];
+
+            allItems.forEach((q, idx) => {
+                const isValid = q.status === 'valid';
+                rowsHtml += `
+                    <tr class="${isValid ? '' : 'row-invalid'}">
+                        <td>${idx + 1}</td>
+                        <td><span class="badge-type" style="background:#f1f5f9; font-size:10px;">${q.question_type_norm || q.type}</span></td>
+                        <td>${escapeHtml((q.question_text_norm || q.questionText || '').substring(0, 75))}...</td>
+                        <td><strong>${escapeHtml(q.correctAnswer || '-')}</strong></td>
+                        <td>+${q.marks_norm || q.marks || 1} / -${q.negative_marks_norm || q.negativeMarks || 0.25}</td>
+                        <td>
+                            <span class="badge-status ${isValid ? 'status-published' : 'status-draft'}" style="font-size:10px;">
+                                ${isValid ? 'Valid' : 'Errors'}
+                            </span>
+                        </td>
+                        <td style="font-size:11.5px; color:${isValid ? '#15803d' : '#ef4444'};">
+                            ${isValid ? '<i class="fas fa-check"></i> Ready for import' : q.errors.join('; ')}
+                        </td>
+                    </tr>`;
+            });
+
+            tbody.innerHTML = rowsHtml;
+            previewArea.style.display = 'block';
+
+            if (summary.valid > 0) {
+                btnConfirm.style.display = 'inline-flex';
+                btnConfirm.innerHTML = `<i class="fas fa-check-circle"></i> Confirm & Import ${summary.valid} Valid Questions`;
+            } else {
+                btnConfirm.style.display = 'none';
+            }
+        }
+
+        function confirmAndSaveImportedQuestions() {
+            const quizId = document.getElementById('import_quiz_id').value;
+            if (!quizId) {
+                alert('Please select a Target Assessment Session first.');
+                return;
+            }
+            if (parsedValidQuestionsCache.length === 0) {
+                alert('No valid questions found to import.');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmImport');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing Questions...';
+
+            fetch('/admin/api/questions/import_confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    quiz_id: quizId,
+                    questions: parsedValidQuestionsCache
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    alert(data.message || 'Successfully imported questions!');
+                    window.location.reload();
+                } else {
+                    alert('Import failed: ' + data.error);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                alert('Network error: ' + err);
+            });
+        }
+
+        // --- FILTER QUESTIONS TABLE ---
+        function filterQuestionsTable() {
+            const query = document.getElementById('tableSearchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('tableTypeFilter').value;
+            const sessionFilter = document.getElementById('tableSessionFilter').value;
+            const statusFilter = document.getElementById('tableStatusFilter').value;
+
+            document.querySelectorAll('.q-row').forEach(row => {
+                const text = row.getAttribute('data-text') || '';
+                const type = row.getAttribute('data-type') || '';
+                const quizId = row.getAttribute('data-quiz-id') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                const matchesQuery = !query || text.includes(query);
+                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice'));
+                const matchesSession = sessionFilter === 'all' || quizId === sessionFilter;
+                const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+                if (matchesQuery && matchesType && matchesSession && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // --- BULK SELECTION & ACTIONS ---
+        function toggleSelectAll(masterCb) {
+            document.querySelectorAll('.q-row-cb').forEach(cb => cb.checked = masterCb.checked);
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const checked = document.querySelectorAll('.q-row-cb:checked');
+            const bulkBar = document.getElementById('bulkBar');
+            if (checked.length > 0) {
+                bulkBar.classList.add('show');
+                document.getElementById('bulkCountLabel').textContent = `${checked.length} question(s) selected`;
+            } else {
+                bulkBar.classList.remove('show');
+            }
+        }
+
+        function executeBulkStatus(newStatus) {
+            const selectedIds = Array.from(document.querySelectorAll('.q-row-cb:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            fetch('/admin/api/questions/bulk_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q_ids: selectedIds, status: newStatus })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function executeBulkDelete() {
+            const selectedIds = Array.from(document.querySelectorAll('.q-row-cb:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+            if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} question(s)?`)) return;
+
+            fetch('/admin/question_bank/delete_bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q_ids: selectedIds })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        // --- PREVIEW & DELETE MODALS ---
+        function previewQuestionModal(qId) {
+            fetch(`/admin/question_bank/api/get/${qId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Could not fetch question details.');
+                        return;
+                    }
+                    const q = data.question;
+                    const container = document.getElementById('previewModalContent');
+                    container.innerHTML = `
+                        <div style="font-size:16px; font-weight:800; color:var(--text-dark); margin-bottom:12px;">
+                            ${escapeHtml(q.question_text)}
+                        </div>
+                        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:14px; display:flex; gap:12px;">
+                            <span><strong>Type:</strong> ${q.question_type}</span>
+                            <span><strong>Marks:</strong> +${q.marks}</span>
+                            <span><strong>Deduction:</strong> -${q.negative_marks || 0}</span>
+                            <span><strong>Correct:</strong> <strong style="color:var(--primary);">${q.correct_option || '-'}</strong></span>
+                        </div>
+                        <div style="background:#f8fafc; padding:12px; border-radius:10px; font-size:12.5px;">
+                            <strong>Explanation:</strong> ${escapeHtml(q.explanation || 'None provided.')}
+                        </div>`;
+                    document.getElementById('previewModal').classList.add('show');
+                });
+        }
+
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+
+        function confirmDeleteQuestion(qId, textSnippet) {
+            document.getElementById('deleteQuestionSnippet').textContent = `Q#${qId}: "${textSnippet}"`;
+            document.getElementById('deleteFormDirect').action = `/admin/question_bank/delete/${qId}`;
+            document.getElementById('deleteConfirmModal').classList.add('show');
+        }
+
+        function closeDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('show');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>

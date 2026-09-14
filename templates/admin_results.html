@@ -6,53 +6,366 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Outfit', sans-serif; background: #f3f4f6; margin: 0; padding: 30px; color: #1e293b; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .header h2 { margin: 0; font-size: 28px; color: #1e293b; }
-        .back-btn { text-decoration: none; color: white; background: #4f46e5; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-
-        .filter-bar {
-            background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            display: flex; gap: 15px; align-items: end; margin-bottom: 25px; flex-wrap: wrap;
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --success-light: #dcfce7;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
         }
-        .filter-group { flex: 1; min-width: 200px; }
-        label { display: block; font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 5px; text-transform: uppercase; }
-        select { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; color: #1e293b; }
-        
-        .btn-filter { background: #0f172a; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .btn-export { background: #10b981; color: white; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 
-        .table-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); overflow: hidden; }
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { text-align: left; padding: 15px; background: #f8fafc; color: #475569; font-size: 12px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; }
-        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
-        tr:hover { background: #f8fafc; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-page);
+            margin: 0;
+            padding: 30px;
+            color: var(--text-main);
+        }
 
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .container {
+            max-width: 1350px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h2 i {
+            color: var(--primary);
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: white;
+            background: var(--primary);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 18px 22px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-info .stat-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+
+        .stat-info .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-top: 2px;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: var(--bg-card);
+            padding: 22px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            flex: 1;
+            min-width: 170px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-family: inherit;
+            color: var(--text-main);
+            background: #fff;
+            font-size: 13.5px;
+            transition: border-color 0.2s ease;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-filter {
+            background: #0f172a;
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            font-size: 13.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-filter:hover {
+            background: #1e293b;
+        }
+
+        .btn-export {
+            background: var(--success);
+            color: white;
+            text-decoration: none;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+
+        /* Table Card */
+        .table-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1100px;
+        }
+
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        th:hover {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        th .sort-icon {
+            margin-left: 4px;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 13.5px;
+            vertical-align: middle;
+        }
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         .badge-pass { background: #dcfce7; color: #166534; }
         .badge-fail { background: #fee2e2; color: #991b1b; }
         .badge-ongoing { background: #fef9c3; color: #854d0e; }
 
-        .score-box { font-weight: 700; color: #4f46e5; }
-        .total-marks { color: #94a3b8; font-size: 12px; font-weight: 400; }
+        .badge-time {
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-speed {
+            background: #fef3c7;
+            color: #b45309;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .score-box {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 15px;
+        }
+
+        .total-marks {
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 400;
+        }
+
+        tfoot td {
+            background: #f8fafc;
+            font-weight: 700;
+            border-top: 2px solid var(--border-color);
+            padding: 16px;
+        }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header">
-            <h2><i class="fas fa-poll"></i> Detailed Results</h2>
+            <h2><i class="fas fa-poll"></i> Detailed Exam Results</h2>
             <a href="{{ '/coordinator' if session.get('role') == 'Coordinator' else '/admin' }}" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+        </div>
+
+        <!-- Metric Summary Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">Total Attempts</div>
+                    <div class="stat-value">{{ summary.total_candidates }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#dcfce7; color:#15803d;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">Average Score</div>
+                    <div class="stat-value">{{ summary.avg_score }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#dbeafe; color:#1d4ed8;">
+                    <i class="fas fa-stopwatch"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">Avg Timing</div>
+                    <div class="stat-value">{{ summary.avg_short_timing }}</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#fef3c7; color:#b45309;">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-label">Avg Attempt Rate</div>
+                    <div class="stat-value">{{ summary.avg_rate }} <span style="font-size:13px; font-weight:500; color:var(--text-muted);">/ min</span></div>
+                </div>
+            </div>
         </div>
 
         <form action="/admin/results" method="GET" class="filter-bar">
             <div class="filter-group">
                 <label>Filter by Batch</label>
                 <select name="batch">
-                    <option value="">All  Batches</option>
+                    <option value="">All Batches</option>
                     {% for b in batches %}
                         <option value="{{ b.batch }}" {% if current_batch == b.batch %}selected{% endif %}>{{ b.batch }}</option>
                     {% endfor %}
@@ -104,18 +417,21 @@
 
         <div class="table-card">
             <div class="table-container">
-                <table>
+                <table id="resultsTable">
                     <thead>
                         <tr>
-                            <th>S.No</th>
-                            <th>Roll No</th>
-                            <th>Student Name</th>
-                            <th>Department</th>
-                            <th>Year/Sem</th>
-                            <th>Batch</th>
-                            <th>Exam Title</th>
-                            <th>Status / Violation</th>
-                            <th>Score</th>
+                            <th onclick="sortTable(0)">S.No <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(1)">Roll No <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(2)">Student Name <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(3)">Department <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(4)">Year/Sem <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(5)">Batch <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(6)">Exam Title <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(7)">Status <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(8)">Score <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(9)">Attempted <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(10)">Timing <span class="sort-icon">▲▼</span></th>
+                            <th onclick="sortTable(11)">Rate (Ans/Min) <span class="sort-icon">▲▼</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -125,35 +441,128 @@
                             <td style="font-family:monospace; font-weight:600;">{{ r.roll_number }}</td>
                             <td>
                                 <div style="font-weight:600;">{{ r.full_name }}</div>
+                                <div style="font-size:11px; color:#64748b;">{{ r.email }}</div>
                             </td>
                             <td>{{ r.department }}{% if r.section %}-{{ r.section }}{% endif %}</td>
                             <td>{{ r.study_year }}</td>
-                            <td><span style="font-size:12px; color:#64748b;">{{ r.enrolled_session }}</span></td>
+                            <td><span style="font-size:12px; color:#64748b;">{{ r.enrolled_session or r.batch }}</span></td>
                             <td>{{ r.quiz_title }}</td>
                             <td>
                                 {% if r.status == 'Completed' %}
-                                    <span class="badge badge-pass">Completed</span>
+                                    <span class="badge badge-pass"><i class="fas fa-check-circle"></i> Completed</span>
                                 {% elif r.status == 'Terminated' %}
                                     <span class="badge badge-fail"><i class="fas fa-exclamation-triangle"></i> Terminated</span>
                                 {% else %}
-                                    <span class="badge badge-ongoing">Ongoing</span>
+                                    <span class="badge badge-ongoing"><i class="fas fa-clock"></i> Ongoing</span>
                                 {% endif %}
                             </td>
                             <td>
                                 <span class="score-box">{{ r.total_score }}</span>
                                 <span class="total-marks">/ {{ r.total_marks }}</span>
                             </td>
+                            <td>
+                                <strong style="color:#0f172a;">{{ r.attempted_count }}</strong>
+                                <span style="font-size:12px; color:#64748b;">/ {{ r.total_questions }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-time" data-val="{{ r.duration_seconds }}">
+                                    <i class="fas fa-stopwatch"></i> {{ r.short_timing }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-speed" data-val="{{ r.per_minute_attempted }}">
+                                    <i class="fas fa-bolt"></i> {{ r.per_minute_attempted }} / min
+                                </span>
+                            </td>
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="9" style="text-align:center; padding:30px; color:#64748b;">No results found matching your filters.</td>
+                            <td colspan="12" style="text-align:center; padding:35px; color:#64748b;">
+                                <i class="fas fa-search" style="font-size:24px; margin-bottom:10px; display:block; opacity:0.5;"></i>
+                                No results found matching your filters.
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    {% if results %}
+                    <tfoot>
+                        <tr>
+                            <td colspan="8" style="text-align:right; font-size:12px; text-transform:uppercase; color:#475569; letter-spacing:0.5px;">
+                                <i class="fas fa-calculator"></i> Summary / Average:
+                            </td>
+                            <td>
+                                <span class="score-box">Avg: {{ summary.avg_score }}</span>
+                            </td>
+                            <td>
+                                <strong>Avg: {{ summary.avg_attempted }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-time" style="background:#dbeafe;">
+                                    <i class="fas fa-stopwatch"></i> Avg: {{ summary.avg_short_timing }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-speed" style="background:#fef3c7;">
+                                    <i class="fas fa-bolt"></i> Avg: {{ summary.avg_rate }}/min
+                                </span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                    {% endif %}
                 </table>
             </div>
         </div>
+
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
     </div>
 
+    <script>
+        let sortDirections = {};
+        function sortTable(columnIndex) {
+            const table = document.getElementById("resultsTable");
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll("tr"));
+            
+            // If empty row or single row, don't sort
+            if (rows.length <= 1 && rows[0].querySelectorAll("td").length === 1) return;
+
+            const isAscending = !sortDirections[columnIndex];
+            sortDirections[columnIndex] = isAscending;
+
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.children[columnIndex];
+                const cellB = rowB.children[columnIndex];
+                if (!cellA || !cellB) return 0;
+
+                // Check for data-val attribute first (for duration, rate)
+                const spanA = cellA.querySelector("[data-val]");
+                const spanB = cellB.querySelector("[data-val]");
+                let valA = spanA ? parseFloat(spanA.getAttribute("data-val")) : cellA.innerText.trim();
+                let valB = spanB ? parseFloat(spanB.getAttribute("data-val")) : cellB.innerText.trim();
+
+                const numA = parseFloat(valA);
+                const numB = parseFloat(valB);
+
+                if (!isNaN(numA) && !isNaN(numB) && typeof valA !== 'string') {
+                    return isAscending ? numA - numB : numB - numA;
+                }
+
+                // If text can be parsed as float
+                if (!isNaN(parseFloat(valA)) && !isNaN(parseFloat(valB))) {
+                    return isAscending ? parseFloat(valA) - parseFloat(valB) : parseFloat(valB) - parseFloat(valA);
+                }
+
+                return isAscending 
+                    ? String(valA).localeCompare(String(valB)) 
+                    : String(valB).localeCompare(String(valA));
+            });
+
+            tbody.innerHTML = "";
+            rows.forEach(row => tbody.appendChild(row));
+        }
+    </script>
 </body>
 </html>

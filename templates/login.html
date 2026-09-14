@@ -185,13 +185,38 @@
 
         /* Error Message Styling */
         .alert-error {
-            background: rgba(220, 53, 69, 0.8);
+            background: rgba(220, 53, 69, 0.85);
             color: white;
-            padding: 10px;
+            padding: 12px;
             border-radius: 10px;
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 16px;
             font-size: 14px;
+            border: 1px solid rgba(220, 53, 69, 0.9);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.88);
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.4;
+            border: 1px solid rgba(245, 158, 11, 0.95);
+        }
+
+        .alert-info {
+            background: rgba(2, 132, 199, 0.88);
+            color: #ffffff;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 13px;
+            line-height: 1.4;
+            border: 1px solid rgba(2, 132, 199, 0.95);
         }
 
         @media only screen and (max-width: 564px) {
@@ -214,6 +239,33 @@
 
             <form action="/login" method="POST">
                 
+                <!-- Concurrent Login Notice -->
+                {% if request.args.get('reason') == 'concurrent_login' %}
+                <div class="alert-warning">
+                    <i class="fas fa-mobile-screen-button"></i> <strong>Multi-Device Notice:</strong><br>
+                    Your account was logged in on another device. Your previous session was terminated.
+                </div>
+                {% endif %}
+
+                <!-- Inactivity Timeout Notice -->
+                {% if request.args.get('reason') == 'timeout' %}
+                <div class="alert-info">
+                    <i class="fas fa-clock-rotate-left"></i> <strong>Session Timed Out:</strong><br>
+                    You have been automatically logged out after 25 minutes of inactivity.
+                </div>
+                {% endif %}
+
+                <!-- Flashed Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert-{{ 'error' if category == 'error' else ('warning' if category == 'warning' else 'info') }}">
+                                <i class="fas fa-circle-info"></i> {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
                 {% if error %}
                 <div class="alert-error">
                     <i class="fas fa-exclamation-triangle"></i> {{ error }}
@@ -222,6 +274,7 @@
                     {% endif %}
                 </div>
                 {% endif %}
+
 
                 <div class="input_box">
                     <input type="text" name="login_id" id="login_id" class="input-field" required>

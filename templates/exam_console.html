@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Secure Exam Browser | QuizMaster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Assessment Workspace | QuizMaster Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -11,636 +14,2529 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.32.7/ext-language_tools.min.js"></script>
 
     <style>
-        /* --- CORE LAYOUT --- */
+        :root {
+            --bg-canvas: #090d16;
+            --bg-panel: #0f172a;
+            --bg-surface: #131b2e;
+            --bg-subtle: #1e293b;
+            --bg-editor: #0d1117;
+            --bg-console: #0b1120;
+            --border-subtle: rgba(148, 163, 184, 0.12);
+            --border-strong: rgba(148, 163, 184, 0.25);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-dim: #64748b;
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --accent-glow: rgba(14, 165, 233, 0.25);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-code: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+        }
+
+        body.light-theme {
+            --bg-canvas: #f1f5f9;
+            --bg-panel: #ffffff;
+            --bg-surface: #f8fafc;
+            --bg-subtle: #e2e8f0;
+            --bg-editor: #ffffff;
+            --bg-console: #f8fafc;
+            --border-subtle: #cbd5e1;
+            --border-strong: #94a3b8;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --text-dim: #64748b;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --accent-glow: rgba(2, 132, 199, 0.2);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --card-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
-            background-color: #f4f6f9;
-            user-select: none; /* CSS Anti-Select */
+            background-color: var(--bg-canvas);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
-            overflow: hidden; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+            overflow: hidden;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
         }
 
-        /* --- BLUR & VIOLATION OVERLAY --- */
-        /* This class will be added to the main UI when a violation occurs */
+        /* Custom Dark Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.24);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.4);
+        }
+
+        /* Anti-Cheat Blurs & Overlays */
         .blur-filter {
-            filter: blur(10px);
-            pointer-events: none; /* Prevent clicking while blurred */
+            filter: blur(12px);
+            pointer-events: none;
             transition: filter 0.3s ease;
         }
 
         #violation-overlay {
-            display: none; /* Hidden by default */
+            display: none;
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(220, 38, 38, 0.9); /* Red semi-transparent */
+            inset: 0;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(12px);
             z-index: 10000;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             color: white;
             text-align: center;
+            padding: 24px;
         }
 
-        /* --- EXISTING STYLES --- */
-        .top-bar { background: #0f172a; color: white; padding: 10px 25px; display: flex; justify-content: space-between; align-items: center; height: 60px; border-bottom: 1px solid #334155; }
-        .main-wrapper { display: flex; flex: 1; overflow: hidden; }
-        .question-area { flex: 1; padding: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; background: #fff; }
-        .sidebar { width: 280px; background: #f8fafc; border-left: 1px solid #e2e8f0; display: flex; flex-direction: column; z-index: 100; }
-        .palette-grid { padding: 15px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 8px; align-content: start; }
-        .grid-btn { height: 35px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-weight: 600; font-size: 13px; color: #475569; transition:0.2s; }
-        .grid-btn:hover { background: #e2e8f0; }
-        .grid-btn.active { border-color: #4f46e5; background: #4f46e5; color: white; }
-        .grid-btn.answered { background: #10b981; color: white; border-color: #10b981; }
-        .grid-btn.skipped { background: #f97316; color: white; border-color: #f97316; } /* Orange for Skipped */
-        .footer { background: rgb(113, 179, 238); padding: 15px 25px; border-top: 1px solid #b0bdcf; display: flex; justify-content: space-between; height: 70px; align-items: center; }
-        .q-container { padding: 40px; max-width: 900px; margin: 0 auto; width: 100%; }
-        .q-header { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 20px; border-bottom: 2px solid #f1f5f9; padding-bottom: 15px; }
-        .q-text { font-size: 17px; line-height: 1.6; color: #334155; margin-bottom: 30px; }
-        .option-card { padding: 18px 25px; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; background: white; display: flex; align-items: center; gap: 15px; }
-        .option-card:hover { border-color: #94a3b8; background: #f8fafc; }
-        .option-card.selected { border-color: #4f46e5; background: #eef2ff; color: #312e81; font-weight: 600; }
-        .opt-key { width: 30px; height: 30px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; color: #64748b; }
-        .option-card.selected .opt-key { background: #4f46e5; color: white; }
-
-        /* MODULE MENU */
-        .module-header { padding: 10px 15px; background: #e2e8f0; font-weight: 700; font-size: 13px; color: #334155; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; }
-        .module-header:hover { background: #cbd5e1; }
-        .module-content { display: none; padding: 10px; background: #f8fafc; }
-        .module-content.open { display: block; }
-        .module-badge { background: #4f46e5; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
-
-        /* CODING UI */
-        .coding-shell {
-            display: grid;
-            grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
-            min-height: 100%;
-            background:
-                radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 32%),
-                linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+        #start-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, #131d33 0%, #080c14 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            color: #f8fafc;
         }
-        .problem-panel {
-            padding: 28px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            border-right: 1px solid rgba(148, 163, 184, 0.2);
-            background: rgba(255,255,255,0.74);
-            backdrop-filter: blur(10px);
+
+        .start-shield-badge {
+            width: 88px;
+            height: 88px;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+            border: 1px solid rgba(125, 211, 252, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.25);
         }
-        .problem-head {
+
+        /* App Root Shell */
+        #exam-ui-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            background: var(--bg-canvas);
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: #0d1322;
+            color: #f8fafc;
+            padding: 0 18px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-            margin-bottom: 22px;
+            align-items: center;
+            height: 54px;
+            min-height: 54px;
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 100;
         }
-        .problem-kicker {
-            font-size: 11px;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #0f766e;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-        .problem-title {
-            margin: 0;
-            font-size: 28px;
-            line-height: 1.1;
-            color: #0f172a;
-            font-weight: 800;
-        }
-        .problem-subtitle {
-            color: #475569;
-            font-size: 14px;
-            margin-top: 6px;
-        }
-        .meta-chips {
+
+        .brand-badge {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-        .meta-chip {
-            display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 12px;
+            font-weight: 800;
+            font-size: 15px;
+            letter-spacing: -0.01em;
+        }
+        .brand-icon {
+            color: #38bdf8;
+            font-size: 17px;
+            filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
+        }
+        .brand-pill {
+            font-size: 10px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0284c7, #6366f1);
+            color: white;
+            padding: 2px 7px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.95);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            color: #0f172a;
+            letter-spacing: 0.04em;
+        }
+        .quiz-title-chip {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            padding: 4px 12px;
+            border-radius: 999px;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Top Quick Navigation Pills */
+        .top-quick-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            overflow-x: auto;
+            max-width: 45vw;
+            padding: 4px 6px;
+        }
+        .quick-pill {
+            min-width: 28px;
+            height: 28px;
+            padding: 0 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text-muted);
             font-size: 12px;
             font-weight: 700;
-            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        .problem-card {
-            background: rgba(255,255,255,0.95);
-            border: 1px solid rgba(191, 219, 254, 0.9);
-            border-radius: 24px;
+        .quick-pill:hover {
+            border-color: var(--primary);
+            color: white;
+            background: rgba(14, 165, 233, 0.15);
+        }
+        .quick-pill.active {
+            border-color: #38bdf8;
+            background: #0284c7;
+            color: white;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+        }
+        .quick-pill.answered {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #34d399;
+        }
+        .quick-pill.skipped {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.5);
+            color: #fbbf24;
+        }
+
+        /* Timer Badge */
+        .timer-badge {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fef08a;
+            font-family: var(--font-code);
+            font-size: 13px;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.12);
+        }
+        .timer-badge.danger-time {
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            background: rgba(239, 68, 68, 0.15);
+            animation: timerPulse 1.2s infinite ease-in-out;
+        }
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .btn-drawer-toggle {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-drawer-toggle:hover {
+            background: rgba(51, 65, 85, 0.9);
+            border-color: var(--border-strong);
+            color: white;
+        }
+
+        .btn-finish-exam {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(220, 38, 38, 0.3);
+        }
+        .btn-finish-exam:hover {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            transform: translateY(-1px);
+        }
+
+        /* Main Workspace Container */
+        .main-wrapper {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-canvas);
+        }
+
+        .question-area {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            background: var(--bg-canvas);
+        }
+
+        .question-block {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- MODERN 5-QUESTION-TYPE QUIZ STYLES --- */
+        .q-container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 32px 24px;
+            overflow-y: auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .q-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .badge-type {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .badge-type.single {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid rgba(14, 165, 233, 0.35);
+            color: #38bdf8;
+        }
+        .badge-type.multi {
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            color: #a5b4fc;
+        }
+        .badge-type.dropdown {
+            background: rgba(20, 184, 166, 0.15);
+            border: 1px solid rgba(20, 184, 166, 0.35);
+            color: #2dd4bf;
+        }
+        .badge-type.blank {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+        }
+        .badge-type.tf {
+            background: rgba(168, 85, 247, 0.15);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            color: #c084fc;
+        }
+        .badge-negative {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(244, 63, 94, 0.12);
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            color: #fb7185;
+        }
+
+        .q-card-wrapper {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 28px 55px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
-        .problem-body {
-            font-size: 16px;
-            line-height: 1.75;
-            color: #1e293b;
-            white-space: pre-wrap;
+        .q-number-pill {
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #38bdf8;
+            margin-bottom: 10px;
         }
-        .spec-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+        .q-text {
+            font-size: 17px;
+            line-height: 1.7;
+            color: #f8fafc;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .type-instruction-hint {
+            font-size: 13px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .type-instruction-hint.multi-hint {
+            border-color: rgba(99, 102, 241, 0.25);
+            background: rgba(99, 102, 241, 0.05);
+            color: #c7d2fe;
+        }
+        .type-instruction-hint.dropdown-hint {
+            border-color: rgba(20, 184, 166, 0.25);
+            background: rgba(20, 184, 166, 0.05);
+            color: #99f6e4;
+        }
+        .type-instruction-hint.blank-hint {
+            border-color: rgba(245, 158, 11, 0.25);
+            background: rgba(245, 158, 11, 0.05);
+            color: #fef08a;
+        }
+        .type-instruction-hint.tf-hint {
+            border-color: rgba(168, 85, 247, 0.25);
+            background: rgba(168, 85, 247, 0.05);
+            color: #e9d5ff;
+        }
+
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option-card {
+            padding: 16px 20px;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(15, 23, 42, 0.7);
+            display: flex;
+            align-items: center;
             gap: 16px;
-            margin-top: 18px;
+            color: #cbd5e1;
+            user-select: none;
+        }
+        .option-card:hover {
+            border-color: rgba(56, 189, 248, 0.5);
+            background: rgba(30, 41, 59, 0.85);
+            transform: translateX(4px);
+            color: #f8fafc;
+        }
+        .option-card.selected {
+            border-color: #38bdf8;
+            background: linear-gradient(90deg, rgba(14, 165, 233, 0.16) 0%, rgba(99, 102, 241, 0.08) 100%);
+            color: #f0f9ff;
+            font-weight: 600;
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.15);
+        }
+
+        /* Radio styling */
+        .radio-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid rgba(148, 163, 184, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .radio-inner-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: transparent;
+            transition: all 0.2s ease;
+            transform: scale(0);
+        }
+        .option-card.radio-card.selected .radio-indicator {
+            border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+        }
+        .option-card.radio-card.selected .radio-inner-dot {
+            background: #38bdf8;
+            transform: scale(1);
+        }
+
+        /* Checkbox styling */
+        .checkbox-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            border: 2px solid rgba(148, 163, 184, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            font-size: 10px;
+            color: transparent;
+        }
+        .option-card.checkbox-card.selected {
+            border-color: #818cf8;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(14, 165, 233, 0.08) 100%);
+            color: #e0e7ff;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
+        }
+        .option-card.checkbox-card.selected .checkbox-indicator {
+            border-color: #818cf8;
+            background: #6366f1;
+            color: #ffffff;
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+        }
+
+        .opt-key {
+            width: 32px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: var(--text-muted);
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .option-card.selected .opt-key {
+            background: #0284c7;
+            border-color: #38bdf8;
+            color: white;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.4);
+        }
+        .opt-text {
+            font-size: 15px;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        /* Select Dropdown */
+        .dropdown-selector-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .dropdown-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+        }
+        .custom-select-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .exam-select-dropdown {
+            width: 100%;
+            padding: 16px 48px 16px 20px;
+            background: #0b1120;
+            border: 1.5px solid rgba(56, 189, 248, 0.3);
+            border-radius: 12px;
+            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 600;
+            appearance: none;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .exam-select-dropdown:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+            background: #0e172a;
+        }
+        .select-chevron {
+            position: absolute;
+            right: 20px;
+            color: #38bdf8;
+            pointer-events: none;
+            font-size: 14px;
+        }
+        .dropdown-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            background: rgba(56, 189, 248, 0.08);
+            border-radius: 10px;
+            border: 1px dashed rgba(56, 189, 248, 0.3);
+            font-size: 14px;
+        }
+        .preview-label {
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        /* Fill in the Blanks */
+        .blank-input-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .blank-input-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+        }
+        .blank-input-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .exam-blank-input {
+            width: 100%;
+            padding: 16px 48px 16px 20px;
+            background: #0b1120;
+            border: 1.5px solid rgba(148, 163, 184, 0.3);
+            border-radius: 12px;
+            color: #f8fafc;
+            font-size: 16px;
+            font-weight: 600;
+            outline: none;
+            letter-spacing: 0.02em;
+            transition: all 0.25s ease;
+        }
+        .exam-blank-input:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 18px rgba(56, 189, 248, 0.25);
+            background: #0e172a;
+        }
+        .btn-clear-blank {
+            position: absolute;
+            right: 14px;
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: color 0.2s;
+        }
+        .btn-clear-blank:hover {
+            color: #f43f5e;
+        }
+        .blank-info-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        /* True / False */
+        .tf-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+        @media (max-width: 640px) {
+            .tf-cards-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .tf-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 22px 24px;
+            border: 1.5px solid var(--border-subtle);
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.7);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            user-select: none;
+        }
+        .tf-card:hover {
+            transform: translateY(-3px);
+        }
+        .tf-card.tf-true:hover {
+            border-color: rgba(52, 211, 153, 0.6);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .tf-card.tf-false:hover {
+            border-color: rgba(244, 63, 94, 0.6);
+            background: rgba(244, 63, 94, 0.08);
+        }
+        .tf-card.tf-true.selected {
+            border-color: #10b981;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 78, 59, 0.35) 100%);
+            box-shadow: 0 0 24px rgba(16, 185, 129, 0.25);
+        }
+        .tf-card.tf-false.selected {
+            border-color: #f43f5e;
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.22) 0%, rgba(136, 19, 55, 0.35) 100%);
+            box-shadow: 0 0 24px rgba(244, 63, 94, 0.25);
+        }
+        .tf-icon-circle {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .tf-icon-circle.true {
+            background: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+        }
+        .tf-icon-circle.false {
+            background: rgba(244, 63, 94, 0.18);
+            color: #fb7185;
+        }
+        .tf-title {
+            font-size: 19px;
+            font-weight: 800;
+            color: #f8fafc;
+            letter-spacing: 0.04em;
+        }
+        .tf-desc {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+        .tf-check-mark {
+            margin-left: auto;
+            font-size: 22px;
+            color: transparent;
+            transition: color 0.2s ease;
+        }
+        .tf-card.tf-true.selected .tf-check-mark {
+            color: #34d399;
+        }
+        .tf-card.tf-false.selected .tf-check-mark {
+            color: #fb7185;
+        }
+
+        /* --- CODING CHALLENGE STUDIO (AUTO-RATIO SPLIT VIEW) --- */
+        .coding-shell {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg-canvas);
+        }
+
+        /* Left: Problem Statement Pane */
+        .problem-panel {
+            flex: 0 0 42%;
+            max-width: 48%;
+            min-width: 360px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-subtle);
+            background: var(--bg-panel);
+            overflow: hidden;
+        }
+
+        .problem-header-bar {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .badge-module {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(14, 165, 233, 0.14);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            color: #38bdf8;
+        }
+        .badge-marks {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: #fbbf24;
+        }
+        .badge-diff {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .problem-title {
+            font-size: 20px;
+            font-weight: 800;
+            color: #f8fafc;
+            line-height: 1.25;
+            letter-spacing: -0.01em;
+            margin: 0;
+        }
+
+        .problem-scroll-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 22px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .problem-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        .problem-desc {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .spec-section {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
         .spec-card {
-            border-radius: 18px;
-            background: rgba(255,255,255,0.92);
-            border: 1px solid rgba(226, 232, 240, 0.92);
-            padding: 18px;
-            box-shadow: 0 18px 36px rgba(15, 23, 42, 0.06);
+            border-radius: 14px;
+            background: rgba(11, 15, 25, 0.85);
+            border: 1px solid var(--border-subtle);
+            padding: 16px;
         }
         .spec-label {
             font-size: 11px;
             font-weight: 800;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: #64748b;
-            margin-bottom: 10px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
         }
         .spec-card pre {
             margin: 0;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: var(--font-code);
             font-size: 13px;
-            line-height: 1.55;
-            color: #0f172a;
+            line-height: 1.6;
+            color: #7dd3fc;
             white-space: pre-wrap;
-            background: #f8fafc;
-            border-radius: 14px;
-            padding: 14px;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
+
+        /* Right: Code Studio & Terminal Pane */
         .workspace-panel {
+            flex: 1;
+            min-width: 0;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            min-height: 100%;
-            background:
-                linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(17, 24, 39, 1) 100%);
-            color: #e2e8f0;
+            background: var(--bg-canvas);
+            overflow: hidden;
         }
+
+        /* Editor Toolbar */
         .workspace-toolbar {
+            height: 48px;
+            min-height: 48px;
+            padding: 0 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            padding: 16px 18px;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.9);
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(14px);
+            background: #0d1424;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: 12px;
+            z-index: 10;
         }
-        .workspace-title {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-        .workspace-title strong {
-            font-size: 16px;
-            letter-spacing: 0.02em;
-        }
-        .workspace-title span {
-            font-size: 12px;
-            color: #94a3b8;
-        }
-        .workspace-actions {
-            display: flex;
+
+        .lang-select-wrapper {
+            position: relative;
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
+        }
+        .lang-icon {
+            position: absolute;
+            left: 12px;
+            color: #38bdf8;
+            pointer-events: none;
+            font-size: 12px;
         }
         .lang-select {
-            background: rgba(15, 23, 42, 0.92);
+            background: #131b2e;
             color: #f8fafc;
-            border: 1px solid rgba(71, 85, 105, 0.8);
-            padding: 10px 12px;
-            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            padding: 7px 14px 7px 32px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 600;
             outline: none;
-            min-width: 130px;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .lang-select:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+        }
+
+        .workspace-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .workspace-btn {
-            border: 1px solid rgba(71, 85, 105, 0.65);
-            background: rgba(30, 41, 59, 0.92);
-            color: #e2e8f0;
-            padding: 10px 12px;
-            border-radius: 12px;
-            font-size: 13px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.7);
+            color: #cbd5e1;
+            padding: 7px 12px;
+            border-radius: 10px;
+            font-size: 12px;
             font-weight: 700;
-            transition: 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
         }
         .workspace-btn:hover {
+            background: rgba(51, 65, 85, 0.85);
+            border-color: var(--border-strong);
+            color: white;
             transform: translateY(-1px);
-            border-color: rgba(125, 211, 252, 0.65);
-            color: #f8fafc;
         }
         .workspace-btn.run {
-            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
-            border-color: transparent;
-            color: #04131f;
+            background: linear-gradient(135deg, #0284c7 0%, #06b6d4 100%);
+            border: 1px solid rgba(125, 211, 252, 0.4);
+            color: #031324;
+            font-weight: 800;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.35);
         }
         .workspace-btn.run:hover {
-            color: #04131f;
+            background: linear-gradient(135deg, #0ea5e9 0%, #14b8a6 100%);
+            color: #031324;
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(14, 165, 233, 0.5);
         }
+
+        /* Editor Frame */
         .editor-frame {
+            flex: 1;
+            min-height: 200px;
             position: relative;
-            min-height: 360px;
-            border-bottom: 1px solid rgba(51, 65, 85, 0.8);
-            background: #0b1220;
+            background: var(--bg-editor);
+            overflow: hidden;
         }
         .ace-editor {
             position: absolute;
             inset: 0;
+            font-family: var(--font-code);
             font-size: 14px;
         }
+
+        /* Console Shell (Bottom Output Drawer) */
         .console-shell {
+            height: 250px;
+            min-height: 180px;
+            max-height: 45vh;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            padding: 18px;
-            background:
-                linear-gradient(180deg, rgba(15, 23, 42, 0.96) 0%, rgba(2, 6, 23, 1) 100%);
+            background: var(--bg-console);
+            border-top: 1px solid var(--border-subtle);
+            overflow: hidden;
         }
-        .judge-tabs {
-            display: inline-flex;
-            gap: 8px;
-            padding: 6px;
-            border-radius: 16px;
-            background: rgba(30, 41, 59, 0.82);
-            border: 1px solid rgba(51, 65, 85, 0.9);
-            width: fit-content;
-        }
-        .judge-tab {
-            border: 0;
-            background: transparent;
-            color: #94a3b8;
-            border-radius: 12px;
-            padding: 10px 14px;
-            font-size: 13px;
-            font-weight: 700;
-            transition: 0.2s ease;
-        }
-        .judge-tab.active {
-            background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(20, 184, 166, 0.14));
-            color: #e0f2fe;
-        }
-        .judge-status {
+
+        .console-tab-bar {
+            height: 42px;
+            min-height: 42px;
+            padding: 0 14px;
+            background: rgba(13, 20, 36, 0.95);
+            border-bottom: 1px solid var(--border-subtle);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .status-banner {
-            display: inline-flex;
-            align-items: center;
             gap: 10px;
-            min-height: 44px;
-            padding: 10px 14px;
-            border-radius: 14px;
-            background: rgba(15, 23, 42, 0.62);
-            border: 1px solid rgba(51, 65, 85, 0.85);
-            color: #cbd5e1;
-            font-size: 13px;
-            font-weight: 700;
-            flex: 1;
         }
-        .status-banner.success { color: #86efac; border-color: rgba(34, 197, 94, 0.38); }
-        .status-banner.error { color: #fca5a5; border-color: rgba(248, 113, 113, 0.35); }
-        .status-banner.loading { color: #fde68a; border-color: rgba(250, 204, 21, 0.35); }
+
+        .judge-tabs {
+            display: flex;
+            gap: 6px;
+        }
+        .judge-tab {
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .judge-tab:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .judge-tab.active {
+            background: rgba(14, 165, 233, 0.15);
+            border: 1px solid rgba(14, 165, 233, 0.3);
+            color: #38bdf8;
+        }
+
         .summary-pill {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 112px;
-            padding: 10px 14px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(71, 85, 105, 0.8);
-            color: #e2e8f0;
-            font-size: 12px;
-            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-code);
         }
+
+        .console-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-subtle);
+            color: #94a3b8;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-banner.success {
+            color: #4ade80;
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+        .status-banner.error {
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .status-banner.loading {
+            color: #fde047;
+            background: rgba(234, 179, 8, 0.1);
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
         .test-case-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
         .case-btn {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            border: 1px solid rgba(71, 85, 105, 0.8);
-            background: rgba(15, 23, 42, 0.68);
-            color: #cbd5e1;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(15, 23, 42, 0.65);
+            color: var(--text-muted);
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             cursor: pointer;
-            transition: 0.2s ease;
+            transition: all 0.2s ease;
         }
-        .case-btn.pass { border-color: rgba(74, 222, 128, 0.45); color: #86efac; }
-        .case-btn.fail { border-color: rgba(251, 146, 60, 0.45); color: #fdba74; }
-        .case-btn.error { border-color: rgba(248, 113, 113, 0.45); color: #fca5a5; }
+        .case-btn:hover {
+            color: white;
+            border-color: var(--border-strong);
+        }
+        .case-btn.pass {
+            border-color: rgba(74, 222, 128, 0.4);
+            color: #4ade80;
+            background: rgba(34, 197, 94, 0.08);
+        }
+        .case-btn.fail {
+            border-color: rgba(248, 113, 113, 0.4);
+            color: #f87171;
+            background: rgba(239, 68, 68, 0.08);
+        }
         .case-btn.active {
-            transform: translateY(-1px);
-            background: rgba(14, 165, 233, 0.15);
-            border-color: rgba(125, 211, 252, 0.65);
+            border-color: #38bdf8;
+            background: rgba(14, 165, 233, 0.18);
             color: #e0f2fe;
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.25);
         }
+
         .case-details-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 14px;
+            gap: 12px;
         }
         .io-box {
-            background: rgba(15, 23, 42, 0.72);
-            border: 1px solid rgba(51, 65, 85, 0.92);
-            border-radius: 16px;
-            padding: 16px;
-            min-height: 132px;
+            background: rgba(11, 16, 28, 0.85);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 90px;
         }
         .io-box.full-width {
             grid-column: 1 / -1;
         }
         .io-label {
-            font-size: 11px;
-            letter-spacing: 0.14em;
+            font-size: 10px;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
             color: #64748b;
             font-weight: 800;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
         .io-content {
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: var(--font-code);
             font-size: 13px;
-            line-height: 1.65;
+            line-height: 1.6;
             white-space: pre-wrap;
             word-break: break-word;
             color: #e2e8f0;
         }
+
         .terminal-input {
             width: 100%;
-            min-height: 118px;
-            border-radius: 16px;
-            border: 1px solid rgba(71, 85, 105, 0.88);
-            background: rgba(15, 23, 42, 0.82);
+            min-height: 80px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(11, 16, 28, 0.9);
             color: #f8fafc;
-            padding: 14px;
+            padding: 12px;
             resize: vertical;
-            font-family: 'Consolas', 'Courier New', monospace;
+            font-family: var(--font-code);
             font-size: 13px;
+            outline: none;
+        }
+        .terminal-input:focus {
+            border-color: #38bdf8;
         }
         .terminal-output {
-            min-height: 138px;
-            border-radius: 16px;
-            border: 1px solid rgba(51, 65, 85, 0.9);
-            background:
-                linear-gradient(180deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.94) 100%);
-            padding: 16px;
-            color: #e2e8f0;
-            font-family: 'Consolas', 'Courier New', monospace;
+            min-height: 80px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(5, 8, 15, 0.95);
+            padding: 12px;
+            color: #a7f3d0;
+            font-family: var(--font-code);
             font-size: 13px;
             white-space: pre-wrap;
             word-break: break-word;
         }
 
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-
-        /* --- RESPONSIVE DESIGN --- */
-        @media (max-width: 992px) {
-            .sidebar {
-                position: fixed;
-                top: 0;
-                bottom: 0;
-                height: 100%;
-                right: 0;
-                width: 85%; /* Wider on mobile */
-                max-width: 320px;
-                transform: translateX(100%); /* Hidden by default */
-                transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); /* Friendly smooth animation */
-                box-shadow: -5px 0 30px rgba(0,0,0,0.3);
-                z-index: 2000;
-            }
-            .sidebar.active { transform: translateX(0); }
-            
-            /* Overlay for sidebar */
-            .sidebar-overlay {
-                display: none;
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.5); z-index: 1999;
-                backdrop-filter: blur(2px);
-            }
-            .sidebar-overlay.active { display: block; }
+        /* --- QUESTION PALETTE SLIDE-OVER DRAWER --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 340px;
+            max-width: 90vw;
+            background: #0d1424;
+            border-left: 1px solid var(--border-subtle);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar.active {
+            transform: translateX(0);
         }
 
-        @media (max-width: 768px) {
-            .top-bar { padding: 0 15px; font-size: 14px; height: 50px; }
-            .q-container { padding: 20px; }
-            .footer { padding: 10px 15px; height: 60px; }
-            
-            /* Adjust font sizes for mobile */
-            .q-text { font-size: 15px; }
-            .option-card { padding: 12px 15px; }
-            
-            /* Hide non-essential elements on very small screens */
-            .vr { display: none; }
-            .coding-shell { grid-template-columns: 1fr; }
-            .problem-panel { padding: 18px; border-right: none; border-bottom: 1px solid rgba(148, 163, 184, 0.16); }
-            .problem-head { flex-direction: column; }
-            .problem-title { font-size: 22px; }
-            .meta-chips { justify-content: flex-start; }
-            .workspace-toolbar { align-items: stretch; }
-            .workspace-actions { justify-content: stretch; width: 100%; }
-            .workspace-actions > * { flex: 1 1 calc(50% - 10px); }
-            .spec-grid,
-            .case-details-grid { grid-template-columns: 1fr; }
-            .editor-frame { min-height: 300px; }
-            .console-shell { padding: 14px; }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(3px);
+            z-index: 1999;
+        }
+        .sidebar-overlay.active {
+            display: block;
+        }
+
+        .sidebar-head {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(15, 23, 42, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .btn-close-sidebar {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        .btn-close-sidebar:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-stats {
+            padding: 14px 20px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid var(--border-subtle);
+            background: rgba(11, 16, 28, 0.5);
+        }
+        .stat-pill {
+            flex: 1;
+            padding: 8px;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .stat-pill .count {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .sidebar-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .module-group {
+            margin-bottom: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(15, 23, 42, 0.4);
+        }
+        .module-header {
+            padding: 12px 16px;
+            background: rgba(30, 41, 59, 0.6);
+            font-weight: 700;
+            font-size: 13px;
+            color: #cbd5e1;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .module-header:hover {
+            background: rgba(51, 65, 85, 0.7);
+            color: white;
+        }
+        .module-content {
+            display: none;
+            padding: 14px;
+            background: rgba(11, 16, 28, 0.4);
+        }
+        .module-content.open {
+            display: block;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: 8px;
+        }
+        .grid-btn {
+            height: 38px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            background: rgba(30, 41, 59, 0.6);
+            color: #cbd5e1;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .grid-btn:hover {
+            border-color: #38bdf8;
+            color: white;
+            background: rgba(14, 165, 233, 0.2);
+        }
+        .grid-btn.active {
+            border-color: #38bdf8;
+            background: #0284c7;
+            color: white;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+        }
+        .grid-btn.answered {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+        .grid-btn.skipped {
+            background: #f59e0b;
+            color: white;
+            border-color: #f59e0b;
+        }
+
+        .sidebar-foot {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-subtle);
+            background: rgba(15, 23, 42, 0.85);
+        }
+
+        /* --- BOTTOM NAVIGATION BAR (FOOTER) --- */
+        .footer {
+            height: 52px;
+            min-height: 52px;
+            background: #0d1322;
+            border-top: 1px solid var(--border-subtle);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 90;
+        }
+
+        .palette-legend {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 600;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .legend-dot.answered { background: var(--success); }
+        .legend-dot.skipped { background: var(--warning); }
+        .legend-dot.current { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+
+        .footer-nav-btn {
+            padding: 7px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-subtle);
+        }
+        .footer-nav-btn.prev {
+            background: rgba(30, 41, 59, 0.6);
+            color: #cbd5e1;
+        }
+        .footer-nav-btn.prev:hover {
+            background: rgba(51, 65, 85, 0.8);
+            border-color: var(--border-strong);
+            color: white;
+        }
+        .footer-nav-btn.next {
+            background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 2px 10px rgba(14, 165, 233, 0.25);
+        }
+        .footer-nav-btn.next:hover {
+            background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Mobile Segmented View Tabs for Coding Challenges */
+        .coding-mobile-nav {
+            display: none;
+            padding: 8px 12px;
+            background: #0d1424;
+            border-bottom: 1px solid var(--border-subtle);
+            gap: 6px;
+            overflow-x: auto;
+        }
+        .mobile-nav-tab {
+            flex: 1;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .mobile-nav-tab.active {
+            border-color: #38bdf8;
+            background: #0284c7;
+            color: white;
+        }
+
+        /* Horizontal Question Navigation Strip (Pills centered horizontally) */
+        .h-qnav-container {
+            width: 100%;
+            background: #0b1120;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            gap: 8px;
+            z-index: 80;
+            user-select: none;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            transition: background 0.25s, border-color 0.25s;
+        }
+
+        .h-nav-arrow {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        /* Module / Section Navigation Strip */
+        .module-selector-bar {
+            width: 100%;
+            background: #0d1424;
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 6px 14px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            flex-shrink: 0;
+            z-index: 85;
+            scrollbar-width: none;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        .module-selector-bar::-webkit-scrollbar { display: none; }
+        .module-selector-track {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: max-content;
+        }
+        .mod-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.7);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .mod-tab-btn:hover {
+            border-color: var(--primary);
+            color: white;
+            background: rgba(14, 165, 233, 0.18);
+        }
+        .mod-tab-btn.active {
+            border-color: #38bdf8;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(14, 165, 233, 0.4);
+        }
+        .mod-tab-count {
+            font-size: 10px;
+            padding: 1px 7px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.35);
+            font-weight: 800;
+        }
+        body.light-theme .module-selector-bar {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        body.light-theme .mod-tab-btn {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        body.light-theme .mod-tab-btn.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        /* Answering Process Banners */
+        .answering-process-banner {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            border: 1px solid transparent;
+        }
+        .answering-process-banner.single {
+            background: rgba(14, 165, 233, 0.12);
+            border-color: rgba(14, 165, 233, 0.35);
+            color: #7dd3fc;
+        }
+        .answering-process-banner.multi {
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.35);
+            color: #c7d2fe;
+        }
+        .answering-process-banner.dropdown {
+            background: rgba(20, 184, 166, 0.12);
+            border-color: rgba(20, 184, 166, 0.35);
+            color: #5eead4;
+        }
+        .answering-process-banner.blank {
+            background: rgba(245, 158, 11, 0.12);
+            border-color: rgba(245, 158, 11, 0.35);
+            color: #fde68a;
+        }
+        .answering-process-banner.tf {
+            background: rgba(168, 85, 247, 0.12);
+            border-color: rgba(168, 85, 247, 0.35);
+            color: #e9d5ff;
+        }
+        .answering-process-banner.code {
+            background: rgba(6, 182, 212, 0.12);
+            border-color: rgba(6, 182, 212, 0.35);
+            color: #a5f3fc;
+        }
+        body.light-theme .answering-process-banner.single { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+        body.light-theme .answering-process-banner.multi { background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; }
+        body.light-theme .answering-process-banner.dropdown { background: #ccfbf1; color: #115e59; border-color: #99f6e4; }
+        body.light-theme .answering-process-banner.blank { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+        body.light-theme .answering-process-banner.tf { background: #f3e8ff; color: #6b21a8; border-color: #e9d5ff; }
+        body.light-theme .answering-process-banner.code { background: #cffafe; color: #155e75; border-color: #a5f3fc; }
+
+        .h-nav-arrow:hover {
+            border-color: var(--primary);
+            color: white;
+            background: rgba(14, 165, 233, 0.2);
+        }
+
+        .h-qnav-track {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            padding: 2px 4px;
+            flex: 1;
+            scrollbar-width: none;
+        }
+        .h-qnav-track::-webkit-scrollbar {
+            display: none;
+        }
+
+        .h-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-width: 44px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(30, 41, 59, 0.6);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .h-pill:hover {
+            border-color: var(--primary);
+            color: white;
+            background: rgba(14, 165, 233, 0.18);
+            transform: translateY(-1px);
+        }
+        .h-pill.active {
+            border-color: #38bdf8;
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #ffffff;
+            box-shadow: 0 0 14px rgba(14, 165, 233, 0.45);
+            font-weight: 800;
+            transform: scale(1.05);
+        }
+        .h-pill.answered {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.6);
+            color: #34d399;
+        }
+        .h-pill.skipped {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.55);
+            color: #fbbf24;
+        }
+        .hpill-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: transparent;
+            display: inline-block;
+        }
+        .h-pill.answered .hpill-dot {
+            background: #10b981;
+            box-shadow: 0 0 5px #10b981;
+        }
+        .h-pill.skipped .hpill-dot {
+            background: #f59e0b;
+        }
+        .h-pill.active .hpill-dot {
+            background: #ffffff;
+            box-shadow: 0 0 5px #ffffff;
+        }
+
+        /* Global Theme Toggle Button */
+        .btn-theme-toggle {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-theme-toggle:hover {
+            border-color: #38bdf8;
+            color: white;
+            background: rgba(14, 165, 233, 0.15);
+        }
+
+        /* Light Theme Overrides */
+        body.light-theme {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        body.light-theme #exam-ui-container {
+            background-color: #f1f5f9;
+        }
+        body.light-theme .top-bar {
+            background: #ffffff;
+            border-bottom-color: #cbd5e1;
+            color: #0f172a;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+        body.light-theme .brand-name {
+            color: #0f172a;
+        }
+        body.light-theme .quiz-title-chip {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .timer-badge {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+        body.light-theme .btn-theme-toggle {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .btn-theme-toggle:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .btn-drawer-toggle {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .btn-drawer-toggle:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .h-qnav-container {
+            background: #ffffff;
+            border-bottom-color: #e2e8f0;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .h-nav-arrow {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        body.light-theme .h-nav-arrow:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .h-pill {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        body.light-theme .h-pill:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .h-pill.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            border-color: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35);
+        }
+        body.light-theme .h-pill.answered {
+            background: #dcfce7;
+            border-color: #86efac;
+            color: #166534;
+        }
+        body.light-theme .h-pill.skipped {
+            background: #fef3c7;
+            border-color: #fde68a;
+            color: #92400e;
+        }
+        body.light-theme .main-wrapper,
+        body.light-theme .question-area,
+        body.light-theme .coding-shell {
+            background: #f1f5f9;
+        }
+        body.light-theme .q-card-wrapper {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .q-text {
+            color: #0f172a;
+        }
+        body.light-theme .option-card {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            color: #334155;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        body.light-theme .option-card:hover {
+            background: #f8fafc;
+            border-color: #38bdf8;
+            color: #0f172a;
+        }
+        body.light-theme .option-card.selected {
+            background: #f0f9ff;
+            border-color: #0284c7;
+            color: #0369a1;
+        }
+        body.light-theme .opt-key {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        body.light-theme .dropdown-selector-wrapper,
+        body.light-theme .blank-input-wrapper {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .blank-input-label,
+        body.light-theme .dropdown-label {
+            color: #334155;
+        }
+        body.light-theme .exam-select-dropdown,
+        body.light-theme .exam-blank-input {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        body.light-theme .exam-select-dropdown:focus,
+        body.light-theme .exam-blank-input:focus {
+            background: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+        body.light-theme .dropdown-preview {
+            background: #f0f9ff;
+            border-color: #bae6fd;
+        }
+        body.light-theme .tf-card {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        body.light-theme .tf-title {
+            color: #0f172a;
+        }
+        body.light-theme .problem-panel {
+            background: #ffffff;
+            border-right-color: #e2e8f0;
+        }
+        body.light-theme .problem-header-bar {
+            background: #f8fafc;
+            border-bottom-color: #e2e8f0;
+        }
+        body.light-theme .problem-title {
+            color: #0f172a;
+        }
+        body.light-theme .problem-card {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+        body.light-theme .problem-desc {
+            color: #1e293b;
+        }
+        body.light-theme .spec-card {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        body.light-theme .spec-card pre {
+            background: #ffffff;
+            color: #0369a1;
+            border-color: #e2e8f0;
+        }
+        body.light-theme .workspace-toolbar {
+            background: #f8fafc;
+            border-bottom-color: #e2e8f0;
+        }
+        body.light-theme .lang-select {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+        body.light-theme .sidebar {
+            background: #ffffff;
+            color: #0f172a;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+        body.light-theme .sidebar-header,
+        body.light-theme .sidebar-foot {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+        body.light-theme .module-group {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+        }
+        body.light-theme .module-header {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+        body.light-theme .module-content {
+            background: #ffffff;
+        }
+        body.light-theme .grid-btn {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .grid-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .grid-btn.active {
+            background: #0284c7;
+            border-color: #0284c7;
+            color: #ffffff;
+        }
+        body.light-theme .grid-btn.answered {
+            background: #10b981;
+            color: #ffffff;
+        }
+        body.light-theme .grid-btn.skipped {
+            background: #f59e0b;
+            color: #ffffff;
+        }
+        body.light-theme .footer {
+            background: #ffffff;
+            border-top-color: #cbd5e1;
+            box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.06);
+        }
+        body.light-theme .footer-nav-btn.prev {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+        body.light-theme .footer-nav-btn.prev:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        body.light-theme .coding-mobile-nav {
+            background: #f8fafc;
+            border-bottom-color: #e2e8f0;
+        }
+        body.light-theme .mobile-nav-tab {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #475569;
+        }
+        body.light-theme .mobile-nav-tab.active {
+            background: #0284c7;
+            color: #ffffff;
+        }
+        body.light-theme .type-instruction-hint {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #334155;
+        }
+        body.light-theme .type-instruction-hint.blank-hint {
+            background: #fefce8;
+            border-color: #fde047;
+            color: #854d0e;
+        }
+
+        /* --- RESPONSIVE / AUTO-RATIO DEVICE RULES --- */
+        @media (max-width: 991px) {
+            .coding-shell {
+                flex-direction: column;
+            }
+            .problem-panel {
+                flex: none;
+                max-width: 100%;
+                min-width: 100%;
+                height: 100%;
+                border-right: none;
+            }
+            .workspace-panel {
+                height: 100%;
+            }
+            .coding-mobile-nav {
+                display: flex !important;
+            }
+            .top-quick-nav {
+                display: none !important;
+            }
+            .quiz-title-chip {
+                max-width: 130px;
+            }
+            .case-details-grid {
+                grid-template-columns: 1fr;
+            }
+            .q-container {
+                padding: 16px 14px;
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .top-bar {
+                padding: 0 10px;
+                height: 50px;
+                min-height: 50px;
+            }
+            .brand-name, .brand-pill {
+                display: none;
+            }
+            .quiz-title-chip {
+                max-width: 100px;
+                font-size: 12px;
+                padding: 3px 8px;
+            }
+            .footer {
+                padding: 0 10px;
+                height: 52px;
+            }
+            .footer-nav-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .btn-finish-exam {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+            .q-text {
+                font-size: 15px;
+            }
+            .option-card {
+                padding: 12px 14px;
+            }
+            .h-pill {
+                min-width: 38px;
+                height: 32px;
+                padding: 0 9px;
+                font-size: 12px;
+            }
+            .h-nav-arrow {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        /* iOS Safari Safe Area Inset Support */
+        @supports (padding: max(0px)) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+            .footer {
+                padding-bottom: max(6px, env(safe-area-inset-bottom));
+            }
         }
     </style>
 </head>
 <body oncontextmenu="return false" oncopy="return false" oncut="return false" onpaste="return false">
 
-    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- Anti-Cheat Violation Overlay -->
     <div id="violation-overlay">
-        <div style="font-size: 60px; margin-bottom: 20px;"><i class="fas fa-exclamation-triangle"></i></div>
-        <h1 class="fw-bold">Don't switch tabs!</h1>
-        <p class="fs-4">You are not allowed to leave the exam window.</p>
-        <div class="bg-white text-danger px-4 py-2 rounded-pill fw-bold mt-3 mb-4">
-            Warning <span id="overlay-count">0</span>/3
+        <div style="font-size: 60px; color: #f87171; margin-bottom: 20px;"><i class="fas fa-triangle-exclamation"></i></div>
+        <h1 class="fw-bold text-white mb-2">Proctored Session Warning</h1>
+        <p class="fs-5 text-slate-300 mb-4" style="max-width: 500px;">Window minimization, tab switching, and leaving the secure browser window are prohibited.</p>
+        <div class="bg-danger text-white px-4 py-2 rounded-pill fw-bold mb-4">
+            Security Infraction <span id="overlay-count">0</span> / 3
         </div>
-        <button class="btn btn-light btn-lg fw-bold px-5" onclick="resumeExam()">Return to Exam</button>
+        <button type="button" class="btn btn-light btn-lg fw-bold px-5 rounded-pill" onclick="resumeExam()">Return to Assessment</button>
     </div>
 
+    <!-- Start Assessment Fullscreen Modal -->
     <div id="start-overlay">
-        <div style="width:80px; height:80px; background:#e0e7ff; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
-            <i class="fas fa-shield-alt text-primary" style="font-size:36px;"></i>
+        <div class="start-shield-badge">
+            <i class="fas fa-shield-halved text-cyan-400" style="font-size: 40px; color: #38bdf8;"></i>
         </div>
-        <h2 class="fw-bold mb-2 text-dark">Secure Exam Environment</h2>
-        <p class="text-muted mb-4 text-center" style="max-width:600px;">
-            <strong>Mandatory Full Screen:</strong> Once the assessment launches, the browser will lock into full-screen mode.<br>
-            <strong>Locked Down Environment:</strong> The exam software prevents the use of the internet or other applications.<br>
-            <span class="text-danger">In case of a "locked" session error, <strong>ask to help coordinator</strong> to exit.</span>
+        <h2 class="fw-bold mb-2 text-white">Secure Assessment Environment</h2>
+        <p class="text-slate-400 mb-4 text-center" style="max-width: 580px; font-size: 15px; line-height: 1.6;">
+            <strong>Proctored Environment:</strong> Launching the assessment engages locked full-screen proctoring mode.<br>
+            All keyboard shortcuts, tab switches, and developer tools are monitored and logged.
         </p>
-        <button class="btn btn-primary btn-lg px-5 rounded-pill fw-bold" onclick="enterFullscreenAndStart()">
+        <button type="button" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow-lg" onclick="enterFullscreenAndStart()" style="background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%); border: none;">
             <i class="fas fa-lock me-2"></i> Enter Secure Mode
         </button>
     </div>
 
+    <!-- Main Exam UI Container -->
     <div id="exam-ui-container">
+        <!-- Top Bar -->
         <div class="top-bar">
-            <div class="d-flex align-items-center gap-3">
-                <div class="fw-bold"><i class="fas fa-cube text-primary"></i> QuizMaster Pro</div>
-                <div class="vr bg-secondary opacity-25 d-none d-md-block"></div>
-                <div style="font-size:14px; opacity:0.8;" id="quiz-title-display">{{ quiz_meta.title }}</div>
-            </div>
-            <div class="d-flex align-items-center gap-3">
-                <div class="badge bg-danger rounded-pill px-3 py-2" id="violation-badge" style="display:none;">
-                    <i class="fas fa-exclamation-circle"></i> Warnings: <span id="v-count">0</span>/3
+            <div class="d-flex align-items-center gap-2">
+                <div class="brand-badge">
+                    <span class="brand-icon"><i class="fas fa-terminal"></i></span>
+                    <span class="brand-name">QuizMaster</span>
+                    <span class="brand-pill">Pro</span>
                 </div>
-                <div class="badge bg-warning text-dark fs-6 font-monospace" id="timer" style="min-width:100px; text-align:center;">Loading...</div>
-                <button class="btn btn-outline-light d-lg-none" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="vr opacity-25 d-none d-md-block mx-1"></div>
+                <div class="quiz-title-chip" id="quiz-title-display">{{ quiz_meta.title }}</div>
+            </div>
+
+            <!-- Right Controls -->
+            <div class="d-flex align-items-center gap-2">
+                <!-- Theme Toggle Button -->
+                <button type="button" class="btn-theme-toggle" id="theme-toggle-btn" onclick="toggleGlobalTheme()" title="Switch Light/Dark Mode">
+                    <i class="fas fa-moon text-info" id="theme-icon"></i>
+                    <span id="theme-text" class="d-none d-sm-inline">Dark</span>
+                </button>
+                <div class="badge bg-danger rounded-pill px-3 py-2" id="violation-badge" style="display:none;">
+                    <i class="fas fa-triangle-exclamation"></i> Warnings: <span id="v-count">0</span>/3
+                </div>
+                <div class="timer-badge" id="timer">
+                    <i class="fas fa-clock text-warning"></i> <span>Loading...</span>
+                </div>
+                <button type="button" class="btn-drawer-toggle" onclick="toggleSidebar()" title="Question Palette">
+                    <i class="fas fa-th-large"></i> <span class="d-none d-lg-inline ms-1">Palette</span>
+                </button>
+                <button type="button" class="btn-finish-exam" onclick="attemptSubmit()" title="Review and submit assessment">
+                    <i class="fas fa-check-double me-1"></i> Review and Submit
+                </button>
             </div>
         </div>
 
-        <div class="main-wrapper">
-            <div class="question-area" id="q-area" style="position:relative;">
+        <!-- Module Navigation Strip (Separated by Question Type) -->
+        {% if modules_summary and modules_summary|length > 1 %}
+        <div class="module-selector-bar">
+            <div class="module-selector-track">
+                {% for mod_name, mod_info in modules_summary.items() %}
+                <button type="button" 
+                        class="mod-tab-btn {% if loop.first %}active{% endif %}" 
+                        id="mod-tab-btn-{{ loop.index0 }}"
+                        data-mod="{{ mod_name }}"
+                        data-first-idx="{{ mod_info.first_idx }}"
+                        onclick="jumpToModule('{{ mod_name }}', {{ mod_info.first_idx }})">
+                    <span class="mod-tab-icon">
+                        {% if 'single' in mod_name|lower %}<i class="fas fa-dot-circle text-sky-400"></i>
+                        {% elif 'multi' in mod_name|lower %}<i class="fas fa-check-square text-indigo-400"></i>
+                        {% elif 'select' in mod_name|lower or 'dropdown' in mod_name|lower %}<i class="fas fa-caret-square-down text-pink-400"></i>
+                        {% elif 'blank' in mod_name|lower or 'fill' in mod_name|lower %}<i class="fas fa-pen-fancy text-amber-400"></i>
+                        {% elif 'true' in mod_name|lower or 'false' in mod_name|lower %}<i class="fas fa-balance-scale text-emerald-400"></i>
+                        {% elif 'code' in mod_name|lower or 'coding' in mod_name|lower %}<i class="fas fa-code text-cyan-400"></i>
+                        {% else %}<i class="fas fa-layer-group text-primary"></i>
+                        {% endif %}
+                    </span>
+                    <span class="mod-tab-name">{{ mod_name }}</span>
+                    <span class="mod-tab-count">{{ mod_info.count }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Horizontal Question Numbers Bar (Active Question Centered in Middle) -->
+        <div class="h-qnav-container">
+            <button type="button" class="h-nav-arrow" onclick="scrollHNav(-1)" title="Scroll Left">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="h-qnav-track" id="h-qnav-track">
                 {% for q in questions %}
-                <div class="question-block h-100" id="q-{{ loop.index0 }}" style="display: {{ 'block' if loop.first else 'none' }};">
+                <button type="button" 
+                        class="h-pill {% if loop.first %}active{% endif %}" 
+                        id="hpill-{{ q.question_id }}" 
+                        data-idx="{{ loop.index0 }}"
+                        data-module="{{ q.module or 'General' }}"
+                        onclick="jumpTo({{ loop.index0 }})" 
+                        title="Question {{ loop.index }}: {{ q.module or 'General' }}">
+                    <span class="hpill-num">{{ loop.index }}</span>
+                    <span class="hpill-dot"></span>
+                </button>
+                {% endfor %}
+            </div>
+            <button type="button" class="h-nav-arrow" onclick="scrollHNav(1)" title="Scroll Right">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-wrapper">
+            <div class="question-area" id="q-area">
+                {% for q in questions %}
+                <div class="question-block" id="q-{{ loop.index0 }}" style="display: {{ 'flex' if loop.first else 'none' }};">
                     <input type="hidden" id="module-{{ loop.index0 }}" value="{{ q.module or 'General' }}">
 
-                    {% if q.question_type == 'MCQ' %}
+                    {% if not q.is_coding %}
+                        <!-- Modern 5-Type Quiz Question Layout -->
                         <div class="q-container">
+                            <!-- Question Top Header -->
                             <div class="q-header">
-                                <span class="badge bg-primary me-2">{{ q.module or 'General' }}</span> Question {{ loop.index }} 
-                                <span class="float-end badge bg-light text-dark border">Mark: {{ q.marks }}</span>
-                            </div>
-                            <div class="q-text">{{ q.question_text }}</div>
-                            <div class="options-group">
-                                {% for opt in q.shuffled_options %}
-                                <div class="option-card" onclick="selectOpt(this, '{{ q.question_id }}', '{{ opt.key }}')">
-                                    <div class="opt-key">{{ loop.index }}</div>
-                                    <div>{{ opt.text }}</div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <span class="badge-module"><i class="fas fa-folder me-1"></i> Module: {{ q.module or 'General' }}</span>
+                                    {% if q.question_type_norm == 'mscq_single' %}
+                                        <span class="badge-type single"><i class="fas fa-dot-circle me-1"></i> Single Choice</span>
+                                    {% elif q.question_type_norm == 'mscq_multiple' %}
+                                        <span class="badge-type multi"><i class="fas fa-check-square me-1"></i> Multiple Choice</span>
+                                    {% elif q.question_type_norm == 'mscq_select' %}
+                                        <span class="badge-type dropdown"><i class="fas fa-caret-square-down me-1"></i> Select Dropdown</span>
+                                    {% elif q.question_type_norm == 'fill_blank' %}
+                                        <span class="badge-type blank"><i class="fas fa-pen-fancy me-1"></i> Fill in the Blanks</span>
+                                    {% elif q.question_type_norm == 'true_false' %}
+                                        <span class="badge-type tf"><i class="fas fa-balance-scale me-1"></i> True / False</span>
+                                    {% endif %}
                                 </div>
-                                {% endfor %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge-marks"><i class="fas fa-star me-1"></i> {{ q.marks }} Marks</span>
+                                    {% if q.negative_marks and q.negative_marks > 0 %}
+                                        <span class="badge-negative"><i class="fas fa-minus-circle me-1"></i> -{{ q.negative_marks }}</span>
+                                    {% endif %}
+                                </div>
                             </div>
+
+                            <!-- Question Statement -->
+                            <div class="q-card-wrapper">
+                                <div class="q-number-pill">Question {{ loop.index }} of {{ questions|length }}</div>
+                                <div class="q-text">{{ q.question_text }}</div>
+                            </div>
+
+                            <!-- TYPE 1: Single Choice (Radio Button) -->
+                            {% if q.question_type_norm == 'mscq_single' and q.shuffled_options|length > 0 %}
+                                <div class="answering-process-banner single">
+                                    <i class="fas fa-dot-circle me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Answering Process: Single Choice</strong>
+                                        <div class="small opacity-80">Select exactly one option by clicking its radio card below.</div>
+                                    </div>
+                                </div>
+                                <div class="options-group radio-group" id="opt-group-{{ q.question_id }}">
+                                    {% for opt in q.shuffled_options %}
+                                    <div class="option-card radio-card" data-opt="{{ opt.key }}" onclick="selectSingleOpt(this, '{{ q.question_id }}', '{{ opt.key }}')">
+                                        <div class="radio-indicator"><div class="radio-inner-dot"></div></div>
+                                        <div class="opt-key">{{ opt.key }}</div>
+                                        <div class="opt-text">{{ opt.text }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                            <!-- TYPE 2: Multiple Choice (Checkboxes) -->
+                            {% elif q.question_type_norm == 'mscq_multiple' and q.shuffled_options|length > 0 %}
+                                <div class="answering-process-banner multi">
+                                    <i class="fas fa-check-double me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Answering Process: Multiple Choice</strong>
+                                        <div class="small opacity-80">Multi-select all correct options using the checkboxes below.</div>
+                                    </div>
+                                </div>
+                                <div class="options-group multi-group" id="opt-group-{{ q.question_id }}">
+                                    {% for opt in q.shuffled_options %}
+                                    <div class="option-card checkbox-card" data-opt="{{ opt.key }}" onclick="toggleMultiOpt(this, '{{ q.question_id }}', '{{ opt.key }}')">
+                                        <div class="checkbox-indicator"><i class="fas fa-check"></i></div>
+                                        <div class="opt-key">{{ opt.key }}</div>
+                                        <div class="opt-text">{{ opt.text }}</div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                            <!-- TYPE 3: Select Dropdown -->
+                            {% elif q.question_type_norm == 'mscq_select' and q.shuffled_options|length > 0 %}
+                                <div class="answering-process-banner dropdown">
+                                    <i class="fas fa-caret-square-down me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Answering Process: Select Dropdown</strong>
+                                        <div class="small opacity-80">Choose the matching answer from the dropdown selector menu below.</div>
+                                    </div>
+                                </div>
+                                <div class="dropdown-selector-wrapper">
+                                    <label class="dropdown-label"><i class="fas fa-caret-down me-1 text-sky-400"></i> Select your answer option:</label>
+                                    <div class="custom-select-container">
+                                        <select class="exam-select-dropdown" id="dropdown-{{ q.question_id }}" onchange="selectDropdownOpt('{{ q.question_id }}', this.value)">
+                                            <option value="">-- Click here to select --</option>
+                                            {% for opt in q.shuffled_options %}
+                                            <option value="{{ opt.key }}">{{ opt.key }}. {{ opt.text }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <i class="fas fa-chevron-down select-chevron"></i>
+                                    </div>
+                                    <div class="dropdown-preview" id="dropdown-preview-{{ q.question_id }}" style="display:none;">
+                                        <span class="preview-label">Selected Option:</span>
+                                        <span class="preview-val fw-bold text-sky-300" id="dropdown-preview-text-{{ q.question_id }}"></span>
+                                    </div>
+                                </div>
+
+                            <!-- TYPE 5: True / False -->
+                            {% elif q.question_type_norm == 'true_false' %}
+                                <div class="answering-process-banner tf">
+                                    <i class="fas fa-balance-scale me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Answering Process: True / False</strong>
+                                        <div class="small opacity-80">Evaluate the statement and select either TRUE or FALSE below.</div>
+                                    </div>
+                                </div>
+                                <div class="tf-cards-grid" id="opt-group-{{ q.question_id }}">
+                                    <div class="tf-card tf-true" data-opt="True" onclick="selectTrueFalseOpt(this, '{{ q.question_id }}', 'True')">
+                                        <div class="tf-icon-circle true"><i class="fas fa-check"></i></div>
+                                        <div class="tf-content">
+                                            <div class="tf-title">TRUE</div>
+                                            <div class="tf-desc">The statement is correct & valid</div>
+                                        </div>
+                                        <div class="tf-check-mark"><i class="fas fa-circle-check"></i></div>
+                                    </div>
+                                    <div class="tf-card tf-false" data-opt="False" onclick="selectTrueFalseOpt(this, '{{ q.question_id }}', 'False')">
+                                        <div class="tf-icon-circle false"><i class="fas fa-times"></i></div>
+                                        <div class="tf-content">
+                                            <div class="tf-title">FALSE</div>
+                                            <div class="tf-desc">The statement is incorrect & invalid</div>
+                                        </div>
+                                        <div class="tf-check-mark"><i class="fas fa-circle-check"></i></div>
+                                    </div>
+                                </div>
+
+                            <!-- TYPE 4 & Universal Fallback: Fill in the Blanks -->
+                            {% else %}
+                                <div class="answering-process-banner blank">
+                                    <i class="fas fa-pen-fancy me-2 fs-5"></i>
+                                    <div>
+                                        <strong>Answering Process: Fill in the Blanks</strong>
+                                        <div class="small opacity-80">
+                                            Type your exact answer into the writing box below.
+                                            {% if q.case_sensitive %}
+                                            <span class="badge bg-warning text-dark ms-1"><i class="fas fa-font me-1"></i> Exact Case Sensitive</span>
+                                            {% else %}
+                                            <span class="badge bg-secondary ms-1"><i class="fas fa-font me-1"></i> Case Insensitive</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="blank-input-wrapper">
+                                    <label class="blank-input-label"><i class="fas fa-keyboard me-1 text-sky-400"></i> Write your answer below:</label>
+                                    <div class="blank-input-box">
+                                        <input type="text" 
+                                               id="blank-input-{{ q.question_id }}" 
+                                               class="exam-blank-input" 
+                                               placeholder="Type your answer here..." 
+                                               autocomplete="off"
+                                               autocorrect="off"
+                                               autocapitalize="none"
+                                               spellcheck="false"
+                                               oninput="handleBlankInput('{{ q.question_id }}', this.value)">
+                                        <button type="button" class="btn-clear-blank" onclick="clearBlankInput('{{ q.question_id }}')" title="Clear answer">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="blank-info-footer">
+                                        <span class="text-slate-400 small" id="blank-status-{{ q.question_id }}"><i class="fas fa-shield-halved me-1"></i> Progress automatically saved</span>
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            <!-- Hidden storage for question response -->
                             <input type="hidden" id="ans-{{ q.question_id }}">
                         </div>
 
                     {% else %}
+                        <!-- LeetCode / HackerRank Pro Coding Shell -->
                         <div class="coding-shell">
-                            <div class="problem-panel">
-                                <div class="problem-head">
-                                    <div>
-                                        <div class="problem-kicker">Coding Challenge</div>
-                                        <h2 class="problem-title">Question {{ loop.index }}</h2>
-                                        <div class="problem-subtitle">Solve it like a judged contest problem. Your code is evaluated against the configured test cases.</div>
+                            <!-- Mobile Segmented Tabs -->
+                            <div class="coding-mobile-nav d-lg-none">
+                                <button type="button" class="mobile-nav-tab active" onclick="switchMobileView('{{ q.question_id }}', 'problem')">
+                                    <i class="fas fa-file-alt me-1"></i> Problem
+                                </button>
+                                <button type="button" class="mobile-nav-tab" onclick="switchMobileView('{{ q.question_id }}', 'editor')">
+                                    <i class="fas fa-code me-1"></i> Code Editor
+                                </button>
+                                <button type="button" class="mobile-nav-tab" onclick="switchMobileView('{{ q.question_id }}', 'console')">
+                                    <i class="fas fa-terminal me-1"></i> Console
+                                </button>
+                            </div>
+
+                            <!-- Left Pane: Problem Description -->
+                            <div class="problem-panel" id="mobile-prob-{{ q.question_id }}">
+                                <div class="problem-header-bar">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge-module"><i class="fas fa-code me-1"></i> {{ q.module or 'Coding' }}</span>
+                                        <span class="badge-marks"><i class="fas fa-star me-1"></i> {{ q.marks }} Marks</span>
+                                        {% if q.negative_marks and q.negative_marks > 0 %}
+                                        <span class="badge-negative"><i class="fas fa-minus-circle me-1"></i> -{{ q.negative_marks }}</span>
+                                        {% endif %}
+                                        {% if q.difficulty %}
+                                        <span class="badge-diff"><i class="fas fa-bolt me-1"></i> {{ q.difficulty|capitalize }}</span>
+                                        {% endif %}
                                     </div>
-                                    <div class="meta-chips">
-                                        <span class="meta-chip"><i class="fas fa-layer-group"></i> {{ q.module or 'General' }}</span>
-                                        <span class="meta-chip"><i class="fas fa-star"></i> {{ q.marks }} Marks</span>
-                                    </div>
+                                    <h3 class="problem-title">Question {{ loop.index }}</h3>
                                 </div>
 
-                                <div class="problem-card">
-                                    <div class="problem-body">{{ q.question_text }}</div>
-                                </div>
-
-                                <div class="spec-grid">
-                                    <div class="spec-card">
-                                        <div class="spec-label">Input Format</div>
-                                        <pre>{{ q.test_input or "Standard Input" }}</pre>
+                                <div class="problem-scroll-body">
+                                    <div class="problem-card">
+                                        <div class="problem-desc">{{ q.question_text }}</div>
                                     </div>
-                                    <div class="spec-card">
-                                        <div class="spec-label">Expected Output</div>
-                                        <pre>{{ q.test_output or "Judge compares the solution output with configured cases." }}</pre>
+
+                                    <div class="spec-section">
+                                        <div class="spec-card">
+                                            <div class="spec-label"><i class="fas fa-arrow-right-to-bracket me-1 text-sky-400"></i> Input Format</div>
+                                            <pre>{{ q.test_input or "Standard Input" }}</pre>
+                                        </div>
+                                        <div class="spec-card">
+                                            <div class="spec-label"><i class="fas fa-arrow-right-from-bracket me-1 text-emerald-400"></i> Expected Output</div>
+                                            <pre>{{ q.test_output or "Judge compares the solution output with configured cases." }}</pre>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
+                            <!-- Right Pane: Code Studio & Terminal -->
                             <div class="workspace-panel" id="workspace-{{ q.question_id }}">
                                 <div class="workspace-toolbar">
-                                    <div class="workspace-title">
-                                        <strong>Contest Workspace</strong>
-                                        <span>LeetCode-style editor, judge view, and terminal workflow.</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="lang-select-wrapper">
+                                            <i class="fas fa-code lang-icon"></i>
+                                            <select class="lang-select" id="lang-select-{{ q.question_id }}" onchange="changeLanguage('{{ q.question_id }}')">
+                                                <option value="python">Python 3</option>
+                                                <option value="java">Java (OpenJDK 17)</option>
+                                                <option value="cpp">C++ (GCC 11)</option>
+                                                <option value="javascript">JavaScript (Node.js)</option>
+                                                <option value="c">C (GCC 11)</option>
+                                                <option value="go">Go (1.20)</option>
+                                            </select>
+                                        </div>
                                     </div>
                                     <div class="workspace-actions">
-                                        <select class="lang-select" id="lang-select-{{ q.question_id }}" onchange="changeLanguage('{{ q.question_id }}')">
-                                            <option value="python">Python 3</option>
-                                            <option value="java">Java</option>
-                                            <option value="cpp">C++</option>
-                                            <option value="javascript">JavaScript</option>
-                                            <option value="c">C</option>
-                                            <option value="go">Go</option>
-                                        </select>
-                                        <button class="workspace-btn" onclick="toggleTheme('{{ q.question_id }}')" title="Toggle editor theme">
-                                            <i class="fas fa-adjust me-1"></i> Theme
+                                        <button type="button" class="workspace-btn" onclick="toggleTheme('{{ q.question_id }}')" title="Toggle editor theme">
+                                            <i class="fas fa-circle-half-stroke"></i> <span class="d-none d-sm-inline">Theme</span>
                                         </button>
-                                        <button class="workspace-btn" onclick="resetCode('{{ q.question_id }}')" title="Reset starter code">
-                                            <i class="fas fa-rotate-left me-1"></i> Reset
+                                        <button type="button" class="workspace-btn" onclick="resetCode('{{ q.question_id }}')" title="Reset starter code">
+                                            <i class="fas fa-rotate-left"></i> <span class="d-none d-sm-inline">Reset</span>
                                         </button>
-                                        <button class="workspace-btn run" onclick="runCode('{{ q.question_id }}')">
+                                        <button type="button" class="workspace-btn run" onclick="runCode('{{ q.question_id }}')">
                                             <i class="fas fa-play me-1"></i> Run Tests
                                         </button>
                                     </div>
                                 </div>
 
-                                <div class="editor-frame">
+                                <div class="editor-frame" id="mobile-edit-{{ q.question_id }}">
                                     <div id="ace-{{ q.question_id }}" class="ace-editor"></div>
                                 </div>
 
-                                <div class="console-shell">
-                                    <div class="judge-tabs">
-                                        <button type="button" class="judge-tab active" id="tab-res-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'res')">Judge Results</button>
-                                        <button type="button" class="judge-tab" id="tab-cust-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'cust')">Custom Run</button>
-                                    </div>
-
-                                    <div id="view-res-{{ q.question_id }}">
-                                        <div class="judge-status">
-                                            <div id="status-msg-{{ q.question_id }}" class="status-banner">
-                                                <i class="fas fa-terminal"></i> Run the official test suite to see verdicts and per-case details.
-                                            </div>
-                                            <div id="summary-pill-{{ q.question_id }}" class="summary-pill">0 / 0 cases</div>
-                                        </div>
-
-                                        <div id="cases-nav-{{ q.question_id }}" class="test-case-container" style="display:none;"></div>
-
-                                        <div id="case-details-{{ q.question_id }}" class="case-details-grid" style="display:none;">
-                                            <div class="io-box">
-                                                <div class="io-label">Input</div>
-                                                <div class="io-content" id="detail-input-{{ q.question_id }}"></div>
-                                            </div>
-                                            <div class="io-box">
-                                                <div class="io-label">Expected Output</div>
-                                                <div class="io-content" id="detail-expected-{{ q.question_id }}"></div>
-                                            </div>
-                                            <div class="io-box full-width">
-                                                <div class="io-label">Your Output</div>
-                                                <div class="io-content" id="detail-actual-{{ q.question_id }}"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="view-cust-{{ q.question_id }}" style="display:none;">
-                                        <div class="io-label">Custom Input</div>
-                                        <textarea id="custom-input-{{ q.question_id }}" class="terminal-input" placeholder="Type custom stdin here and run it like a local terminal session."></textarea>
-                                        <div class="d-flex justify-content-end mt-3">
-                                            <button class="workspace-btn" onclick="runCustom('{{ q.question_id }}')">
-                                                <i class="fas fa-terminal me-1"></i> Run Custom Input
+                                <div class="console-shell" id="mobile-console-{{ q.question_id }}">
+                                    <div class="console-tab-bar">
+                                        <div class="judge-tabs">
+                                            <button type="button" class="judge-tab active" id="tab-res-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'res')">
+                                                <i class="fas fa-flask me-1"></i> Test Cases
+                                            </button>
+                                            <button type="button" class="judge-tab" id="tab-cust-{{ q.question_id }}" onclick="switchTab('{{ q.question_id }}', 'cust')">
+                                                <i class="fas fa-terminal me-1"></i> Custom Input
                                             </button>
                                         </div>
-                                        <div class="mt-3">
-                                            <div class="io-label">Terminal Output</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div id="summary-pill-{{ q.question_id }}" class="summary-pill">0 / 0 cases</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="console-body">
+                                        <div id="view-res-{{ q.question_id }}">
+                                            <div id="status-msg-{{ q.question_id }}" class="status-banner">
+                                                <i class="fas fa-circle-info"></i> Run the official test suite to see verdicts and per-case evaluation details.
+                                            </div>
+
+                                            <div id="cases-nav-{{ q.question_id }}" class="test-case-container mt-2" style="display:none;"></div>
+
+                                            <div id="case-details-{{ q.question_id }}" class="case-details-grid mt-2" style="display:none;">
+                                                <div class="io-box">
+                                                    <div class="io-label">Standard Input</div>
+                                                    <div class="io-content" id="detail-input-{{ q.question_id }}"></div>
+                                                </div>
+                                                <div class="io-box">
+                                                    <div class="io-label">Expected Output</div>
+                                                    <div class="io-content" id="detail-expected-{{ q.question_id }}"></div>
+                                                </div>
+                                                <div class="io-box full-width">
+                                                    <div class="io-label">Your Output</div>
+                                                    <div class="io-content" id="detail-actual-{{ q.question_id }}"></div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="view-cust-{{ q.question_id }}" style="display:none;">
+                                            <div class="io-label mb-1">Custom Stdin Input</div>
+                                            <textarea id="custom-input-{{ q.question_id }}" class="terminal-input" placeholder="Type custom input values here (e.g. 5 7) as if passed through stdin..."></textarea>
+                                            <div class="d-flex justify-content-end my-2">
+                                                <button type="button" class="workspace-btn run py-1 px-3" onclick="runCustom('{{ q.question_id }}')">
+                                                    <i class="fas fa-play me-1"></i> Execute Custom
+                                                </button>
+                                            </div>
+                                            <div class="io-label mb-1">Execution Output (stdout / stderr)</div>
                                             <div class="terminal-output" id="custom-output-{{ q.question_id }}">Terminal output will appear here.</div>
                                         </div>
                                     </div>
@@ -653,59 +2549,93 @@
                 {% endfor %}
             </div>
 
-            <div class="sidebar">
-                <div class="p-3 border-bottom fw-bold bg-white d-flex justify-content-between align-items-center">
-                    <span><i class="fas fa-bars me-2"></i> Exam Modules</span>
-                    <button class="btn btn-sm btn-light d-lg-none" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
+            <!-- Question Palette Slide-Over Drawer -->
+            <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+            <div class="sidebar" id="sidebar-drawer">
+                <div class="sidebar-head">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fas fa-th-large text-primary"></i>
+                        <span class="fw-bold text-white">Question Palette</span>
+                    </div>
+                    <button type="button" class="btn-close-sidebar" onclick="toggleSidebar()"><i class="fas fa-times"></i></button>
                 </div>
-                
-                <div style="flex: 1; overflow-y: auto;" id="sidebar-content">
-                    <!-- Group Questions by Module -->
+
+                <div class="sidebar-stats">
+                    <div class="stat-pill"><span class="count text-success" id="answered-count">0</span> Answered</div>
+                    <div class="stat-pill"><span class="count text-warning" id="skipped-count">0</span> Skipped</div>
+                    <div class="stat-pill"><span class="count text-light" id="total-count">{{ questions|length }}</span> Total</div>
+                </div>
+
+                <div class="sidebar-scroll" id="sidebar-content">
                     {% set ns = namespace(current_module=None) %}
                     {% for q in questions %}
                         {% if ns.current_module != (q.module or 'General') %}
-                            {% if not loop.first %}</div></div>{% endif %}
+                            {% if not loop.first %}</div></div></div>{% endif %}
                             {% set ns.current_module = (q.module or 'General') %}
-                            
                             <div class="module-group">
                                 <div class="module-header" onclick="toggleModule('mod-{{ loop.index }}')">
-                                    {{ ns.current_module }}
+                                    <span><i class="fas fa-folder-open me-2 text-primary"></i> {{ ns.current_module }}</span>
                                     <i class="fas fa-chevron-down small"></i>
                                 </div>
                                 <div class="module-content open" id="mod-{{ loop.index }}">
-                                    <div class="palette-grid" style="padding:0;">
+                                    <div class="palette-grid">
                         {% endif %}
-                        
-                        <button class="grid-btn" id="btn-{{ q.question_id }}" onclick="jumpTo({{ loop.index0 }})">{{ loop.index }}</button>
+
+                        <button type="button" class="grid-btn" id="btn-{{ q.question_id }}" onclick="jumpTo({{ loop.index0 }})">
+                            {{ loop.index }}
+                        </button>
 
                         {% if loop.last %}</div></div></div>{% endif %}
                     {% endfor %}
                 </div>
-                <div class="p-3 mt-auto border-top bg-white">
-                    <button class="btn btn-danger w-100 fw-bold py-2" onclick="attemptSubmit()">Finish Exam</button>
+
+                <div class="sidebar-foot">
+                    <button type="button" class="btn btn-danger w-100 fw-bold py-2 shadow-sm rounded-3" onclick="attemptSubmit()">
+                        <i class="fas fa-check-double me-2"></i> Review and Submit
+                    </button>
                 </div>
             </div>
         </div>
 
+        <!-- Bottom Status Bar (Footer) -->
         <div class="footer">
-            <button class="btn btn-outline-dark d-lg-none me-2" onclick="toggleSidebar()"><i class="fas fa-th-large"></i></button>
-            <button class="btn btn-outline-secondary px-4 fw-bold" onclick="prevQ()"><i class="fas fa-arrow-left me-2"></i> Previous</button>
-            <button class="btn btn-primary px-4 fw-bold shadow-sm" onclick="nextQ()">Save & Next <i class="fas fa-arrow-right ms-2"></i></button>
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn-drawer-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-th-large me-1"></i> <span class="d-none d-sm-inline">Question</span> Palette
+                </button>
+                <div class="palette-legend d-none d-md-flex">
+                    <span class="legend-item"><span class="legend-dot answered"></span> Answered</span>
+                    <span class="legend-item"><span class="legend-dot skipped"></span> Skipped</span>
+                    <span class="legend-item"><span class="legend-dot current"></span> Current</span>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="footer-nav-btn prev" onclick="prevQ()">
+                    <i class="fas fa-arrow-left me-1"></i> Previous
+                </button>
+                <button type="button" class="footer-nav-btn next" onclick="nextQ()">
+                    Save & Next <i class="fas fa-arrow-right ms-1"></i>
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
-        let attemptId = {{ attempt_id }};
+        let attemptId = {{ attempt_id | default(0) }};
         let questions = [{% for q in questions %}'{{ q.question_id }}',{% endfor %}];
-        let savedResponses = {{ saved_responses | tojson }};
+        let savedResponses = {{ saved_responses | tojson if saved_responses else '{}' }};
         let currentIdx = 0;
-        let timeLeft = {{ quiz_meta.duration_minutes }} * 60; // Default
+        let timeLeft = parseInt('{{ quiz_meta.duration_minutes if (quiz_meta and quiz_meta.duration_minutes) else 60 }}') * 60; // Default
         let editorInstances = {};
         let editorThemes = {};
         let isExamActive = false;
 
         let violationCount = 0;
         const MAX_VIOLATIONS = 3;
+
+        // In-memory fallback for environments where localStorage is blocked by tracking prevention
+        const memoryDrafts = {};
 
         // BOILERPLATES (Same as before)
         const boilerplates = {
@@ -724,15 +2654,33 @@
         }
 
         function saveEditorDraft(qId, lang, value) {
-            localStorage.setItem(getDraftStorageKey(qId, lang), value);
+            const key = getDraftStorageKey(qId, lang);
+            memoryDrafts[key] = value;
+            try {
+                if (window.localStorage) {
+                    localStorage.setItem(key, value);
+                }
+            } catch (e) {
+                // Silently fallback to in-memory if browser blocks localStorage
+            }
         }
 
         function loadEditorDraft(qId, lang) {
-            return localStorage.getItem(getDraftStorageKey(qId, lang));
+            const key = getDraftStorageKey(qId, lang);
+            try {
+                if (window.localStorage) {
+                    const item = localStorage.getItem(key);
+                    if (item !== null) return item;
+                }
+            } catch (e) {
+                // Silently fallback to in-memory if browser blocks localStorage
+            }
+            return memoryDrafts[key] || null;
         }
 
         function setStatusBanner(qId, message, state = 'idle') {
             const el = document.getElementById(`status-msg-${qId}`);
+            if (!el) return;
             el.className = 'status-banner';
             if (state !== 'idle') {
                 el.classList.add(state);
@@ -741,7 +2689,8 @@
         }
 
         function setSummaryPill(qId, text) {
-            document.getElementById(`summary-pill-${qId}`).innerText = text;
+            const el = document.getElementById(`summary-pill-${qId}`);
+            if (el) el.innerText = text;
         }
 
         // --- ENHANCED SECURITY ---
@@ -769,14 +2718,30 @@
             }
         });
 
-        // 3. Security Monitors
-        function enterFullscreenAndStart() {
-            requestFS();
-            document.getElementById('start-overlay').style.display = 'none';
-            isExamActive = true;
-            initTimers();
-            initEditors();
-            
+        // Helper for Cross-Browser Fullscreen
+        function requestFS() {
+            try {
+                var doc = document.documentElement;
+                if (doc.requestFullscreen) {
+                    var p = doc.requestFullscreen();
+                    if (p && p.catch) p.catch(() => {});
+                } else if (doc.mozRequestFullScreen) {
+                    doc.mozRequestFullScreen();
+                } else if (doc.webkitRequestFullscreen) {
+                    doc.webkitRequestFullscreen();
+                } else if (doc.msRequestFullscreen) {
+                    doc.msRequestFullscreen();
+                }
+            } catch (e) {
+                console.warn("requestFS error:", e);
+            }
+        }
+
+        let securityMonitorsAttached = false;
+        function attachSecurityMonitors() {
+            if (securityMonitorsAttached) return;
+            securityMonitorsAttached = true;
+
             // Monitor Tab Switching
             document.addEventListener("visibilitychange", () => { 
                 if(document.hidden && isExamActive) triggerViolation("Tab Switch"); 
@@ -790,21 +2755,44 @@
             // Monitor Fullscreen Exit
             ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'msfullscreenchange'].forEach(
                 eventType => document.addEventListener(eventType, () => {
-                    if (!document.fullscreenElement && !document.webkitFullscreenElement && 
-                        !document.mozFullScreenElement && !document.msFullscreenElement && isExamActive) {
+                    const isFs = document.fullscreenElement || document.webkitFullscreenElement || 
+                                 document.mozFullScreenElement || document.msFullscreenElement;
+                    if (!isFs && isExamActive) {
                         triggerViolation("Exited Fullscreen");
                     }
                 }, false)
             );
         }
 
-        // Helper for Cross-Browser Fullscreen
-        function requestFS() {
-            var doc = document.documentElement;
-            if (doc.requestFullscreen) doc.requestFullscreen().catch(()=>{});
-            else if (doc.mozRequestFullScreen) doc.mozRequestFullScreen();
-            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen(); // Safari/iOS
-            else if (doc.msRequestFullscreen) doc.msRequestFullscreen(); // IE/Edge
+        // 3. Security Monitors & Entry
+        function enterFullscreenAndStart() {
+            // Instantly dismiss overlay so the user sees immediate response
+            const overlay = document.getElementById('start-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            isExamActive = true;
+
+            try {
+                requestFS();
+            } catch (e) {
+                console.warn("requestFS error:", e);
+            }
+
+            try {
+                initTimers();
+            } catch (e) {
+                console.error("initTimers error:", e);
+            }
+
+            try {
+                initEditors();
+            } catch (e) {
+                console.error("initEditors error:", e);
+            }
+
+            // Attach blur / fullscreen listeners after a short delay so the initial fullscreen transition doesn't trigger false positives
+            setTimeout(attachSecurityMonitors, 1500);
         }
 
         // 4. Violation Handler (Blur & Block)
@@ -856,16 +2844,96 @@
             }
         }
 
+        // --- THEME SWITCHER & COMPATIBILITY ---
+        function toggleGlobalTheme() {
+            const body = document.body;
+            const isCurrentlyLight = body.classList.contains('light-theme');
+            const targetTheme = isCurrentlyLight ? 'dark' : 'light';
+
+            applyTheme(targetTheme);
+            try {
+                if (window.localStorage) {
+                    localStorage.setItem('exam_console_theme', targetTheme);
+                }
+            } catch (e) {}
+        }
+
+        function applyTheme(theme) {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+
+            if (theme === 'light') {
+                body.classList.add('light-theme');
+                if (icon) icon.className = 'fas fa-sun text-warning';
+                if (text) text.innerText = 'Light';
+            } else {
+                body.classList.remove('light-theme');
+                if (icon) icon.className = 'fas fa-moon text-info';
+                if (text) text.innerText = 'Dark';
+            }
+
+            // Sync all active Ace editors
+            for (const qId of Object.keys(editorInstances)) {
+                if (editorInstances[qId]) {
+                    editorInstances[qId].setTheme(theme === 'light' ? aceThemes.light : aceThemes.dark);
+                }
+            }
+        }
+
+        // Horizontal navigation smooth scrolling
+        function scrollHNav(direction) {
+            const track = document.getElementById('h-qnav-track');
+            if (track) {
+                track.scrollBy({ left: direction * 200, behavior: 'smooth' });
+            }
+        }
+
         // --- EXAM LOGIC ---
         function attemptSubmit() {
+            let answered = 0;
+            let skipped = 0;
+            questions.forEach(qId => {
+                let btn = document.getElementById(`btn-${qId}`);
+                let hpill = document.getElementById(`hpill-${qId}`);
+                let isAns = (btn && btn.classList.contains('answered')) || (hpill && hpill.classList.contains('answered'));
+                if (isAns) {
+                    answered++;
+                } else {
+                    skipped++;
+                }
+            });
+            let total = questions.length;
+
             Swal.fire({
-                title: 'Finish Exam?',
-                text: "Are you sure you want to submit? You cannot undo this action.",
-                icon: 'warning',
+                title: 'Review and Submit Assessment',
+                html: `
+                    <div style="text-align: left; padding: 4px 2px;">
+                        <p style="font-size: 14px; margin-bottom: 14px;">Please review your answers before submitting:</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; text-align: center;">
+                            <div style="background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 10px; padding: 10px 6px;">
+                                <div style="font-size: 20px; font-weight: 800; color: #0284c7;">${total}</div>
+                                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Total</div>
+                            </div>
+                            <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 10px 6px;">
+                                <div style="font-size: 20px; font-weight: 800; color: #10b981;">${answered}</div>
+                                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Answered</div>
+                            </div>
+                            <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 10px 6px;">
+                                <div style="font-size: 20px; font-weight: 800; color: #f59e0b;">${skipped}</div>
+                                <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; color: #64748b;">Unanswered</div>
+                            </div>
+                        </div>
+                        ${skipped > 0 ? `<div style="font-size: 13px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;"><i class="fas fa-exclamation-triangle me-1"></i> You have <strong>${skipped}</strong> unanswered question(s).</div>` : `<div style="font-size: 13px; color: #166534; background: #dcfce7; border: 1px solid #86efac; border-radius: 8px; padding: 8px 12px; margin-bottom: 12px;"><i class="fas fa-check-circle me-1"></i> All questions have been answered!</div>`}
+                        <div style="font-size: 13px; color: #64748b;">Are you sure you want to finalize and submit your assessment? This action cannot be reversed.</div>
+                    </div>
+                `,
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#4f46e5',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, Submit'
+                confirmButtonColor: '#0284c7',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="fas fa-check-double me-1"></i> Submit Assessment',
+                cancelButtonText: 'Review Questions'
             }).then((result) => {
                 if (result.isConfirmed) {
                     submitExam();
@@ -875,7 +2943,7 @@
 
         function submitExam() {
             isExamActive = false;
-            Swal.fire({ title: 'Submitting...', text: 'Please wait...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            Swal.fire({ title: 'Submitting Assessment...', text: 'Please wait while your answers are processed...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
             
             fetch('/api/submit_quiz', {
                 method: 'POST',
@@ -884,9 +2952,9 @@
             })
             .then(res => res.json())
             .then(data => {
-                Swal.fire('Submitted!', `Your score: ${data.score}`, 'success').then(() => window.location.href = '/student');
+                Swal.fire('Assessment Submitted!', `Your final score: ${data.score}`, 'success').then(() => window.location.href = '/student');
             })
-            .catch(() => { isExamActive = true; Swal.fire('Error', 'Submission failed.', 'error'); });
+            .catch(() => { isExamActive = true; Swal.fire('Submission Error', 'Could not complete exam submission. Please retry.', 'error'); });
         }
 
         function initTimers() {
@@ -900,33 +2968,67 @@
                     if(timeLeft < 300) timerEl.classList.replace('bg-warning', 'bg-danger');
                 }
             }, 1000);
+
+            // Enterprise Session Heartbeat: sync every 2 minutes & detect concurrent login
+            setInterval(() => {
+                fetch('/api/session/heartbeat', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                .then(r => r.json())
+                .then(d => {
+                    if(d && d.error === 'concurrent_login') {
+                        alert("Security Notice: Your account was logged in from another device. This exam session has been terminated.");
+                        window.location.href = '/login?reason=concurrent_login';
+                    }
+                }).catch(() => {});
+            }, 120000);
         }
 
+
         function initEditors() {
+            if (typeof ace === 'undefined') {
+                console.warn("Ace editor library is not loaded.");
+                return;
+            }
             {% for q in questions %}
-                {% if q.question_type == 'CODE' %}
-                    var editor = ace.edit("ace-{{ q.question_id }}");
-                    editorThemes['{{ q.question_id }}'] = 'dark';
-                    editor.setTheme(aceThemes.dark);
-                    editor.session.setMode("ace/mode/python");
-                    editor.setOptions({
-                        enableBasicAutocompletion: true,
-                        enableLiveAutocompletion: true,
-                        enableSnippets: true,
-                        fontSize: "14px",
-                        showPrintMargin: false,
-                        tabSize: 4,
-                        useSoftTabs: true
-                    });
-                    const savedDraft = loadEditorDraft('{{ q.question_id }}', 'python');
-                    editor.setValue(savedDraft || boilerplates['python'], -1);
-                    editor.setShowPrintMargin(false);
-                    editor.session.on('change', function() {
-                        const lang = document.getElementById('lang-select-{{ q.question_id }}').value;
-                        saveEditorDraft('{{ q.question_id }}', lang, editor.getValue());
-                    });
-                    editorInstances['{{ q.question_id }}'] = editor;
-                    setSummaryPill('{{ q.question_id }}', '0 / 0 cases');
+                {% if q.is_coding %}
+                (function(qId) {
+                    try {
+                        const aceEl = document.getElementById("ace-" + qId);
+                        if (!aceEl) return;
+                        var editor = ace.edit("ace-" + qId);
+                        const isLight = document.body.classList.contains('light-theme');
+                        editorThemes[qId] = isLight ? 'light' : 'dark';
+                        editor.setTheme(isLight ? aceThemes.light : aceThemes.dark);
+                        editor.session.setMode("ace/mode/python");
+                        editor.setOptions({
+                            enableBasicAutocompletion: true,
+                            enableLiveAutocompletion: true,
+                            enableSnippets: true,
+                            fontSize: "14px",
+                            showPrintMargin: false,
+                            tabSize: 4,
+                            useSoftTabs: true
+                        });
+                        var savedDraft = loadEditorDraft(qId, 'python');
+                        editor.setValue(savedDraft || boilerplates['python'], -1);
+                        editor.setShowPrintMargin(false);
+                        editor.session.on('change', function() {
+                            const langEl = document.getElementById('lang-select-' + qId);
+                            const lang = langEl ? langEl.value : 'python';
+                            saveEditorDraft(qId, lang, editor.getValue());
+                        });
+                        editor.commands.addCommand({
+                            name: 'runCodeShortcut',
+                            bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
+                            exec: function(ed) {
+                                runCode(qId);
+                            }
+                        });
+                        editorInstances[qId] = editor;
+                        setSummaryPill(qId, '0 / 0 cases');
+                    } catch (err) {
+                        console.error("Error initializing editor for question " + qId, err);
+                    }
+                })('{{ q.question_id }}');
                 {% endif %}
             {% endfor %}
         }
@@ -958,235 +3060,580 @@
             setStatusBanner(qId, '<i class="fas fa-rotate-left"></i> Starter code restored for the selected language.');
         }
 
+        function jumpToModule(modName, firstIdx) {
+            if (typeof firstIdx === 'number' && firstIdx >= 0 && firstIdx < questions.length) {
+                jumpTo(firstIdx);
+            }
+        }
+
         function jumpTo(idx) {
+            if (idx < 0 || idx >= questions.length) return;
             // 1. Mark previous question status (Orange if skipped)
             updateStatusColor(currentIdx);
 
             // 2. Switch Question
-            document.getElementById(`q-${currentIdx}`).style.display = 'none';
-            document.getElementById(`btn-${questions[currentIdx]}`).classList.remove('active');
+            const oldBlock = document.getElementById(`q-${currentIdx}`);
+            if (oldBlock) oldBlock.style.display = 'none';
+            const oldBtn = document.getElementById(`btn-${questions[currentIdx]}`);
+            if (oldBtn) oldBtn.classList.remove('active');
+            const oldPill = document.getElementById(`pill-${questions[currentIdx]}`);
+            if (oldPill) oldPill.classList.remove('active');
+            const oldHpill = document.getElementById(`hpill-${questions[currentIdx]}`);
+            if (oldHpill) oldHpill.classList.remove('active');
             
             currentIdx = idx;
             
-            document.getElementById(`q-${currentIdx}`).style.display = 'block';
-            document.getElementById(`btn-${questions[currentIdx]}`).classList.add('active');
+            const newBlock = document.getElementById(`q-${currentIdx}`);
+            if (newBlock) newBlock.style.display = 'flex';
+            const newBtn = document.getElementById(`btn-${questions[currentIdx]}`);
+            if (newBtn) newBtn.classList.add('active');
+            const newPill = document.getElementById(`pill-${questions[currentIdx]}`);
+            if (newPill) newPill.classList.add('active');
+            const newHpill = document.getElementById(`hpill-${questions[currentIdx]}`);
+            if (newHpill) {
+                newHpill.classList.add('active');
+                // Center the active question number in the middle horizontally
+                newHpill.scrollIntoView({
+                    behavior: 'smooth',
+                    inline: 'center',
+                    block: 'nearest'
+                });
+            }
+
+            // Sync Module Tab
+            const modInput = document.getElementById(`module-${currentIdx}`);
+            const currentMod = modInput ? modInput.value : '';
+            if (currentMod) {
+                document.querySelectorAll('.mod-tab-btn').forEach(btn => {
+                    if (btn.getAttribute('data-mod') === currentMod) {
+                        btn.classList.add('active');
+                        btn.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
             
             // 3. Resize Editor if needed
             let qId = questions[currentIdx];
-            if(editorInstances[qId]) editorInstances[qId].resize();
+            if (editorInstances[qId]) {
+                setTimeout(() => {
+                    editorInstances[qId].resize();
+                }, 50);
+            }
             
-            document.querySelector('.sidebar').classList.remove('active'); // Close sidebar on mobile
+            // Close sidebar drawer if open
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) sidebar.classList.remove('active');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.remove('active');
+
+            updateSummaryCounts();
         }
 
         function updateStatusColor(idx) {
             let qId = questions[idx];
             let btn = document.getElementById(`btn-${qId}`);
+            let pill = document.getElementById(`pill-${qId}`);
+            let hpill = document.getElementById(`hpill-${qId}`);
+            if (!btn && !hpill) return;
             
             // Check if answered
             let isAnswered = false;
+            let inp = document.getElementById(`ans-${qId}`);
+            if (inp && inp.value && inp.value.trim() !== '') {
+                isAnswered = true;
+            } else if (savedResponses[qId]) {
+                let sr = savedResponses[qId];
+                if ((sr.opt && String(sr.opt).trim() !== '') || sr.code_status || sr.language) {
+                    isAnswered = true;
+                }
+            }
+
+            if (isAnswered) {
+                if (btn) { btn.classList.add('answered'); btn.classList.remove('skipped'); }
+                if (pill) { pill.classList.add('answered'); pill.classList.remove('skipped'); }
+                if (hpill) { hpill.classList.add('answered'); hpill.classList.remove('skipped'); }
+            } else {
+                if (btn) { btn.classList.add('skipped'); btn.classList.remove('answered'); }
+                if (pill) { pill.classList.add('skipped'); pill.classList.remove('answered'); }
+                if (hpill) { hpill.classList.add('skipped'); hpill.classList.remove('answered'); }
+            }
+        }
+
+        function updateSummaryCounts() {
+            let answered = 0;
+            let skipped = 0;
+            questions.forEach(qId => {
+                let btn = document.getElementById(`btn-${qId}`);
+                if (btn) {
+                    if (btn.classList.contains('answered')) answered++;
+                    else if (btn.classList.contains('skipped')) skipped++;
+                }
+            });
+            const ansEl = document.getElementById('answered-count');
+            if (ansEl) ansEl.innerText = answered;
+            const skipEl = document.getElementById('skipped-count');
+            if (skipEl) skipEl.innerText = skipped;
+        }
+
+        function switchMobileView(qId, view) {
+            const prob = document.getElementById(`mobile-prob-${qId}`);
+            const edit = document.getElementById(`mobile-edit-${qId}`);
+            const cons = document.getElementById(`mobile-console-${qId}`);
             
-            // Check MCQ hidden input
-            let mcqInput = document.getElementById(`ans-${qId}`);
-            if (mcqInput && mcqInput.value) isAnswered = true;
+            // Update mobile tab buttons active state
+            const tabs = document.querySelectorAll(`#q-${currentIdx} .mobile-nav-tab`);
+            tabs.forEach(t => t.classList.remove('active'));
+            if (window.event && window.event.currentTarget) {
+                window.event.currentTarget.classList.add('active');
+            }
 
-            // Check Code (if submitted previously or typed)
-            // Note: For code, we usually rely on 'Run Code' or explicit save. 
-            // Here we check if 'savedResponses' has it.
-            if (savedResponses[qId]) isAnswered = true;
-
-            if (!isAnswered) {
-                btn.classList.add('skipped'); // Orange
-                btn.classList.remove('answered');
+            if (view === 'problem') {
+                if (prob) prob.style.display = 'flex';
+                if (edit) edit.style.display = 'none';
+                if (cons) cons.style.display = 'none';
+            } else if (view === 'editor') {
+                if (prob) prob.style.display = 'none';
+                if (edit) edit.style.display = 'block';
+                if (cons) cons.style.display = 'none';
+                if (editorInstances[qId]) {
+                    setTimeout(() => editorInstances[qId].resize(), 60);
+                }
+            } else if (view === 'console') {
+                if (prob) prob.style.display = 'none';
+                if (edit) edit.style.display = 'none';
+                if (cons) cons.style.display = 'flex';
             }
         }
 
         function toggleSidebar() {
-            document.querySelector('.sidebar').classList.toggle('active');
-            let overlay = document.querySelector('.sidebar-overlay');
-            if(overlay) overlay.classList.toggle('active');
+            const sb = document.querySelector('.sidebar');
+            if (sb) sb.classList.toggle('active');
+            const overlay = document.querySelector('.sidebar-overlay');
+            if (overlay) overlay.classList.toggle('active');
+            updateSummaryCounts();
         }
 
         function toggleModule(id) {
             let el = document.getElementById(id);
-            el.classList.toggle('open');
+            if (el) el.classList.toggle('open');
         }
 
         function nextQ() { if(currentIdx < questions.length - 1) jumpTo(currentIdx + 1); }
         function prevQ() { if(currentIdx > 0) jumpTo(currentIdx - 1); }
 
-        function selectOpt(el, qId, val) {
-            el.parentElement.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+        function selectSingleOpt(el, qId, val) {
+            let container = el.closest('.options-group') || document.getElementById(`opt-group-${qId}`);
+            if (container) {
+                container.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            }
             el.classList.add('selected');
             
-            // Update local state for color logic
             document.getElementById(`ans-${qId}`).value = val;
             savedResponses[qId] = { opt: val };
             
-            document.getElementById(`btn-${qId}`).classList.remove('skipped');
-            document.getElementById(`btn-${qId}`).classList.add('answered');
+            let btn = document.getElementById(`btn-${qId}`);
+            if (btn) { btn.classList.remove('skipped'); btn.classList.add('answered'); }
+            let pill = document.getElementById(`pill-${qId}`);
+            if (pill) { pill.classList.remove('skipped'); pill.classList.add('answered'); }
+            let hpill = document.getElementById(`hpill-${qId}`);
+            if (hpill) { hpill.classList.remove('skipped'); hpill.classList.add('answered'); }
+
+            updateSummaryCounts();
+            fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: val }) });
+        }
+        function selectOpt(el, qId, val) { selectSingleOpt(el, qId, val); }
+
+        function toggleMultiOpt(el, qId, val) {
+            el.classList.toggle('selected');
+            let container = document.getElementById(`opt-group-${qId}`);
+            let selectedOpts = [];
+            if (container) {
+                container.querySelectorAll('.checkbox-card.selected').forEach(c => {
+                    let optVal = c.getAttribute('data-opt');
+                    if (optVal) selectedOpts.push(optVal.trim());
+                });
+            }
+            selectedOpts.sort();
+            let combined = selectedOpts.join(', ');
             
+            document.getElementById(`ans-${qId}`).value = combined;
+            savedResponses[qId] = { opt: combined };
+
+            let btn = document.getElementById(`btn-${qId}`);
+            let pill = document.getElementById(`pill-${qId}`);
+            let hpill = document.getElementById(`hpill-${qId}`);
+            if (combined.length > 0) {
+                if (btn) { btn.classList.remove('skipped'); btn.classList.add('answered'); }
+                if (pill) { pill.classList.remove('skipped'); pill.classList.add('answered'); }
+                if (hpill) { hpill.classList.remove('skipped'); hpill.classList.add('answered'); }
+            } else {
+                if (btn) { btn.classList.remove('answered'); btn.classList.add('skipped'); }
+                if (pill) { pill.classList.remove('answered'); pill.classList.add('skipped'); }
+                if (hpill) { hpill.classList.remove('answered'); hpill.classList.add('skipped'); }
+            }
+
+            updateSummaryCounts();
+            fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: combined }) });
+        }
+
+        function selectDropdownOpt(qId, val) {
+            let dd = document.getElementById(`dropdown-${qId}`);
+            let prev = document.getElementById(`dropdown-preview-${qId}`);
+            let prevTxt = document.getElementById(`dropdown-preview-text-${qId}`);
+            
+            if (val && val.trim() !== '') {
+                if (prev && prevTxt && dd) {
+                    prev.style.display = 'flex';
+                    prevTxt.innerText = dd.options[dd.selectedIndex] ? dd.options[dd.selectedIndex].text : val;
+                }
+            } else {
+                if (prev) prev.style.display = 'none';
+            }
+
+            document.getElementById(`ans-${qId}`).value = val;
+            savedResponses[qId] = { opt: val };
+
+            let btn = document.getElementById(`btn-${qId}`);
+            let pill = document.getElementById(`pill-${qId}`);
+            let hpill = document.getElementById(`hpill-${qId}`);
+            if (val && val.trim() !== '') {
+                if (btn) { btn.classList.remove('skipped'); btn.classList.add('answered'); }
+                if (pill) { pill.classList.remove('skipped'); pill.classList.add('answered'); }
+                if (hpill) { hpill.classList.remove('skipped'); hpill.classList.add('answered'); }
+            } else {
+                if (btn) { btn.classList.remove('answered'); btn.classList.add('skipped'); }
+                if (pill) { pill.classList.remove('answered'); pill.classList.add('skipped'); }
+                if (hpill) { hpill.classList.remove('answered'); hpill.classList.add('skipped'); }
+            }
+
+            updateSummaryCounts();
             fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: val }) });
         }
 
-        // --- PASTE THIS IN YOUR SCRIPT SECTION ---
+        let blankDebounceTimers = {};
+        function handleBlankInput(qId, val) {
+            document.getElementById(`ans-${qId}`).value = val;
+            savedResponses[qId] = { opt: val };
 
-// 1. Helper to switch tabs
-function switchTab(qId, tabName) {
-    document.getElementById(`view-res-${qId}`).style.display = 'none';
-    document.getElementById(`view-cust-${qId}`).style.display = 'none';
-    document.getElementById(`tab-res-${qId}`).classList.remove('active');
-    document.getElementById(`tab-cust-${qId}`).classList.remove('active');
+            let btn = document.getElementById(`btn-${qId}`);
+            let pill = document.getElementById(`pill-${qId}`);
+            let hpill = document.getElementById(`hpill-${qId}`);
+            let statusEl = document.getElementById(`blank-status-${qId}`);
 
-    document.getElementById(`view-${tabName}-${qId}`).style.display = 'block';
-    document.getElementById(`tab-${tabName}-${qId}`).classList.add('active');
-}
+            if (val && val.trim() !== '') {
+                if (btn) { btn.classList.remove('skipped'); btn.classList.add('answered'); }
+                if (pill) { pill.classList.remove('skipped'); pill.classList.add('answered'); }
+                if (hpill) { hpill.classList.remove('skipped'); hpill.classList.add('answered'); }
+                if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Answer saved';
+            } else {
+                if (btn) { btn.classList.remove('answered'); btn.classList.add('skipped'); }
+                if (pill) { pill.classList.remove('answered'); pill.classList.add('skipped'); }
+                if (hpill) { hpill.classList.remove('answered'); hpill.classList.add('skipped'); }
+                if (statusEl) statusEl.innerHTML = '<i class="fas fa-shield-halved me-1"></i> Waiting for answer';
+            }
+            updateSummaryCounts();
 
-// 2. Helper to show details when clicking a test case button
-function showCaseDetails(qId, index) {
-    let results = window[`results_${qId}`]; // Retrieve saved results
-    let res = results[index];
-    
-    // Highlight active button
-    let btns = document.querySelectorAll(`#cases-nav-${qId} .case-btn`);
-    btns.forEach(b => b.classList.remove('active'));
-    btns[index].classList.add('active');
-
-    // Fill Data
-    document.getElementById(`detail-input-${qId}`).innerText = res.input;
-    document.getElementById(`detail-expected-${qId}`).innerText = res.expected;
-    document.getElementById(`detail-actual-${qId}`).innerText = res.actual;
-    
-    // Color Logic
-    let actBox = document.getElementById(`detail-actual-${qId}`);
-    actBox.style.color = res.status === 'Pass' ? '#4ade80' : '#f87171';
-
-    document.getElementById(`case-details-${qId}`).style.display = 'block';
-}
-
-// 3. THE NEW RUN CODE FUNCTION
-function runCode(qId) {
-    let editor = editorInstances[qId];
-    let code = editor.getValue();
-    let lang = document.getElementById(`lang-select-${qId}`).value;
-    saveEditorDraft(qId, lang, code);
-    
-    // Show Loading
-    setStatusBanner(qId, '<i class="fas fa-spinner fa-spin"></i> Running against official test cases...', 'loading');
-    document.getElementById(`cases-nav-${qId}`).style.display = 'none';
-    document.getElementById(`case-details-${qId}`).style.display = 'none';
-    setSummaryPill(qId, 'Running...');
-    switchTab(qId, 'res'); 
-
-    fetch('/api/run_code', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.status === 'error') {
-            setStatusBanner(qId, `<i class="fas fa-circle-exclamation"></i> ${data.output}`, 'error');
-            setSummaryPill(qId, '0 / 0 cases');
-            return;
+            if (blankDebounceTimers[qId]) clearTimeout(blankDebounceTimers[qId]);
+            blankDebounceTimers[qId] = setTimeout(() => {
+                fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: val }) });
+            }, 300);
         }
 
-        // Render Buttons for each test case
-        let navHtml = '';
-        let results = data.results || []; 
-        let passedCount = 0;
+        function clearBlankInput(qId) {
+            let el = document.getElementById(`blank-input-${qId}`);
+            if (el) el.value = '';
+            handleBlankInput(qId, '');
+        }
 
-        results.forEach((res, index) => {
-            let colorClass = res.status === 'Pass' ? 'pass' : (res.status === 'Error' ? 'error' : 'fail');
-            let icon = res.status === 'Pass' ? 'check' : (res.status === 'Error' ? 'triangle-exclamation' : 'times');
-            if(res.status === 'Pass') passedCount++;
+        function selectTrueFalseOpt(el, qId, val) {
+            let container = document.getElementById(`opt-group-${qId}`);
+            if (container) {
+                container.querySelectorAll('.tf-card').forEach(c => c.classList.remove('selected'));
+            }
+            el.classList.add('selected');
 
-            navHtml += `<div class="case-btn ${colorClass}" onclick="showCaseDetails('${qId}', ${index})">
-                            <i class="fas fa-${icon}"></i> Case ${index + 1}
-                        </div>`;
+            document.getElementById(`ans-${qId}`).value = val;
+            savedResponses[qId] = { opt: val };
+
+            let btn = document.getElementById(`btn-${qId}`);
+            if (btn) { btn.classList.remove('skipped'); btn.classList.add('answered'); }
+            let pill = document.getElementById(`pill-${qId}`);
+            if (pill) { pill.classList.remove('skipped'); pill.classList.add('answered'); }
+            let hpill = document.getElementById(`hpill-${qId}`);
+            if (hpill) { hpill.classList.remove('skipped'); hpill.classList.add('answered'); }
+
+            updateSummaryCounts();
+            fetch('/api/save_answer', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ attempt_id: attemptId, question_id: qId, option: val }) });
+        }
+
+        // Helper to switch tabs
+        function switchTab(qId, tabName) {
+            const resView = document.getElementById(`view-res-${qId}`);
+            const custView = document.getElementById(`view-cust-${qId}`);
+            const resTab = document.getElementById(`tab-res-${qId}`);
+            const custTab = document.getElementById(`tab-cust-${qId}`);
+
+            if (resView) resView.style.display = tabName === 'res' ? 'block' : 'none';
+            if (custView) custView.style.display = tabName === 'cust' ? 'block' : 'none';
+            if (resTab) resTab.classList.toggle('active', tabName === 'res');
+            if (custTab) custTab.classList.toggle('active', tabName === 'cust');
+        }
+
+        // Helper to show details when clicking a test case button
+        function showCaseDetails(qId, index) {
+            let results = window[`results_${qId}`];
+            if (!results || !results[index]) return;
+            let res = results[index];
+            
+            let btns = document.querySelectorAll(`#cases-nav-${qId} .case-btn`);
+            btns.forEach(b => b.classList.remove('active'));
+            if (btns[index]) btns[index].classList.add('active');
+
+            const inputEl = document.getElementById(`detail-input-${qId}`);
+            const expectEl = document.getElementById(`detail-expected-${qId}`);
+            const actualEl = document.getElementById(`detail-actual-${qId}`);
+
+            if (inputEl) inputEl.innerText = res.input;
+            if (expectEl) expectEl.innerText = res.expected;
+            if (actualEl) {
+                actualEl.innerText = res.actual;
+                actualEl.style.color = res.status === 'Pass' ? '#4ade80' : '#f87171';
+            }
+            
+            const caseGrid = document.getElementById(`case-details-${qId}`);
+            if (caseGrid) caseGrid.style.display = 'grid';
+        }
+
+        // Run Code against official test cases
+        function runCode(qId) {
+            let editor = editorInstances[qId];
+            if (!editor) return;
+            let code = editor.getValue();
+            let lang = document.getElementById(`lang-select-${qId}`).value;
+            saveEditorDraft(qId, lang, code);
+            
+            setStatusBanner(qId, '<i class="fas fa-spinner fa-spin"></i> Running solution against official test cases...', 'loading');
+            const casesNav = document.getElementById(`cases-nav-${qId}`);
+            if (casesNav) casesNav.style.display = 'none';
+            const caseDetails = document.getElementById(`case-details-${qId}`);
+            if (caseDetails) caseDetails.style.display = 'none';
+            setSummaryPill(qId, 'Evaluating...');
+            switchTab(qId, 'res'); 
+
+            fetch('/api/run_code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'error') {
+                    setStatusBanner(qId, `<i class="fas fa-triangle-exclamation"></i> ${data.output}`, 'error');
+                    setSummaryPill(qId, '0 / 0 cases');
+                    return;
+                }
+
+                let navHtml = '';
+                let results = data.results || []; 
+                let passedCount = 0;
+
+                results.forEach((res, index) => {
+                    let colorClass = res.status === 'Pass' ? 'pass' : 'fail';
+                    let icon = res.status === 'Pass' ? 'check' : 'xmark';
+                    if(res.status === 'Pass') passedCount++;
+
+                    navHtml += `<div class="case-btn ${colorClass}" onclick="showCaseDetails('${qId}', ${index})">
+                                    <i class="fas fa-${icon}"></i> Case ${index + 1}
+                                </div>`;
+                });
+
+                window[`results_${qId}`] = results;
+
+                if (casesNav) {
+                    casesNav.innerHTML = navHtml;
+                    casesNav.style.display = results.length ? 'flex' : 'none';
+                }
+                
+                let verdict = data.verdict || (passedCount === results.length ? 'Accepted' : 'Wrong Answer');
+                let verdictState = verdict === 'Accepted' ? 'success' : 'error';
+                let iconClass = verdict === 'Accepted' ? 'fa-circle-check text-success' : 'fa-circle-xmark text-danger';
+                setStatusBanner(qId, `<i class="fas ${iconClass}"></i> ${verdict}`, verdictState);
+                setSummaryPill(qId, `${passedCount} / ${results.length} cases`);
+
+                savedResponses[qId] = { code_status: verdict, language: lang };
+                let btn = document.getElementById(`btn-${qId}`);
+                if (btn) {
+                    btn.classList.remove('skipped');
+                    btn.classList.add('answered');
+                }
+                let pill = document.getElementById(`pill-${qId}`);
+                if (pill) {
+                    pill.classList.remove('skipped');
+                    pill.classList.add('answered');
+                }
+                updateSummaryCounts();
+
+                // Auto-show first test case if exists
+                if(results.length > 0) showCaseDetails(qId, 0);
+                if(results.length === 0 && data.output) {
+                    const inp = document.getElementById(`detail-input-${qId}`);
+                    const exp = document.getElementById(`detail-expected-${qId}`);
+                    const act = document.getElementById(`detail-actual-${qId}`);
+                    if (inp) inp.innerText = 'No fixed input';
+                    if (exp) exp.innerText = 'No expected output configured';
+                    if (act) act.innerText = data.output;
+                    if (caseDetails) caseDetails.style.display = 'grid';
+                }
+            })
+            .catch(() => {
+                setStatusBanner(qId, '<i class="fas fa-triangle-exclamation"></i> Unable to reach judge service.', 'error');
+                setSummaryPill(qId, '0 / 0 cases');
+            });
+        }
+
+        function runCustom(qId) {
+            let editor = editorInstances[qId];
+            if (!editor) return;
+            let code = editor.getValue();
+            let lang = document.getElementById(`lang-select-${qId}`).value;
+            let stdin = document.getElementById(`custom-input-${qId}`).value;
+            let outputEl = document.getElementById(`custom-output-${qId}`);
+
+            saveEditorDraft(qId, lang, code);
+            if (outputEl) outputEl.innerText = 'Running custom input...';
+
+            fetch('/api/run_code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang, mode: 'custom', stdin: stdin })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    if (outputEl) outputEl.innerText = data.output || 'Execution failed.';
+                    setStatusBanner(qId, '<i class="fas fa-triangle-exclamation"></i> Custom execution failed.', 'error');
+                    return;
+                }
+
+                if (outputEl) outputEl.innerText = data.output || 'Execution completed with no output.';
+                setStatusBanner(qId, '<i class="fas fa-terminal text-success"></i> Custom run completed successfully.', 'success');
+                savedResponses[qId] = { code_status: 'Custom Run', language: lang };
+                let btn = document.getElementById(`btn-${qId}`);
+                if (btn) {
+                    btn.classList.remove('skipped');
+                    btn.classList.add('answered');
+                }
+                let pill = document.getElementById(`pill-${qId}`);
+                if (pill) {
+                    pill.classList.remove('skipped');
+                    pill.classList.add('answered');
+                }
+                let hpill = document.getElementById(`hpill-${qId}`);
+                if (hpill) {
+                    hpill.classList.remove('skipped');
+                    hpill.classList.add('answered');
+                }
+                updateSummaryCounts();
+            })
+            .catch(() => {
+                if (outputEl) outputEl.innerText = 'Execution request failed.';
+                setStatusBanner(qId, '<i class="fas fa-triangle-exclamation"></i> Unable to reach judge service.', 'error');
+            });
+        }
+
+        // Auto-resize active editor on screen change
+        window.addEventListener('resize', () => {
+            let qId = questions[currentIdx];
+            if (editorInstances[qId]) {
+                editorInstances[qId].resize();
+            }
         });
 
-        // Save results to use later when clicking buttons
-        window[`results_${qId}`] = results;
+        // Initialize Saved States
+        window.onload = function() {
+            try {
+                let savedTheme = 'dark';
+                try {
+                    if (window.localStorage) {
+                        savedTheme = localStorage.getItem('exam_console_theme') || 'dark';
+                    }
+                } catch(e) {}
+                applyTheme(savedTheme);
 
-        document.getElementById(`cases-nav-${qId}`).innerHTML = navHtml;
-        document.getElementById(`cases-nav-${qId}`).style.display = results.length ? 'flex' : 'none';
-        
-        let verdict = data.verdict || (passedCount === results.length ? 'Accepted' : 'Wrong Answer');
-        let verdictState = verdict === 'Accepted' ? 'success' : 'error';
-        setStatusBanner(qId, `<i class="fas fa-gavel"></i> ${verdict}`, verdictState);
-        setSummaryPill(qId, `${passedCount} / ${results.length} cases`);
+                if (savedResponses && typeof savedResponses === 'object') {
+                    for (const [qId, data] of Object.entries(savedResponses)) {
+                        let btn = document.getElementById(`btn-${qId}`);
+                        let pill = document.getElementById(`pill-${qId}`);
+                        let hpill = document.getElementById(`hpill-${qId}`);
+                        
+                        if (data && data.opt && String(data.opt).trim() !== '') {
+                            let optVal = String(data.opt).trim();
+                            let inp = document.getElementById(`ans-${qId}`);
+                            if (inp) inp.value = optVal;
 
-        savedResponses[qId] = { code_status: verdict, language: lang };
-        document.getElementById(`btn-${qId}`).classList.remove('skipped');
-        document.getElementById(`btn-${qId}`).classList.add('answered');
+                            if (btn) { btn.classList.add('answered'); btn.classList.remove('skipped'); }
+                            if (pill) { pill.classList.add('answered'); pill.classList.remove('skipped'); }
+                            if (hpill) { hpill.classList.add('answered'); hpill.classList.remove('skipped'); }
 
-        // Auto-click the first case
-        if(results.length > 0) showCaseDetails(qId, 0);
-        if(results.length === 0 && data.output) {
-            document.getElementById(`detail-input-${qId}`).innerText = 'No fixed input';
-            document.getElementById(`detail-expected-${qId}`).innerText = 'No expected output configured';
-            document.getElementById(`detail-actual-${qId}`).innerText = data.output;
-            document.getElementById(`case-details-${qId}`).style.display = 'grid';
-        }
-    })
-    .catch(() => {
-        setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Unable to reach the judge service.', 'error');
-        setSummaryPill(qId, '0 / 0 cases');
-    });
-}
+                            // 1. Single Choice Radio
+                            let radioCard = document.querySelector(`#opt-group-${qId} .radio-card[data-opt="${optVal}"]`);
+                            if (radioCard) radioCard.classList.add('selected');
 
-function runCustom(qId) {
-    let editor = editorInstances[qId];
-    let code = editor.getValue();
-    let lang = document.getElementById(`lang-select-${qId}`).value;
-    let stdin = document.getElementById(`custom-input-${qId}`).value;
-    let outputEl = document.getElementById(`custom-output-${qId}`);
+                            // 2. Multiple Choice Checkbox
+                            let parts = optVal.split(',').map(s => s.trim().toUpperCase());
+                            parts.forEach(p => {
+                                let chkCard = document.querySelector(`#opt-group-${qId} .checkbox-card[data-opt="${p}"]`);
+                                if (chkCard) chkCard.classList.add('selected');
+                            });
 
-    saveEditorDraft(qId, lang, code);
-    outputEl.innerText = 'Running custom input...';
+                            // 3. Select Dropdown
+                            let dd = document.getElementById(`dropdown-${qId}`);
+                            if (dd) {
+                                dd.value = optVal;
+                                let prev = document.getElementById(`dropdown-preview-${qId}`);
+                                let prevTxt = document.getElementById(`dropdown-preview-text-${qId}`);
+                                if (prev && prevTxt) {
+                                    prev.style.display = 'flex';
+                                    prevTxt.innerText = dd.options[dd.selectedIndex] ? dd.options[dd.selectedIndex].text : optVal;
+                                }
+                            }
 
-    fetch('/api/run_code', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ attempt_id: attemptId, question_id: qId, code: code, language: lang, mode: 'custom', stdin: stdin })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'error') {
-            outputEl.innerText = data.output || 'Execution failed.';
-            setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Custom run failed.', 'error');
-            return;
-        }
+                            // 4. Fill in the Blanks
+                            let blankInp = document.getElementById(`blank-input-${qId}`);
+                            if (blankInp) blankInp.value = optVal;
+                            let statusEl = document.getElementById(`blank-status-${qId}`);
+                            if (statusEl) statusEl.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Answer saved';
 
-        outputEl.innerText = data.output || 'No Output';
-        setStatusBanner(qId, '<i class="fas fa-terminal"></i> Custom run completed.', 'success');
-        savedResponses[qId] = { code_status: 'Custom Run', language: lang };
-        document.getElementById(`btn-${qId}`).classList.remove('skipped');
-        document.getElementById(`btn-${qId}`).classList.add('answered');
-    })
-    .catch(() => {
-        outputEl.innerText = 'Execution failed.';
-        setStatusBanner(qId, '<i class="fas fa-circle-exclamation"></i> Unable to reach the judge service.', 'error');
-    });
-}
-
-// Initialize Saved States (Coloring)
-window.onload = function() {
-    // Mark saved answers as green
-    for (const [qId, data] of Object.entries(savedResponses)) {
-        let btn = document.getElementById(`btn-${qId}`);
-        if(btn) btn.classList.add('answered');
-        
-        // If MCQ, select the option visually
-        let optCard = document.querySelector(`.option-card[onclick*="'${qId}', '${data.opt}'"]`);
-        if(optCard) optCard.classList.add('selected');
-        
-        let inp = document.getElementById(`ans-${qId}`);
-        if(inp) inp.value = data.opt;
-    }
-    // Mark first question active
-    document.getElementById(`btn-${questions[0]}`).classList.add('active');
-};
+                            // 5. True / False
+                            let normTf = (optVal.toLowerCase() === 'true' || optVal.toUpperCase() === 'A') ? 'True' : 
+                                         (optVal.toLowerCase() === 'false' || optVal.toUpperCase() === 'B') ? 'False' : optVal;
+                            let tfCard = document.querySelector(`#opt-group-${qId} .tf-card[data-opt="${normTf}"]`);
+                            if (tfCard) tfCard.classList.add('selected');
+                        } else if (data && (data.code_status || data.language)) {
+                            if (btn) { btn.classList.add('answered'); btn.classList.remove('skipped'); }
+                            if (pill) { pill.classList.add('answered'); pill.classList.remove('skipped'); }
+                            if (hpill) { hpill.classList.add('answered'); hpill.classList.remove('skipped'); }
+                        }
+                    }
+                }
+                if (questions && questions.length > 0) {
+                    let firstBtn = document.getElementById(`btn-${questions[0]}`);
+                    if (firstBtn) firstBtn.classList.add('active');
+                    let firstPill = document.getElementById(`pill-${questions[0]}`);
+                    if (firstPill) firstPill.classList.add('active');
+                    let firstHpill = document.getElementById(`hpill-${questions[0]}`);
+                    if (firstHpill) {
+                        firstHpill.classList.add('active');
+                        firstHpill.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    }
+                }
+                updateSummaryCounts();
+            } catch (e) {
+                console.warn("window.onload initialization error:", e);
+            }
+        };
     </script>
 </body>
 </html>

@@ -2,8 +2,31 @@ from flask import Blueprint, request, redirect, session, render_template, flash,
 from utils import get_db_connection
 import base64
 import os
+import time
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
+from session_manager import register_user_session, invalidate_user_session
+from user_management_service import verify_user_password, hash_user_password
+from official_assets_manager import log_admin_action, get_client_ip
+
+# Rate limiting for password change attempts: { 'identifier': [timestamp, timestamp, ...] }
+PASSWORD_CHANGE_ATTEMPTS = {}
+MAX_PW_ATTEMPTS = 5
+PW_WINDOW_SECONDS = 600  # 10 minutes
+
+def is_pw_rate_limited(identifier):
+    now = time.time()
+    attempts = PASSWORD_CHANGE_ATTEMPTS.get(identifier, [])
+    # Keep only attempts in window
+    valid_attempts = [t for t in attempts if now - t < PW_WINDOW_SECONDS]
+    PASSWORD_CHANGE_ATTEMPTS[identifier] = valid_attempts
+    return len(valid_attempts) >= MAX_PW_ATTEMPTS
+
+def record_pw_attempt(identifier):
+    now = time.time()
+    attempts = PASSWORD_CHANGE_ATTEMPTS.get(identifier, [])
+    attempts.append(now)
+    PASSWORD_CHANGE_ATTEMPTS[identifier] = attempts
 
 auth_bp = Blueprint('auth', __name__, template_folder='../templates')
 
@@ -125,53 +148,181 @@ def update_profile():
     finally:
         conn.close()
 
-@auth_bp.route('/api/user/change-password', methods=['POST'])
-def change_password():
+@auth_bp.route('/change-password', methods=['GET', 'POST'])
+def change_password_page():
     if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Not logged in'}), 401
-    
-    data = request.get_json()
-    current_password = data.get('current_password', '')
-    new_password = data.get('new_password', '')
-    
-    if not current_password or not new_password:
-        return jsonify({'success': False, 'message': 'All fields are required'})
-    
-    if len(new_password) < 6:
-        return jsonify({'success': False, 'message': 'Password must be at least 6 characters'})
-    
+        return redirect('/login')
+
+    if request.method == 'GET':
+        return render_template('change_password.html')
+
+    # Handle standard form POST submission
+    current_pw = request.form.get('current_password', '').strip()
+    new_pw = request.form.get('new_password', '').strip()
+    confirm_pw = request.form.get('confirm_password', '').strip()
+
+    user_id = session['user_id']
+    ip = get_client_ip(request)
+    rate_key = f"{user_id}_{ip}"
+
+    if is_pw_rate_limited(rate_key):
+        flash('Too many failed attempts. Please try again after 10 minutes.', 'danger')
+        return render_template('change_password.html')
+
+    if not current_pw or not new_pw or not confirm_pw:
+        flash('All password fields are required.', 'danger')
+        return render_template('change_password.html')
+
+    if len(new_pw) < 6:
+        flash('New password must be at least 6 characters.', 'danger')
+        return render_template('change_password.html')
+
+    if new_pw != confirm_pw:
+        flash('New password and confirmation do not match.', 'danger')
+        return render_template('change_password.html')
+
+    if new_pw == current_pw:
+        flash('New password cannot be the same as your current password.', 'danger')
+        return render_template('change_password.html')
+
     conn = get_db_connection()
+    if not conn:
+        flash('Database connection failed. Please try again.', 'danger')
+        return render_template('change_password.html')
+
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT password_hash FROM Users WHERE user_id=%s", (session['user_id'],))
+            cursor.execute("SELECT password_hash FROM Users WHERE user_id=%s", (user_id,))
             user = cursor.fetchone()
-            
-            if user['password_hash'] != current_password:
-                return jsonify({'success': False, 'message': 'Current password is incorrect'})
-            
-            cursor.execute("UPDATE Users SET password_hash=%s WHERE user_id=%s", (new_password, session['user_id']))
+            if not user or not verify_user_password(user['password_hash'], current_pw):
+                record_pw_attempt(rate_key)
+                flash('Current password is incorrect.', 'danger')
+                return render_template('change_password.html')
+
+            new_hash = hash_user_password(new_pw)
+            cursor.execute("""
+                UPDATE Users
+                SET password_hash=%s,
+                    must_change_password=0,
+                    password_changed_at=NOW()
+                WHERE user_id=%s
+            """, (new_hash, user_id))
+
         conn.commit()
-        return jsonify({'success': True, 'message': 'Password changed successfully'})
+        session['must_change_password'] = 0
+        log_admin_action(user_id, 'PASSWORD_CHANGED', {'role': session.get('role')}, request)
+
+        flash('Password updated successfully! Welcome to your dashboard.', 'success')
+        role = session.get('role')
+        if role == 'Admin': return redirect('/admin')
+        elif role == 'Coordinator': return redirect('/coordinator')
+        else: return redirect('/student')
     except Exception as e:
+        conn.rollback()
+        flash(f'An error occurred: {str(e)}', 'danger')
+        return render_template('change_password.html')
+    finally:
+        conn.close()
+
+@auth_bp.route('/api/auth/change-password', methods=['POST'])
+@auth_bp.route('/api/user/change-password', methods=['POST'])
+def api_change_password():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Not logged in'}), 401
+
+    user_id = session['user_id']
+    ip = get_client_ip(request)
+    rate_key = f"{user_id}_{ip}"
+
+    if is_pw_rate_limited(rate_key):
+        return jsonify({
+            'success': False,
+            'message': 'Too many failed attempts. Please try again after 10 minutes.'
+        }), 429
+
+    data = request.get_json() or request.form
+    current_password = data.get('current_password', '').strip()
+    new_password = data.get('new_password', '').strip()
+    confirm_password = data.get('confirm_password', '').strip()
+
+    if not current_password or not new_password:
+        return jsonify({'success': False, 'message': 'Current and new password are required.'}), 400
+
+    if len(new_password) < 6:
+        return jsonify({'success': False, 'message': 'Password must be at least 6 characters.'}), 400
+
+    if confirm_password and new_password != confirm_password:
+        return jsonify({'success': False, 'message': 'New password and confirmation do not match.'}), 400
+
+    if new_password == current_password:
+        return jsonify({'success': False, 'message': 'New password cannot be identical to current password.'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'message': 'Database connection unavailable.'}), 500
+
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT password_hash FROM Users WHERE user_id=%s", (user_id,))
+            user = cursor.fetchone()
+            if not user or not verify_user_password(user['password_hash'], current_password):
+                record_pw_attempt(rate_key)
+                return jsonify({'success': False, 'message': 'Current password is incorrect.'}), 400
+
+            new_hash = hash_user_password(new_password)
+            cursor.execute("""
+                UPDATE Users
+                SET password_hash=%s,
+                    must_change_password=0,
+                    password_changed_at=NOW()
+                WHERE user_id=%s
+            """, (new_hash, user_id))
+
+        conn.commit()
+        session['must_change_password'] = 0
+        log_admin_action(user_id, 'PASSWORD_CHANGED', {'role': session.get('role')}, request)
+
+        role = session.get('role')
+        target_redirect = '/admin' if role == 'Admin' else ('/coordinator' if role == 'Coordinator' else '/student')
+
+        return jsonify({
+            'success': True,
+            'message': 'Password changed successfully.',
+            'redirect': target_redirect
+        })
+    except Exception as e:
+        conn.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         conn.close()
 
+@auth_bp.route('/api/auth/password-change-required')
+def api_password_change_required():
+    if 'user_id' not in session:
+        return jsonify({'logged_in': False, 'required': False})
+    return jsonify({
+        'logged_in': True,
+        'required': session.get('must_change_password') == 1,
+        'user_id': session.get('user_id'),
+        'role': session.get('role')
+    })
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_id = request.form.get('login_id')
-        password = request.form.get('password')
+        login_id = request.form.get('login_id', '').strip()
+        password = request.form.get('password', '').strip()
         remember = request.form.get('remember')
         conn = get_db_connection()
         user = None
         if conn:
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM Users WHERE (email=%s OR roll_number=%s) AND password_hash=%s", (login_id, login_id, password))
+                # Query user by email or roll_number (case-insensitive where applicable)
+                cursor.execute("SELECT * FROM Users WHERE email=%s OR roll_number=%s", (login_id, login_id))
                 user = cursor.fetchone()
             conn.close()
 
-        if user:
+        if user and verify_user_password(user['password_hash'], password):
             # SECURITY CHECK: IS USER BLOCKED?
             if user.get('is_blocked', 0) == 1:
                 return render_template('login.html',
@@ -190,6 +341,19 @@ def login():
             if not enrolled_session and user.get('role') == 'Student':
                 enrolled_session = user.get('batch', '')
             session['enrolled_session'] = enrolled_session
+
+            must_change_pw = int(user.get('must_change_password') or 0)
+            session['must_change_password'] = must_change_pw
+
+            # Single-Device & 25-minute Inactivity Tracking for Student and Coordinator
+            if user['role'] in ['Student', 'Coordinator']:
+                token = register_user_session(user['user_id'], user['role'])
+                session['session_token'] = token
+                session['last_activity'] = time.time()
+
+            # Forced first-login password change redirect
+            if must_change_pw == 1:
+                return redirect('/change-password')
 
             if user['role'] == 'Admin': return redirect('/admin')
             elif user['role'] == 'Coordinator': return redirect('/coordinator')
@@ -283,8 +447,15 @@ def register():
 
 @auth_bp.route('/logout')
 def logout():
+    user_id = session.get('user_id')
+    if user_id:
+        invalidate_user_session(user_id)
     session.clear()
+    reason = request.args.get('reason')
+    if reason:
+        return redirect(f'/login?reason={reason}')
     return redirect('/')
+
 
 @auth_bp.route('/api/user/migrate-db')
 def migrate_user_db():

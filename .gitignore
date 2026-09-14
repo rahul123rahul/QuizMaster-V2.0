@@ -34,8 +34,14 @@ instance/
 *.log
 *.sqlite3
 
-# Generated assets
+# Generated temporary assets
 temp_qr.png
 
-# User uploads
-static/uploads/
+# User uploads (directory tracked via .gitkeep)
+static/uploads/*
+!static/uploads/.gitkeep
+!static/uploads/official_assets/
+!static/uploads/official_assets/.gitkeep
+
+# Temporary scratch text files
+scratch/*.txt

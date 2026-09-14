@@ -119,7 +119,8 @@
             <li class="nav-item"><a href="/admin/results"><i class="fas fa-poll"></i> <span>Results</span></a></li>
             <li class="nav-item"><a href="#upload"><i class="fas fa-cloud-upload-alt"></i> <span>Upload</span></a></li>
             <li class="nav-item"><a href="#manual"><i class="fas fa-pen"></i> <span>Manual Q</span></a></li>
-            <li class="nav-item"><a href="#questions"><i class="fas fa-book"></i> <span>Q-Bank</span></a></li>
+            <li class="nav-item"><a href="/admin/question_bank"><i class="fas fa-database"></i> <span>Questions Bank</span></a></li>
+            <li class="nav-item"><a href="/admin/coding"><i class="fas fa-code"></i> <span>Coding</span></a></li>
             <li class="nav-item"><a href="/coordinator/study"><i class="fas fa-book-open"></i> <span>Study Material</span></a></li>
             <li class="nav-item"><a href="#students"><i class="fas fa-user-graduate"></i> <span>Students</span></a></li>
             <li class="nav-item"><a href="/admin/students"><i class="fas fa-filter"></i> <span>Manage</span></a></li>
@@ -383,6 +384,10 @@
             </div>
         </div>
 
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
     </main>
 </div>
 
@@ -503,6 +508,9 @@
         if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
     };
 </script>
+
+<!-- Enterprise Inactivity & Single-Device Session Guard -->
+<script src="/static/js/session_idle_guard.js"></script>
 
 </body>
 </html>

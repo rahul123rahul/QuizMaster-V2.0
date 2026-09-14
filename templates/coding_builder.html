@@ -1,0 +1,2363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Question Builder | QuizMaster Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-subtle: rgba(79, 70, 229, 0.08);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --text-dark: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.94);
+            --glass-border: rgba(226, 232, 240, 0.9);
+            --glass-shadow: 0 10px 30px 0 rgba(31, 38, 135, 0.06);
+            --surface-card: #ffffff;
+            --border-color: #e2e8f0;
+            --font-main: 'Outfit', sans-serif;
+            --font-code: 'Fira Code', monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-main); }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 40%, #f0fdf4 100%);
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* --- GLOBAL NAVIGATION SIDEBAR --- */
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .nav-item {
+            position: relative;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.12);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid var(--primary);
+        }
+
+        .logout { margin-top: auto; color: #ef4444; }
+        .logout:hover { color: #dc2626; background: rgba(254, 226, 226, 0.8); }
+
+        /* --- MAIN WRAPPER --- */
+        .main-wrapper {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+            max-width: 1650px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- TOP HEADER --- */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title-area h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title-area p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        .btn-outline-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary-subtle);
+        }
+
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+        /* --- STATS SUMMARY BAR --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-badge-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .stat-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
+        .stat-lbl { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px; }
+
+        /* --- TWO-PANEL WORKSPACE LAYOUT --- */
+        .builder-workspace-two-panel {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 22px;
+            align-items: start;
+            margin-bottom: 30px;
+        }
+
+        /* --- LEFT PANEL: QUESTIONS LIST --- */
+        .left-panel-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-height: calc(100vh - 200px);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+        }
+
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 9px 12px 9px 34px;
+            border-radius: 10px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            color: var(--text-dark);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 8px;
+        }
+        .filter-select {
+            flex: 1;
+            padding: 7px 10px;
+            border-radius: 9px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            outline: none;
+            cursor: pointer;
+        }
+        .filter-select:focus {
+            border-color: var(--primary);
+        }
+
+        .questions-scroll-list {
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-right: 4px;
+            flex: 1;
+        }
+
+        .q-item-card {
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+        .q-item-card:hover {
+            border-color: rgba(79, 70, 229, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.08);
+        }
+        .q-item-card.active {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.04) 0%, rgba(99, 102, 241, 0.08) 100%);
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.12);
+        }
+        .q-item-card.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            bottom: 12px;
+            width: 4px;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .q-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .q-card-id {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+            font-family: var(--font-code);
+        }
+
+        /* DIFFICULTY BADGES STRICTLY ONLY FOR CODING */
+        .diff-badge {
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 999px;
+            text-transform: capitalize;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .diff-badge.easy {
+            background: #dcfce7;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+        .diff-badge.medium {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #b45309;
+        }
+        .diff-badge.difficult,
+        .diff-badge.hard {
+            background: #ffe4e6;
+            border: 1px solid #fecdd3;
+            color: #be123c;
+        }
+
+        .q-card-title {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            line-height: 1.35;
+        }
+
+        .q-card-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+        .q-meta-tag {
+            background: #f1f5f9;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-weight: 600;
+        }
+
+        .q-card-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+        .card-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card-icon-btn {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .card-icon-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: white;
+        }
+        .card-icon-btn.danger:hover {
+            color: #ef4444;
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        /* --- RIGHT PANEL: CODING QUESTION EDITOR --- */
+        .right-panel-area {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .editor-section-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .section-card-title {
+            font-size: 14.5px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding-bottom: 10px;
+            border-bottom: 1.5px solid rgba(79, 70, 229, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+        .col-12 { grid-column: span 12; }
+        .col-8 { grid-column: span 8; }
+        .col-6 { grid-column: span 6; }
+        .col-4 { grid-column: span 4; }
+        .col-3 { grid-column: span 3; }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .field-label .req {
+            color: var(--danger);
+            margin-left: 3px;
+        }
+
+        .text-input, .select-input, .textarea-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-dark);
+            font-size: 13.5px;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .text-input:focus, .select-input:focus, .textarea-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+        .textarea-input {
+            resize: vertical;
+            line-height: 1.6;
+            min-height: 90px;
+        }
+
+        /* DIFFICULTY SELECTOR PILLS - CODING ONLY */
+        .diff-pill-selector {
+            display: flex;
+            gap: 10px;
+        }
+        .diff-radio-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 8px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .diff-radio-card:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .diff-radio-card.easy.selected {
+            background: #dcfce7;
+            border-color: #10b981;
+            color: #047857;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        .diff-radio-card.medium.selected {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #b45309;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+        }
+        .diff-radio-card.difficult.selected {
+            background: #ffe4e6;
+            border-color: #f43f5e;
+            color: #be123c;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+        }
+
+        /* Permitted Languages Toggle */
+        .lang-toggles-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .lang-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border-color);
+            background: #ffffff;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .lang-toggle-btn.selected {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(99, 102, 241, 0.12) 100%);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+        }
+
+        /* Starter Code Studio Box */
+        .starter-code-container {
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+        .editor-lang-tabs {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border-bottom: 1.5px solid var(--border-color);
+            padding: 0 10px;
+            gap: 6px;
+        }
+        .lang-tab {
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            border-bottom: 2.5px solid transparent;
+            transition: all 0.2s;
+        }
+        .lang-tab:hover {
+            color: var(--primary);
+        }
+        .lang-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(79, 70, 229, 0.06);
+        }
+
+        .editor-code-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 8px 14px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            gap: 8px;
+        }
+        .code-tool-btn {
+            background: white;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 5px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .code-tool-btn:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        #ace-starter-editor {
+            height: 250px;
+            width: 100%;
+            font-family: var(--font-code);
+            font-size: 13.5px;
+        }
+
+        /* Sample Cases & Test Cases */
+        .cases-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .case-card {
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .case-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .case-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .test-case-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .tc-textarea {
+            width: 100%;
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-dark);
+            font-family: var(--font-code);
+            font-size: 12.5px;
+            padding: 8px 10px;
+            resize: vertical;
+            min-height: 65px;
+            outline: none;
+        }
+        .tc-textarea:focus {
+            border-color: var(--primary);
+            background: white;
+        }
+
+        /* Evaluation Settings Switches */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .setting-switch-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 12px;
+        }
+        .setting-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .setting-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        .setting-desc {
+            font-size: 11.5px;
+            color: var(--text-muted);
+        }
+
+        /* Toggle Checkbox */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 42px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* Sticky Footer Toolbar */
+        .editor-footer-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 16px 24px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+        }
+
+        /* --- MODALS --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(6px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-head {
+            padding: 18px 24px;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .modal-head h3 {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-dark);
+        }
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .btn-close-modal:hover { color: var(--danger); }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .modal-foot {
+            padding: 16px 24px;
+            background: #f8fafc;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* Candidate Preview Split */
+        .preview-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            height: 520px;
+        }
+        .preview-left-pane {
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .preview-right-pane {
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            border: 1.5px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        #ace-preview-editor {
+            flex: 1;
+            width: 100%;
+            font-family: var(--font-code);
+            font-size: 13px;
+        }
+        .preview-console-out {
+            height: 160px;
+            background: #0f172a;
+            border-top: 1px solid var(--border-color);
+            padding: 12px;
+            overflow-y: auto;
+            font-family: var(--font-code);
+            font-size: 12px;
+            color: #38bdf8;
+            white-space: pre-wrap;
+        }
+
+        /* Dropzone */
+        .dropzone-box {
+            border: 2px dashed rgba(79, 70, 229, 0.35);
+            border-radius: 16px;
+            padding: 34px;
+            text-align: center;
+            background: rgba(79, 70, 229, 0.03);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .dropzone-box:hover {
+            border-color: var(--primary);
+            background: rgba(79, 70, 229, 0.06);
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { display: none; }
+            .builder-workspace-two-panel { grid-template-columns: 1fr; }
+            .left-panel-card { position: static; max-height: 400px; }
+            .preview-split { grid-template-columns: 1fr; height: auto; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+    <!-- GLOBAL SIDEBAR -->
+    <div class="sidebar">
+        <a href="/admin" class="logo"><i class="fas fa-cube"></i> QuizMaster</a>
+        <div class="nav-container">
+            <a href="/admin" class="nav-item"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+            <a href="/admin/sessions" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>Sessions</span></a>
+            <a href="/admin/manage_centers" class="nav-item"><i class="fas fa-map-marker-alt"></i> <span>Centers</span></a>
+            <a href="/admin/content" class="nav-item"><i class="fas fa-layer-group"></i> <span>Content</span></a>
+            <a href="/admin/coding" class="nav-item active"><i class="fas fa-code"></i> <span>Coding</span></a>
+            <a href="/admin/repository" class="nav-item"><i class="fas fa-database"></i> <span>Question Repository</span></a>
+            <a href="/admin/study" class="nav-item"><i class="fas fa-book-open"></i> <span>Study Material</span></a>
+            <a href="/admin/results" class="nav-item"><i class="fas fa-poll"></i> <span>Results</span></a>
+            <a href="/admin/students" class="nav-item"><i class="fas fa-user-graduate"></i> <span>Students</span></a>
+            <a href="/admin/coordinators" class="nav-item"><i class="fas fa-user-shield"></i> <span>Coords</span></a>
+            <a href="/logout" class="nav-item logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+
+        <!-- TOP HEADER -->
+        <div class="top-header">
+            <div class="header-title-area">
+                <h1><i class="fas fa-laptop-code text-indigo-600" style="color:var(--primary);"></i> Coding Question Builder</h1>
+                <p>Create, validate, test, bulk-create, import, and export coding challenges</p>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" class="btn btn-primary" onclick="resetFormForNew()">
+                    <i class="fas fa-plus"></i> New Coding Question
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="openBulkCreateModal()">
+                    <i class="fas fa-layer-group"></i> Bulk Create
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="openImportModal()">
+                    <i class="fas fa-cloud-upload-alt"></i> Import Questions
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="openExportModal()">
+                    <i class="fas fa-file-export"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS SUMMARY BAR -->
+        <div class="stats-row">
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;"><i class="fas fa-laptop-code"></i></div>
+                <div>
+                    <div class="stat-val" id="metric-total">{{ metrics.total }}</div>
+                    <div class="stat-lbl">Total Challenges</div>
+                </div>
+            </div>
+            <!-- Difficulty levels strictly ONLY for Coding questions -->
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#dcfce7; color:#166534;"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <div class="stat-val" style="color:#166534;" id="metric-easy">{{ metrics.easy }}</div>
+                    <div class="stat-lbl">Easy Challenges</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#fef3c7; color:#b45309;"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <div class="stat-val" style="color:#b45309;" id="metric-med">{{ metrics.medium }}</div>
+                    <div class="stat-lbl">Medium Challenges</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#ffe4e6; color:#be123c;"><i class="fas fa-bolt"></i></div>
+                <div>
+                    <div class="stat-val" style="color:#be123c;" id="metric-diff">{{ metrics.difficult }}</div>
+                    <div class="stat-lbl">Difficult Challenges</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#f1f5f9; color:#475569;"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="stat-val" id="metric-pub">{{ metrics.published }}</div>
+                    <div class="stat-lbl">Published / Active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TWO-PANEL WORKSPACE -->
+        <div class="builder-workspace-two-panel">
+
+            <!-- LEFT PANEL: QUESTION CARDS LIST -->
+            <div class="left-panel-card">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="search-input" id="search-questions" placeholder="Search challenges..." oninput="filterQuestions()">
+                </div>
+                <div class="filter-row">
+                    <!-- Difficulty filter strictly for Coding -->
+                    <select class="filter-select" id="filter-diff" onchange="filterQuestions()">
+                        <option value="all">All Difficulties</option>
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="difficult">Difficult</option>
+                    </select>
+                    <select class="filter-select" id="filter-status" onchange="filterQuestions()">
+                        <option value="all">All Status</option>
+                        <option value="published">Published</option>
+                        <option value="draft">Draft</option>
+                    </select>
+                </div>
+
+                <div class="questions-scroll-list" id="questions-list-container">
+                    {% for q in questions %}
+                    <div class="q-item-card {% if loop.first %}active{% endif %}" 
+                         id="card-{{ q.question_id }}" 
+                         data-id="{{ q.question_id }}"
+                         data-diff="{{ q.difficulty|lower }}"
+                         data-status="{{ q.status|lower }}"
+                         data-search="{{ (q.title ~ ' ' ~ q.problemStatement ~ ' ' ~ q.category)|lower }}"
+                         onclick="loadQuestionForEdit({{ q.question_id }})">
+                        <div class="q-card-head">
+                            <span class="q-card-id">{{ q.id }}</span>
+                            <!-- Strictly only for coding -->
+                            <span class="diff-badge {{ q.difficulty|lower }}"><i class="fas fa-bolt"></i> {{ q.difficulty }}</span>
+                        </div>
+                        <div class="q-card-title">{{ q.title }}</div>
+                        <div class="q-card-meta">
+                            <span class="q-meta-tag"><i class="fas fa-star text-amber-500"></i> +{{ q.marks }} pts</span>
+                            {% if q.negativeMarks and q.negativeMarks > 0 %}
+                            <span class="q-meta-tag" style="color:#e11d48;"><i class="fas fa-minus-circle"></i> -{{ q.negativeMarks }}</span>
+                            {% endif %}
+                            <span class="q-meta-tag"><i class="fas fa-vial text-indigo-500"></i> {{ q.testCases|length }} tests</span>
+                        </div>
+                        <div class="q-card-actions">
+                            <div class="card-btn-group">
+                                <button type="button" class="card-icon-btn" onclick="event.stopPropagation(); openPreviewModalById({{ q.question_id }})" title="Candidate Preview"><i class="fas fa-play"></i> Preview</button>
+                                <button type="button" class="card-icon-btn" onclick="event.stopPropagation(); duplicateQuestion({{ q.question_id }})" title="Duplicate"><i class="fas fa-copy"></i> Copy</button>
+                            </div>
+                            <div class="card-btn-group">
+                                <button type="button" class="card-icon-btn danger" onclick="event.stopPropagation(); deleteQuestion({{ q.question_id }})" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; padding: 40px 10px; color: var(--text-muted);">
+                        <i class="fas fa-code fs-2 mb-2" style="color:var(--primary);"></i>
+                        <p>No coding challenges found.<br>Click <strong>+ New Coding Question</strong> to create one.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: QUESTION EDITOR -->
+            <div class="right-panel-area">
+
+                <!-- SECTION A: BASIC INFORMATION -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-info-circle"></i> Section A: Basic Information
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-field col-4">
+                            <label class="field-label">Question ID <span class="req">*</span></label>
+                            <input type="text" class="text-input" id="q-field-id" value="code_001" placeholder="e.g. code_001">
+                        </div>
+                        <div class="form-field col-8">
+                            <label class="field-label">Question Title <span class="req">*</span></label>
+                            <input type="text" class="text-input" id="q-field-title" value="Add Two Numbers" placeholder="e.g. Add Two Numbers">
+                        </div>
+
+                        <div class="form-field col-12">
+                            <label class="field-label">Problem Statement <span class="req">*</span></label>
+                            <textarea class="textarea-input" id="q-field-problem" rows="3" placeholder="Describe the programming challenge clearly for students..."></textarea>
+                        </div>
+
+                        <div class="form-field col-12">
+                            <label class="field-label">Detailed Description / Notes (Optional)</label>
+                            <textarea class="textarea-input" id="q-field-detailed" rows="2" placeholder="Additional hints, mathematical context, or algorithms..."></textarea>
+                        </div>
+
+                        <!-- DIFFICULTY LEVELS: STRICTLY ONLY FOR CODING QUESTIONS -->
+                        <div class="form-field col-6">
+                            <label class="field-label">Difficulty Level (Only for Coding) <span class="req">*</span></label>
+                            <div class="diff-pill-selector">
+                                <div class="diff-radio-card easy selected" onclick="selectDifficulty('Easy')">
+                                    <i class="fas fa-bolt"></i> Easy
+                                </div>
+                                <div class="diff-radio-card medium" onclick="selectDifficulty('Medium')">
+                                    <i class="fas fa-bolt"></i> Medium
+                                </div>
+                                <div class="diff-radio-card difficult" onclick="selectDifficulty('Difficult')">
+                                    <i class="fas fa-bolt"></i> Difficult
+                                </div>
+                            </div>
+                            <input type="hidden" id="q-field-diff" value="Easy">
+                        </div>
+
+                        <div class="form-field col-6">
+                            <label class="field-label">Category</label>
+                            <input type="text" class="text-input" id="q-field-category" value="Basic Programming" placeholder="e.g. Basic Programming, Strings, Arrays">
+                        </div>
+
+                        <div class="form-field col-6">
+                            <label class="field-label">Tags (comma separated)</label>
+                            <input type="text" class="text-input" id="q-field-tags" value="arithmetic, input-output" placeholder="arithmetic, logic, loops">
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Marks <span class="req">*</span></label>
+                            <input type="number" step="0.5" class="text-input" id="q-field-marks" value="10">
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Negative Marks Deduction</label>
+                            <input type="number" step="0.5" class="text-input" id="q-field-neg-marks" value="2" placeholder="0 if none">
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Time Limit (ms)</label>
+                            <input type="number" class="text-input" id="q-field-time-limit" value="2000">
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Memory Limit (MB)</label>
+                            <input type="number" class="text-input" id="q-field-mem-limit" value="256">
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Status</label>
+                            <select class="select-input" id="q-field-status">
+                                <option value="draft">Draft</option>
+                                <option value="published" selected>Published</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field col-3">
+                            <label class="field-label">Session</label>
+                            <select class="select-input" id="q-field-session">
+                                {% for s in sessions %}
+                                <option value="{{ s.quiz_id }}">{{ s.title }} (ID: {{ s.quiz_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION B: PERMITTED PROGRAMMING LANGUAGES -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-code"></i> Section B: Permitted Programming Languages
+                    </div>
+                    <div class="lang-toggles-grid" id="supported-langs-container">
+                        <div class="lang-toggle-btn selected" data-lang="python" onclick="toggleLanguage(this, 'python')">
+                            <i class="fab fa-python text-amber-500"></i> Python 3
+                        </div>
+                        <div class="lang-toggle-btn selected" data-lang="cpp" onclick="toggleLanguage(this, 'cpp')">
+                            <i class="fas fa-file-code text-indigo-500"></i> C++ (GCC)
+                        </div>
+                        <div class="lang-toggle-btn selected" data-lang="c" onclick="toggleLanguage(this, 'c')">
+                            <i class="fas fa-copyright text-blue-500"></i> C (GCC)
+                        </div>
+                        <div class="lang-toggle-btn selected" data-lang="java" onclick="toggleLanguage(this, 'java')">
+                            <i class="fab fa-java text-rose-500"></i> Java
+                        </div>
+                        <div class="lang-toggle-btn selected" data-lang="javascript" onclick="toggleLanguage(this, 'javascript')">
+                            <i class="fab fa-js text-yellow-500"></i> JavaScript
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION C: CODE EDITOR & STARTER CODE -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-laptop-code"></i> Section C: Starter Code by Language
+                    </div>
+
+                    <div class="starter-code-container">
+                        <div class="editor-lang-tabs">
+                            <button type="button" class="lang-tab active" data-lang="python" onclick="switchStarterTab('python')"><i class="fab fa-python me-1"></i> Python</button>
+                            <button type="button" class="lang-tab" data-lang="cpp" onclick="switchStarterTab('cpp')">C++</button>
+                            <button type="button" class="lang-tab" data-lang="c" onclick="switchStarterTab('c')">C</button>
+                            <button type="button" class="lang-tab" data-lang="java" onclick="switchStarterTab('java')"><i class="fab fa-java me-1"></i> Java</button>
+                            <button type="button" class="lang-tab" data-lang="javascript" onclick="switchStarterTab('javascript')"><i class="fab fa-js me-1"></i> JavaScript</button>
+                        </div>
+                        <div class="editor-code-toolbar">
+                            <button type="button" class="code-tool-btn" onclick="resetActiveStarterCode()"><i class="fas fa-rotate-left"></i> Reset Starter</button>
+                            <button type="button" class="code-tool-btn" onclick="copyStarterCode()"><i class="fas fa-copy"></i> Copy</button>
+                        </div>
+                        <div id="ace-starter-editor"></div>
+                    </div>
+                </div>
+
+                <!-- SECTION D: INPUT AND OUTPUT SPECIFICATIONS -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-exchange-alt"></i> Section D: Input & Output Specifications
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-field col-6">
+                            <label class="field-label">Input Format</label>
+                            <textarea class="textarea-input" id="q-field-input-format" rows="2" placeholder="e.g. Two space-separated integers a and b"></textarea>
+                        </div>
+                        <div class="form-field col-6">
+                            <label class="field-label">Output Format</label>
+                            <textarea class="textarea-input" id="q-field-output-format" rows="2" placeholder="e.g. Print the sum on a single line"></textarea>
+                        </div>
+                        <div class="form-field col-12">
+                            <label class="field-label">Constraints (one per line)</label>
+                            <textarea class="textarea-input" id="q-field-constraints" rows="2" placeholder="-10^9 <= a, b <= 10^9&#10;Time Limit: 2.0s"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span style="font-size: 13.5px; font-weight: 700; color: var(--text-dark);">Sample Input / Output Pairs</span>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addSamplePair()"><i class="fas fa-plus"></i> Add Sample</button>
+                        </div>
+                        <div class="cases-wrapper" id="sample-pairs-container">
+                            <!-- Dynamic Samples Inserted Here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION E: TEST CASES MANAGER -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-vial"></i> Section E: Test Cases Manager
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span style="font-size: 12.5px; color: var(--text-muted);">Hidden test cases are verified on the server and concealed from candidates.</span>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="addTestCaseRow()">
+                            <i class="fas fa-plus"></i> Add Test Case
+                        </button>
+                    </div>
+
+                    <div class="cases-wrapper" id="test-cases-container">
+                        <!-- Dynamic Test Cases Inserted Here -->
+                    </div>
+                </div>
+
+                <!-- SECTION F: EVALUATION SETTINGS -->
+                <div class="editor-section-card">
+                    <div class="section-card-title">
+                        <i class="fas fa-sliders-h"></i> Section F: Evaluation Settings
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Exact Output Matching</span>
+                                <span class="setting-desc">Output must match the expected string precisely</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-exact" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Ignore Outer Whitespace</span>
+                                <span class="setting-desc">Trim leading and trailing spaces per line</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-trim" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Ignore Line-Ending Differences</span>
+                                <span class="setting-desc">Normalize CRLF (\r\n) and LF (\n)</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-line-endings" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Case-Sensitive Matching</span>
+                                <span class="setting-desc">Distinguish uppercase and lowercase characters</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-case" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Partial Scoring</span>
+                                <span class="setting-desc">Award marks proportional to passed test cases</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-partial" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="setting-switch-card">
+                            <div class="setting-info">
+                                <span class="setting-title">Allow Custom Input Testing</span>
+                                <span class="setting-desc">Permit students to test custom inputs</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="eval-custom-input" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER ACTIONS -->
+                <div class="editor-footer-card">
+                    <div>
+                        <button type="button" class="btn btn-secondary" onclick="resetCurrentEditor()"><i class="fas fa-undo"></i> Reset</button>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="testRunActiveCode()"><i class="fas fa-play"></i> Run Tests</button>
+                        <button type="button" class="btn btn-success" onclick="openPreviewModal()"><i class="fas fa-eye"></i> Candidate Preview</button>
+                        <button type="button" class="btn btn-primary" onclick="saveActiveQuestion()"><i class="fas fa-save"></i> Save Question</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin: 30px 24px 20px calc(var(--sidebar-width) + 24px); background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
+    </div>
+
+    <!-- 1. CANDIDATE PREVIEW MODAL -->
+    <div class="modal-overlay" id="modal-preview">
+        <div class="modal-box" style="max-width: 1050px;">
+            <div class="modal-head">
+                <h3 id="prev-modal-title"><i class="fas fa-terminal text-indigo-600 me-2"></i> Candidate Assessment Preview</h3>
+                <button type="button" class="btn-close-modal" onclick="closeModal('modal-preview')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-split">
+                    <!-- Problem info -->
+                    <div class="preview-left-pane">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="diff-badge easy" id="prev-modal-diff">Easy</span>
+                            <span class="badge bg-primary" id="prev-modal-marks" style="padding:4px 8px; border-radius:6px; background:#4f46e5; color:white; font-size:11px; font-weight:700;">+10 pts</span>
+                            <span class="badge bg-danger" id="prev-modal-neg" style="display:none; padding:4px 8px; border-radius:6px; background:#ef4444; color:white; font-size:11px; font-weight:700;">-2 deduction</span>
+                        </div>
+                        <h4 id="prev-title-text" style="color:var(--text-dark); font-weight:800; font-size:17px;"></h4>
+                        <div id="prev-prob-text" style="color:var(--text-secondary); font-size:14px; line-height:1.6; white-space:pre-wrap;"></div>
+
+                        <div style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid var(--border-color);">
+                            <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Input Format</div>
+                            <pre id="prev-inp-fmt" style="font-family:var(--font-code); color:var(--primary); font-size:12px; margin:4px 0 0 0;"></pre>
+                        </div>
+                        <div style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid var(--border-color);">
+                            <div style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Output Format</div>
+                            <pre id="prev-out-fmt" style="font-family:var(--font-code); color:var(--primary); font-size:12px; margin:4px 0 0 0;"></pre>
+                        </div>
+                        <div id="prev-samples-section"></div>
+                    </div>
+
+                    <!-- Runner & Editor -->
+                    <div class="preview-right-pane">
+                        <div style="padding:10px 14px; background:#f8fafc; border-bottom:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                            <select id="prev-lang-select" class="filter-select" style="width:140px;" onchange="changePreviewLanguage()">
+                                <option value="python">Python 3</option>
+                                <option value="cpp">C++ (GCC)</option>
+                                <option value="c">C (GCC)</option>
+                                <option value="java">Java</option>
+                                <option value="javascript">JavaScript</option>
+                            </select>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="runPreviewCode()">
+                                <i class="fas fa-play me-1"></i> Run Code
+                            </button>
+                        </div>
+                        <div id="ace-preview-editor"></div>
+                        <div class="preview-console-out" id="preview-console-out">Click "Run Code" to execute solution in sandbox...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-preview')">Close Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. BULK CREATE QUESTIONS MODAL -->
+    <div class="modal-overlay" id="modal-bulk-create">
+        <div class="modal-box" style="max-width: 960px;">
+            <div class="modal-head">
+                <h3><i class="fas fa-layer-group text-indigo-600 me-2"></i> Bulk Create Coding Questions</h3>
+                <button type="button" class="btn-close-modal" onclick="closeModal('modal-bulk-create')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <p style="font-size:13.5px; color:var(--text-secondary);">Quickly create multiple coding challenges in one transaction.</p>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addBulkQuestionCard()"><i class="fas fa-plus"></i> Add Question</button>
+                </div>
+
+                <div class="cases-wrapper" id="bulk-questions-list">
+                    <!-- Dynamic bulk cards -->
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-bulk-create')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkCreate()"><i class="fas fa-check"></i> Save All Questions</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. MULTI-FORMAT IMPORT MODAL -->
+    <div class="modal-overlay" id="modal-import">
+        <div class="modal-box" style="max-width: 820px;">
+            <div class="modal-head">
+                <h3><i class="fas fa-cloud-upload-alt text-indigo-600 me-2"></i> Bulk Import Coding Questions</h3>
+                <button type="button" class="btn-close-modal" onclick="closeModal('modal-import')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Sample Download Templates Bar -->
+                <div style="background:#f8fafc; border-radius:12px; padding:14px; border:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <strong style="font-size:13.5px; color:var(--text-dark);">Sample Templates:</strong>
+                        <div style="font-size:12px; color:var(--text-muted);">Download sample files to verify expected formatting.</div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="/admin/coding/api/sample/json" class="btn btn-secondary btn-sm"><i class="fas fa-file-code"></i> JSON</a>
+                        <a href="/admin/coding/api/sample/csv" class="btn btn-secondary btn-sm"><i class="fas fa-file-csv"></i> CSV</a>
+                        <a href="/admin/coding/api/sample/docx" class="btn btn-secondary btn-sm"><i class="fas fa-file-word"></i> Word (DOCX)</a>
+                        <a href="/admin/coding/api/sample/zip" class="btn btn-secondary btn-sm"><i class="fas fa-file-zipper"></i> ZIP</a>
+                    </div>
+                </div>
+
+                <div class="dropzone-box" onclick="document.getElementById('import-file-input').click()">
+                    <i class="fas fa-cloud-arrow-up fs-1 mb-2" style="color:var(--primary); font-size:36px;"></i>
+                    <h5 style="color:var(--text-dark); font-weight:700; margin-top:8px;">Drag and drop file here or click to browse</h5>
+                    <p style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">Supported formats: JSON, CSV, DOCX, ZIP</p>
+                    <input type="file" id="import-file-input" style="display:none;" accept=".json,.csv,.docx,.zip" onchange="handleImportFileSelect(event)">
+                </div>
+
+                <!-- Live Import Preview Box -->
+                <div id="import-preview-wrapper" style="display:none; flex-direction:column; gap:10px;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h5 style="color:var(--text-dark); font-size:14.5px; font-weight:800;" id="import-summary-title">Import Validation Preview</h5>
+                        <div class="d-flex align-items-center gap-2" id="import-badge-counts"></div>
+                    </div>
+                    <div id="import-questions-table" style="max-height:240px; overflow-y:auto; border:1px solid var(--border-color); border-radius:10px; background:#ffffff;">
+                        <!-- Validation questions rows -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-import')">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-import" style="display:none;" onclick="confirmImport()"><i class="fas fa-check-double"></i> Confirm & Import</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. EXPORT MODAL -->
+    <div class="modal-overlay" id="modal-export">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-head">
+                <h3><i class="fas fa-file-export text-indigo-600 me-2"></i> Export Coding Questions</h3>
+                <button type="button" class="btn-close-modal" onclick="closeModal('modal-export')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-field">
+                    <label class="field-label">Export Format</label>
+                    <select class="select-input" id="export-format">
+                        <option value="json">JSON Package (.json)</option>
+                        <option value="csv">CSV Spreadsheet (.csv)</option>
+                        <option value="docx">Microsoft Word Document (.docx)</option>
+                        <option value="zip">Complete ZIP Package (.zip)</option>
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label class="field-label">Scope</label>
+                    <select class="select-input" id="export-scope">
+                        <option value="all">All Coding Questions</option>
+                        <option value="current">Current Active Question</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('modal-export')">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="executeExport()"><i class="fas fa-download"></i> Download Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT STATE & LOGIC -->
+    <script>
+        const initialQuestions = {{ questions | tojson }};
+        const defaultBoilerplates = {{ default_boilerplates | tojson }};
+        const supportedLangsMaster = {{ supported_languages | tojson }};
+
+        let currentQuestionId = initialQuestions.length > 0 ? initialQuestions[0].question_id : null;
+        let activeStarterLang = 'python';
+        let starterEditor = null;
+        let previewEditor = null;
+        let importPreviewCache = [];
+
+        // Ace Editor Init with Crisp Clean Theme
+        window.addEventListener('DOMContentLoaded', () => {
+            initAceEditors();
+            if (initialQuestions.length > 0) {
+                loadQuestionData(initialQuestions[0]);
+            } else {
+                resetFormForNew();
+            }
+        });
+
+        function initAceEditors() {
+            // Starter Editor (using clean textmate/chrome theme matching existing platform)
+            starterEditor = ace.edit("ace-starter-editor");
+            starterEditor.setTheme("ace/theme/textmate");
+            starterEditor.session.setMode("ace/mode/python");
+            starterEditor.setOptions({
+                fontSize: "13.5px",
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                enableSnippets: true,
+                showPrintMargin: false,
+                tabSize: 4,
+                useSoftTabs: true
+            });
+            starterEditor.setValue(defaultBoilerplates['python'] || '', -1);
+
+            // Preview Editor
+            previewEditor = ace.edit("ace-preview-editor");
+            previewEditor.setTheme("ace/theme/textmate");
+            previewEditor.session.setMode("ace/mode/python");
+            previewEditor.setOptions({
+                fontSize: "13px",
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: true,
+                showPrintMargin: false
+            });
+        }
+
+        // Section A: Difficulty Selection (Strictly for Coding)
+        function selectDifficulty(diff) {
+            document.getElementById('q-field-diff').value = diff;
+            document.querySelectorAll('.diff-radio-card').forEach(el => el.classList.remove('selected'));
+            let dClass = diff.toLowerCase();
+            let card = document.querySelector(`.diff-radio-card.${dClass}`);
+            if (card) card.classList.add('selected');
+        }
+
+        // Section B: Languages Toggle
+        function toggleLanguage(btn, lang) {
+            btn.classList.toggle('selected');
+        }
+
+        function getSelectedLanguages() {
+            let selected = [];
+            document.querySelectorAll('#supported-langs-container .lang-toggle-btn.selected').forEach(btn => {
+                selected.push(btn.getAttribute('data-lang'));
+            });
+            return selected.length > 0 ? selected : ['python'];
+        }
+
+        // Section C: Starter Code Tabs
+        let starterCodeMap = Object.assign({}, defaultBoilerplates);
+
+        function switchStarterTab(lang) {
+            starterCodeMap[activeStarterLang] = starterEditor.getValue();
+            activeStarterLang = lang;
+            document.querySelectorAll('.editor-lang-tabs .lang-tab').forEach(b => {
+                b.classList.toggle('active', b.getAttribute('data-lang') === lang);
+            });
+
+            const aceModes = {
+                python: 'ace/mode/python',
+                cpp: 'ace/mode/c_cpp',
+                c: 'ace/mode/c_cpp',
+                java: 'ace/mode/java',
+                javascript: 'ace/mode/javascript'
+            };
+
+            starterEditor.session.setMode(aceModes[lang] || 'ace/mode/python');
+            starterEditor.setValue(starterCodeMap[lang] || defaultBoilerplates[lang] || '', -1);
+        }
+
+        function resetActiveStarterCode() {
+            starterEditor.setValue(defaultBoilerplates[activeStarterLang] || '', -1);
+            starterCodeMap[activeStarterLang] = defaultBoilerplates[activeStarterLang] || '';
+        }
+
+        function copyStarterCode() {
+            navigator.clipboard.writeText(starterEditor.getValue());
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Starter code copied to clipboard!', timer: 2000, showConfirmButton: false });
+        }
+
+        // Section D: Samples
+        function addSamplePair(inputVal = '', outputVal = '', expVal = '') {
+            const container = document.getElementById('sample-pairs-container');
+            const idx = container.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'case-card sample-case-item';
+            div.innerHTML = `
+                <div class="case-card-head">
+                    <span class="case-title">Sample Case #${idx}</span>
+                    <button type="button" class="card-icon-btn danger" onclick="this.closest('.sample-case-item').remove()" title="Remove Sample"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="test-case-row">
+                    <div>
+                        <label class="field-label" style="font-size:11.5px;">Sample Input</label>
+                        <textarea class="tc-textarea samp-in" placeholder="e.g. 5 7">${escapeHtml(inputVal)}</textarea>
+                    </div>
+                    <div>
+                        <label class="field-label" style="font-size:11.5px;">Expected Output</label>
+                        <textarea class="tc-textarea samp-out" placeholder="e.g. 12">${escapeHtml(outputVal)}</textarea>
+                    </div>
+                </div>
+                <div>
+                    <label class="field-label" style="font-size:11.5px;">Explanation (Optional)</label>
+                    <input type="text" class="text-input samp-exp" style="padding:7px 10px; font-size:12px;" value="${escapeHtml(expVal)}" placeholder="Explanation for students...">
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // Section E: Test Cases
+        function addTestCaseRow(tc = null) {
+            const container = document.getElementById('test-cases-container');
+            const idx = container.children.length + 1;
+            const id = tc ? tc.id : `tc_${String(idx).padStart(3, '0')}`;
+            const inputVal = tc ? tc.input : '';
+            const expVal = tc ? tc.expectedOutput : '';
+            const isHidden = tc ? tc.hidden : (idx > 1);
+            const weight = tc ? tc.weight : 20;
+
+            const div = document.createElement('div');
+            div.className = 'case-card tc-item';
+            div.innerHTML = `
+                <div class="case-card-head">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="case-title">Test Case #${idx} (${id})</span>
+                        <label style="font-size:11.5px; display:inline-flex; align-items:center; gap:5px; color:var(--text-secondary); cursor:pointer;">
+                            <input type="checkbox" class="tc-hidden" ${isHidden ? 'checked' : ''}> Hidden Test
+                        </label>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span style="font-size:11.5px; color:var(--text-secondary);">Weight:</span>
+                        <input type="number" class="text-input tc-weight" style="width:70px; padding:4px 8px; font-size:11.5px;" value="${weight}">
+                        <button type="button" class="card-icon-btn danger" onclick="this.closest('.tc-item').remove()" title="Delete Case"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="test-case-row">
+                    <div>
+                        <label class="field-label" style="font-size:11.5px;">Standard Input</label>
+                        <textarea class="tc-textarea tc-in" placeholder="Standard input...">${escapeHtml(inputVal)}</textarea>
+                    </div>
+                    <div>
+                        <label class="field-label" style="font-size:11.5px;">Expected Output <span class="req">*</span></label>
+                        <textarea class="tc-textarea tc-out" placeholder="Expected standard output...">${escapeHtml(expVal)}</textarea>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        // Load Question Data into Form
+        function loadQuestionData(q) {
+            currentQuestionId = q.question_id || null;
+
+            // Basic Info
+            document.getElementById('q-field-id').value = q.id || '';
+            document.getElementById('q-field-title').value = q.title || '';
+            document.getElementById('q-field-problem').value = q.problemStatement || '';
+            document.getElementById('q-field-detailed').value = q.detailedDescription || '';
+            selectDifficulty(q.difficulty || 'Easy');
+            document.getElementById('q-field-category').value = q.category || 'Coding Challenges';
+            document.getElementById('q-field-tags').value = Array.isArray(q.tags) ? q.tags.join(', ') : (q.tags || '');
+            document.getElementById('q-field-marks').value = q.marks || 10;
+            document.getElementById('q-field-neg-marks').value = q.negativeMarks || 0;
+            document.getElementById('q-field-time-limit').value = q.timeLimitMs || 2000;
+            document.getElementById('q-field-mem-limit').value = q.memoryLimitMb || 256;
+            document.getElementById('q-field-status').value = q.status || 'published';
+            if (q.quiz_id) document.getElementById('q-field-session').value = q.quiz_id;
+
+            // Supported Languages
+            const activeLangs = q.supportedLanguages || ['python', 'cpp', 'c', 'java', 'javascript'];
+            document.querySelectorAll('#supported-langs-container .lang-toggle-btn').forEach(btn => {
+                const l = btn.getAttribute('data-lang');
+                btn.classList.toggle('selected', activeLangs.includes(l));
+            });
+
+            // Starter Code
+            starterCodeMap = Object.assign({}, defaultBoilerplates, q.starterCode || {});
+            switchStarterTab(activeStarterLang || 'python');
+
+            // Input / Output Specs
+            document.getElementById('q-field-input-format').value = q.inputFormat || '';
+            document.getElementById('q-field-output-format').value = q.outputFormat || '';
+            document.getElementById('q-field-constraints').value = Array.isArray(q.constraints) ? q.constraints.join('\n') : (q.constraints || '');
+
+            // Samples
+            const samplesContainer = document.getElementById('sample-pairs-container');
+            samplesContainer.innerHTML = '';
+            if (q.samples && q.samples.length > 0) {
+                q.samples.forEach(s => addSamplePair(s.input, s.expectedOutput, s.explanation));
+            } else {
+                addSamplePair('5 7', '12', '5 + 7 = 12');
+            }
+
+            // Test Cases
+            const tcContainer = document.getElementById('test-cases-container');
+            tcContainer.innerHTML = '';
+            if (q.testCases && q.testCases.length > 0) {
+                q.testCases.forEach(tc => addTestCaseRow(tc));
+            } else {
+                addTestCaseRow({ id: 'tc_001', input: '5 7', expectedOutput: '12', hidden: false, weight: 20 });
+                addTestCaseRow({ id: 'tc_002', input: '10 20', expectedOutput: '30', hidden: true, weight: 40 });
+            }
+
+            // Evaluation Settings
+            const ev = q.evaluationSettings || {};
+            document.getElementById('eval-exact').checked = ev.exactOutput !== false;
+            document.getElementById('eval-trim').checked = ev.ignoreLeadingTrailingWhitespace !== false;
+            document.getElementById('eval-line-endings').checked = ev.ignoreLineEndingDifferences !== false;
+            document.getElementById('eval-case').checked = ev.caseSensitive !== false;
+            document.getElementById('eval-partial').checked = ev.partialScoring !== false;
+            document.getElementById('eval-custom-input').checked = ev.allowCustomInput !== false;
+
+            // Highlight in card list
+            document.querySelectorAll('.q-item-card').forEach(c => c.classList.remove('active'));
+            const card = document.getElementById(`card-${q.question_id}`);
+            if (card) card.classList.add('active');
+        }
+
+        function loadQuestionForEdit(qId) {
+            fetch(`/admin/coding/api/get/${qId}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) loadQuestionData(d.question);
+                    else Swal.fire('Error', d.error || 'Failed to fetch question', 'error');
+                })
+                .catch(() => Swal.fire('Error', 'Network communication error', 'error'));
+        }
+
+        function resetFormForNew() {
+            currentQuestionId = null;
+            document.querySelectorAll('.q-item-card').forEach(c => c.classList.remove('active'));
+
+            document.getElementById('q-field-id').value = `code_${Date.now().toString().slice(-4)}`;
+            document.getElementById('q-field-title').value = '';
+            document.getElementById('q-field-problem').value = '';
+            document.getElementById('q-field-detailed').value = '';
+            selectDifficulty('Easy');
+            document.getElementById('q-field-category').value = 'Coding Challenges';
+            document.getElementById('q-field-tags').value = '';
+            document.getElementById('q-field-marks').value = 10;
+            document.getElementById('q-field-neg-marks').value = 2;
+            document.getElementById('q-field-time-limit').value = 2000;
+            document.getElementById('q-field-mem-limit').value = 256;
+            document.getElementById('q-field-status').value = 'published';
+
+            starterCodeMap = Object.assign({}, defaultBoilerplates);
+            switchStarterTab('python');
+
+            document.getElementById('sample-pairs-container').innerHTML = '';
+            addSamplePair('5 7', '12', '5 + 7 = 12');
+
+            document.getElementById('test-cases-container').innerHTML = '';
+            addTestCaseRow({ id: 'tc_001', input: '5 7', expectedOutput: '12', hidden: false, weight: 20 });
+            addTestCaseRow({ id: 'tc_002', input: '10 20', expectedOutput: '30', hidden: true, weight: 40 });
+        }
+
+        function collectEditorPayload() {
+            starterCodeMap[activeStarterLang] = starterEditor.getValue();
+
+            const samples = [];
+            document.querySelectorAll('#sample-pairs-container .sample-case-item').forEach(item => {
+                samples.push({
+                    input: item.querySelector('.samp-in').value,
+                    expectedOutput: item.querySelector('.samp-out').value,
+                    explanation: item.querySelector('.samp-exp').value
+                });
+            });
+
+            const testCases = [];
+            document.querySelectorAll('#test-cases-container .tc-item').forEach((item, idx) => {
+                testCases.push({
+                    id: `tc_${String(idx + 1).padStart(3, '0')}`,
+                    input: item.querySelector('.tc-in').value,
+                    expectedOutput: item.querySelector('.tc-out').value,
+                    hidden: item.querySelector('.tc-hidden').checked,
+                    weight: parseFloat(item.querySelector('.tc-weight').value || 20)
+                });
+            });
+
+            const rawConstraints = document.getElementById('q-field-constraints').value;
+            const constraints = rawConstraints.split('\n').map(c => c.trim()).filter(c => c);
+
+            return {
+                question_id: currentQuestionId,
+                id: document.getElementById('q-field-id').value.trim(),
+                title: document.getElementById('q-field-title').value.trim(),
+                problemStatement: document.getElementById('q-field-problem').value.trim(),
+                detailedDescription: document.getElementById('q-field-detailed').value.trim(),
+                difficulty: document.getElementById('q-field-diff').value,
+                category: document.getElementById('q-field-category').value.trim(),
+                tags: document.getElementById('q-field-tags').value.split(',').map(t => t.trim()).filter(t => t),
+                marks: parseFloat(document.getElementById('q-field-marks').value || 10),
+                negativeMarks: parseFloat(document.getElementById('q-field-neg-marks').value || 0),
+                timeLimitMs: parseInt(document.getElementById('q-field-time-limit').value || 2000),
+                memoryLimitMb: parseInt(document.getElementById('q-field-mem-limit').value || 256),
+                status: document.getElementById('q-field-status').value,
+                quiz_id: parseInt(document.getElementById('q-field-session').value || 1),
+                supportedLanguages: getSelectedLanguages(),
+                starterCode: starterCodeMap,
+                inputFormat: document.getElementById('q-field-input-format').value.trim(),
+                outputFormat: document.getElementById('q-field-output-format').value.trim(),
+                constraints: constraints,
+                samples: samples,
+                testCases: testCases,
+                evaluationSettings: {
+                    exactOutput: document.getElementById('eval-exact').checked,
+                    ignoreLeadingTrailingWhitespace: document.getElementById('eval-trim').checked,
+                    ignoreLineEndingDifferences: document.getElementById('eval-line-endings').checked,
+                    caseSensitive: document.getElementById('eval-case').checked,
+                    partialScoring: document.getElementById('eval-partial').checked,
+                    allowCustomInput: document.getElementById('eval-custom-input').checked
+                }
+            };
+        }
+
+        // Save Question
+        function saveActiveQuestion() {
+            const payload = collectEditorPayload();
+            if (!payload.title) {
+                Swal.fire('Validation Error', 'Question title is required.', 'warning');
+                return;
+            }
+            if (!payload.problemStatement) {
+                Swal.fire('Validation Error', 'Problem statement is required.', 'warning');
+                return;
+            }
+
+            Swal.fire({ title: 'Saving Coding Challenge...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/admin/coding/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire('Saved!', data.message, 'success').then(() => window.location.reload());
+                } else {
+                    Swal.fire('Error', data.error || (data.errors ? data.errors.join('\n') : 'Save failed'), 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Network communication failed', 'error'));
+        }
+
+        // Duplicate Question
+        function duplicateQuestion(qId) {
+            Swal.fire({
+                title: 'Duplicate Question?',
+                text: 'Create an identical copy in draft status?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Duplicate',
+                confirmButtonColor: '#4f46e5'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    fetch(`/admin/coding/duplicate/${qId}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) Swal.fire('Duplicated!', d.message, 'success').then(() => window.location.reload());
+                            else Swal.fire('Error', d.error, 'error');
+                        });
+                }
+            });
+        }
+
+        // Delete Question
+        function deleteQuestion(qId) {
+            Swal.fire({
+                title: 'Delete Question?',
+                text: 'Are you sure? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Delete Forever'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    fetch(`/admin/coding/delete/${qId}`, { method: 'POST' })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) Swal.fire('Deleted!', d.message, 'success').then(() => window.location.reload());
+                            else Swal.fire('Error', d.error, 'error');
+                        });
+                }
+            });
+        }
+
+        // Search & Filter Questions List
+        function filterQuestions() {
+            const query = document.getElementById('search-questions').value.toLowerCase();
+            const diff = document.getElementById('filter-diff').value.toLowerCase();
+            const status = document.getElementById('filter-status').value.toLowerCase();
+
+            document.querySelectorAll('.q-item-card').forEach(card => {
+                const cardDiff = card.getAttribute('data-diff');
+                const cardStatus = card.getAttribute('data-status');
+                const cardSearch = card.getAttribute('data-search');
+
+                const matchesQuery = !query || cardSearch.includes(query);
+                const matchesDiff = (diff === 'all') || (cardDiff === diff);
+                const matchesStatus = (status === 'all') || (cardStatus === status);
+
+                card.style.display = (matchesQuery && matchesDiff && matchesStatus) ? 'block' : 'none';
+            });
+        }
+
+        // Test Run Code
+        function testRunActiveCode() {
+            const payload = collectEditorPayload();
+            const code = starterEditor.getValue();
+            const lang = activeStarterLang;
+
+            if (!code.trim()) {
+                Swal.fire('Empty Code', 'Please write some code in the editor to run.', 'warning');
+                return;
+            }
+
+            Swal.fire({ title: 'Running Code Tests...', text: `Executing ${lang.toUpperCase()} solution in sandbox...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/admin/coding/api/run_test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: code,
+                    language: lang,
+                    mode: 'test_cases',
+                    testCases: payload.testCases,
+                    evaluationSettings: payload.evaluationSettings,
+                    timeLimitMs: payload.timeLimitMs
+                })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    const sum = d.summary;
+                    const isAllPassed = sum.passedCount === sum.totalCount;
+                    let htmlContent = `
+                        <div style="text-align:left;">
+                            <div style="margin-bottom:12px; font-size:15px;">
+                                Verdict: <strong style="color:${isAllPassed ? '#10b981' : '#ef4444'}">${sum.overallStatus}</strong>
+                                (${sum.passedCount} / ${sum.totalCount} passed - ${sum.scorePercentage}%)
+                            </div>
+                            <div style="max-height:220px; overflow-y:auto; font-family:var(--font-code); font-size:12px;">
+                    `;
+                    sum.cases.forEach((c, idx) => {
+                        htmlContent += `
+                            <div style="padding:6px 8px; margin-bottom:6px; border-radius:6px; background:${c.passed ? '#f0fdf4' : '#fef2f2'}; border:1px solid ${c.passed ? '#86efac' : '#fecdd3'};">
+                                <strong>Case #${idx + 1} (${c.id}):</strong> ${c.status} (${c.timeMs}ms)
+                                ${c.actualOutput ? `<div>Out: <code>${escapeHtml(c.actualOutput)}</code></div>` : ''}
+                                ${c.stderr ? `<div style="color:#ef4444;">Err: ${escapeHtml(c.stderr)}</div>` : ''}
+                            </div>
+                        `;
+                    });
+                    htmlContent += '</div></div>';
+
+                    Swal.fire({
+                        title: isAllPassed ? 'All Test Cases Passed!' : 'Execution Results',
+                        html: htmlContent,
+                        icon: isAllPassed ? 'success' : 'info'
+                    });
+                } else {
+                    Swal.fire('Execution Error', d.error, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Execution failed to complete', 'error'));
+        }
+
+        // Preview Modal
+        function openPreviewModal() {
+            const p = collectEditorPayload();
+            renderPreviewModalWithData(p);
+        }
+
+        function openPreviewModalById(qId) {
+            fetch(`/admin/coding/api/get/${qId}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) renderPreviewModalWithData(d.question);
+                });
+        }
+
+        function renderPreviewModalWithData(p) {
+            document.getElementById('prev-modal-title').innerHTML = `<i class="fas fa-terminal text-indigo-600 me-2"></i> ${escapeHtml(p.title)}`;
+            document.getElementById('prev-modal-diff').innerText = p.difficulty || 'Easy';
+            document.getElementById('prev-modal-diff').className = `diff-badge ${(p.difficulty || 'easy').toLowerCase()}`;
+            document.getElementById('prev-modal-marks').innerText = `+${p.marks} pts`;
+
+            const negEl = document.getElementById('prev-modal-neg');
+            if (p.negativeMarks && p.negativeMarks > 0) {
+                negEl.style.display = 'inline-block';
+                negEl.innerText = `-${p.negativeMarks} penalty`;
+            } else {
+                negEl.style.display = 'none';
+            }
+
+            document.getElementById('prev-title-text').innerText = p.title;
+            document.getElementById('prev-prob-text').innerText = p.problemStatement;
+            document.getElementById('prev-inp-fmt').innerText = p.inputFormat || 'Standard Input';
+            document.getElementById('prev-out-fmt').innerText = p.outputFormat || 'Standard Output';
+
+            // Samples
+            const samplesSec = document.getElementById('prev-samples-section');
+            samplesSec.innerHTML = '';
+            if (p.samples && p.samples.length > 0) {
+                p.samples.forEach((s, idx) => {
+                    samplesSec.innerHTML += `
+                        <div style="background:#ffffff; border-radius:10px; padding:12px; border:1px solid var(--border-color); margin-top:8px;">
+                            <div style="font-size:11px; font-weight:800; color:var(--primary);">Sample #${idx + 1}</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Input:</div>
+                            <pre style="font-family:var(--font-code); color:var(--text-dark); font-size:11.5px; margin:2px 0;">${escapeHtml(s.input)}</pre>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Expected Output:</div>
+                            <pre style="font-family:var(--font-code); color:var(--text-dark); font-size:11.5px; margin:2px 0;">${escapeHtml(s.expectedOutput)}</pre>
+                            ${s.explanation ? `<div style="font-size:11px; color:var(--text-secondary); margin-top:4px;"><em>${escapeHtml(s.explanation)}</em></div>` : ''}
+                        </div>
+                    `;
+                });
+            }
+
+            // Language dropdown
+            const langSelect = document.getElementById('prev-lang-select');
+            langSelect.innerHTML = '';
+            (p.supportedLanguages || ['python']).forEach(l => {
+                const opt = document.createElement('option');
+                opt.value = l;
+                opt.innerText = l.toUpperCase();
+                langSelect.appendChild(opt);
+            });
+
+            // Set Preview Ace
+            previewEditor.session.setMode("ace/mode/python");
+            const sc = (p.starterCode && p.starterCode['python']) ? p.starterCode['python'] : (defaultBoilerplates['python'] || '');
+            previewEditor.setValue(sc, -1);
+            document.getElementById('preview-console-out').innerText = 'Click "Run Code" to test candidate solution...';
+
+            openModal('modal-preview');
+        }
+
+        function changePreviewLanguage() {
+            const lang = document.getElementById('prev-lang-select').value;
+            const aceModes = { python: 'ace/mode/python', cpp: 'ace/mode/c_cpp', c: 'ace/mode/c_cpp', java: 'ace/mode/java', javascript: 'ace/mode/javascript' };
+            previewEditor.session.setMode(aceModes[lang] || 'ace/mode/python');
+            previewEditor.setValue(starterCodeMap[lang] || defaultBoilerplates[lang] || '', -1);
+        }
+
+        function runPreviewCode() {
+            const code = previewEditor.getValue();
+            const lang = document.getElementById('prev-lang-select').value;
+            const p = collectEditorPayload();
+            const consoleOut = document.getElementById('preview-console-out');
+
+            consoleOut.innerText = `Running ${lang.toUpperCase()} code in sandbox... Please wait...`;
+
+            fetch('/admin/coding/api/run_test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: code,
+                    language: lang,
+                    mode: 'test_cases',
+                    testCases: p.testCases,
+                    evaluationSettings: p.evaluationSettings,
+                    timeLimitMs: p.timeLimitMs,
+                    mask_hidden: true
+                })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    const sum = d.summary;
+                    let out = `VERDICT: ${sum.overallStatus}\n`;
+                    out += `Cases Passed: ${sum.passedCount} / ${sum.totalCount} (${sum.scorePercentage}%)\n`;
+                    if (sum.overallStatus !== 'Accepted' && p.negativeMarks > 0) {
+                        out += `NEGATIVE MARKING: -${p.negativeMarks} pts deduction for incorrect submission.\n`;
+                    }
+                    out += `--------------------------------------------------\n`;
+                    sum.cases.forEach((c, idx) => {
+                        out += `[Test #${idx + 1}] ${c.id}: ${c.status} (${c.timeMs}ms)\n`;
+                        if (c.hidden) {
+                            out += `  -> Hidden Test Case Verified\n`;
+                        } else {
+                            out += `  Input: ${c.input}\n  Output: ${c.actualOutput}\n  Expected: ${c.expectedOutput}\n`;
+                        }
+                    });
+                    consoleOut.innerText = out;
+                } else {
+                    consoleOut.innerText = `ERROR: ${d.error}`;
+                }
+            })
+            .catch(() => consoleOut.innerText = 'Network error while executing runner.');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        // Bulk Create Modal
+        function openBulkCreateModal() {
+            const list = document.getElementById('bulk-questions-list');
+            list.innerHTML = '';
+            addBulkQuestionCard('Add Two Numbers', 'Easy', 'Write a program to read two integers and print their sum.');
+            addBulkQuestionCard('Reverse String', 'Medium', 'Given a string, print it reversed.');
+            openModal('modal-bulk-create');
+        }
+
+        function addBulkQuestionCard(title = '', diff = 'Easy', prob = '') {
+            const list = document.getElementById('bulk-questions-list');
+            const idx = list.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'case-card bulk-q-card';
+            div.innerHTML = `
+                <div class="case-card-head">
+                    <span class="case-title">Question #${idx}</span>
+                    <button type="button" class="card-icon-btn danger" onclick="this.closest('.bulk-q-card').remove()"><i class="fas fa-trash"></i></button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-field col-6">
+                        <label class="field-label" style="font-size:11.5px;">Title <span class="req">*</span></label>
+                        <input type="text" class="text-input bulk-title" value="${escapeHtml(title)}" placeholder="Title...">
+                    </div>
+                    <div class="form-field col-3">
+                        <label class="field-label" style="font-size:11.5px;">Difficulty (Coding)</label>
+                        <select class="select-input bulk-diff">
+                            <option value="Easy" ${diff === 'Easy' ? 'selected' : ''}>Easy</option>
+                            <option value="Medium" ${diff === 'Medium' ? 'selected' : ''}>Medium</option>
+                            <option value="Difficult" ${diff === 'Difficult' ? 'selected' : ''}>Difficult</option>
+                        </select>
+                    </div>
+                    <div class="form-field col-3">
+                        <label class="field-label" style="font-size:11.5px;">Marks</label>
+                        <input type="number" class="text-input bulk-marks" value="10">
+                    </div>
+                    <div class="form-field col-12">
+                        <label class="field-label" style="font-size:11.5px;">Problem Statement <span class="req">*</span></label>
+                        <textarea class="tc-textarea bulk-prob" rows="2" placeholder="Problem description...">${escapeHtml(prob)}</textarea>
+                    </div>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+
+        function submitBulkCreate() {
+            const cards = document.querySelectorAll('#bulk-questions-list .bulk-q-card');
+            if (cards.length === 0) {
+                Swal.fire('Empty', 'Please add at least one question.', 'warning');
+                return;
+            }
+
+            const questions = [];
+            cards.forEach((c, idx) => {
+                questions.push({
+                    title: c.querySelector('.bulk-title').value.trim(),
+                    difficulty: c.querySelector('.bulk-diff').value,
+                    marks: parseFloat(c.querySelector('.bulk-marks').value || 10),
+                    problemStatement: c.querySelector('.bulk-prob').value.trim(),
+                    supportedLanguages: ['python', 'cpp', 'java', 'javascript'],
+                    starterCode: defaultBoilerplates,
+                    testCases: [{ id: 'tc_001', input: 'sample', expectedOutput: 'output', hidden: false, weight: 100 }]
+                });
+            });
+
+            Swal.fire({ title: 'Creating Questions...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/admin/coding/api/bulk_create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ questions: questions })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    Swal.fire('Success!', d.message, 'success').then(() => window.location.reload());
+                } else {
+                    Swal.fire('Validation Error', d.message || d.error, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Transaction failed', 'error'));
+        }
+
+        // Import Modal
+        function openImportModal() {
+            document.getElementById('import-preview-wrapper').style.display = 'none';
+            document.getElementById('btn-confirm-import').style.display = 'none';
+            document.getElementById('import-file-input').value = '';
+            openModal('modal-import');
+        }
+
+        function handleImportFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const fd = new FormData();
+            fd.append('file', file);
+
+            Swal.fire({ title: 'Parsing & Validating File...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/admin/coding/api/import_preview', {
+                method: 'POST',
+                body: fd
+            })
+            .then(r => r.json())
+            .then(d => {
+                Swal.close();
+                if (d.success) {
+                    importPreviewCache = d.questions;
+                    renderImportPreview(d);
+                } else {
+                    Swal.fire('Import Error', d.error, 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Upload failed', 'error'));
+        }
+
+        function renderImportPreview(d) {
+            const wrap = document.getElementById('import-preview-wrapper');
+            wrap.style.display = 'flex';
+
+            document.getElementById('import-badge-counts').innerHTML = `
+                <span class="badge bg-secondary" style="padding:4px 8px; border-radius:6px; background:#64748b; color:white; font-size:11px;">${d.total} Total</span>
+                <span class="badge bg-success" style="padding:4px 8px; border-radius:6px; background:#10b981; color:white; font-size:11px;">${d.valid_count} Valid</span>
+                ${d.invalid_count > 0 ? `<span class="badge bg-danger" style="padding:4px 8px; border-radius:6px; background:#ef4444; color:white; font-size:11px;">${d.invalid_count} Errors</span>` : ''}
+            `;
+
+            const table = document.getElementById('import-questions-table');
+            table.innerHTML = '';
+            d.questions.forEach((q, idx) => {
+                const isValid = q.isValid;
+                const div = document.createElement('div');
+                div.style.cssText = `padding:10px 14px; border-bottom:1px solid var(--border-color); display:flex; align-items:center; justify-content:space-between; background:${isValid ? 'transparent' : 'rgba(239,68,68,0.06)'};`;
+                div.innerHTML = `
+                    <div>
+                        <strong style="color:${isValid ? 'var(--text-dark)' : 'var(--danger)'}; font-size:13px;">${idx + 1}. ${escapeHtml(q.title || 'Untitled')}</strong>
+                        <div style="font-size:11.5px; color:var(--text-muted);">${q.difficulty} | +${q.marks} pts | ${q.testCases ? q.testCases.length : 0} tests</div>
+                        ${q.errors && q.errors.length > 0 ? `<div style="font-size:11.5px; color:var(--danger); margin-top:2px;">${escapeHtml(q.errors.join(', '))}</div>` : ''}
+                    </div>
+                    <div>
+                        <span class="badge ${isValid ? 'bg-success' : 'bg-danger'}" style="padding:4px 8px; border-radius:6px; background:${isValid ? '#10b981' : '#ef4444'}; color:white; font-size:11px;">${isValid ? 'Valid' : 'Error'}</span>
+                    </div>
+                `;
+                table.appendChild(div);
+            });
+
+            if (d.valid_count > 0) {
+                document.getElementById('btn-confirm-import').style.display = 'inline-flex';
+            }
+        }
+
+        function confirmImport() {
+            const validQuestions = importPreviewCache.filter(q => q.isValid);
+            if (validQuestions.length === 0) {
+                Swal.fire('No Valid Questions', 'There are no valid questions to import.', 'warning');
+                return;
+            }
+
+            Swal.fire({ title: 'Importing Questions...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            fetch('/admin/coding/api/import_confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ questions: validQuestions })
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    Swal.fire('Import Completed!', `Successfully imported ${d.saved_count} coding questions.`, 'success').then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    Swal.fire('Error', d.errors ? d.errors.join('\n') : 'Import failed.', 'error');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'Import request failed', 'error'));
+        }
+
+        // Export Modal
+        function openExportModal() {
+            openModal('modal-export');
+        }
+
+        function executeExport() {
+            const fmt = document.getElementById('export-format').value;
+            const scope = document.getElementById('export-scope').value;
+
+            let url = `/admin/coding/api/export?format=${fmt}`;
+            if (scope === 'current' && currentQuestionId) {
+                url += `&scope=selected&ids=${currentQuestionId}`;
+            } else {
+                url += `&scope=all`;
+            }
+
+            window.location.href = url;
+            closeModal('modal-export');
+        }
+    </script>
+</body>
+</html>

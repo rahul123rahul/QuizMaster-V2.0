@@ -210,3 +210,137 @@ def dept_analytics():
                     data['values'].append(round(float(r['avg_pct']), 2))
         conn.close()
     return jsonify(data)
+
+@api_bp.route('/run_code', methods=['POST'])
+def run_code():
+    data = request.json or {}
+    attempt_id = data.get('attempt_id')
+    question_id = data.get('question_id')
+    code = data.get('code', '')
+    language = data.get('language', 'python')
+    mode = data.get('mode', 'official')
+    custom_stdin = data.get('stdin', '')
+
+    from code_runner import execute_code
+    from utils import split_test_case_block, normalize_judge_output
+
+    if not code.strip():
+        return jsonify({'status': 'error', 'output': 'No code provided to execute.'}), 400
+
+    # 1. Custom Stdin Mode
+    if mode == 'custom':
+        exec_res = execute_code(code, language, stdin_data=custom_stdin)
+        if exec_res.get('stderr') and not exec_res.get('stdout'):
+            return jsonify({'status': 'error', 'output': exec_res.get('stderr')})
+        out = exec_res.get('stdout') or ''
+        if exec_res.get('stderr'):
+            out += f"\n[Errors / Warnings]:\n{exec_res.get('stderr')}"
+        return jsonify({'status': 'success', 'output': out.strip() or 'No Output'})
+
+    # 2. Official Test Cases Mode
+    conn = get_db_connection()
+    q_data = None
+    if conn:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT question_id, test_input, test_output, marks FROM Questions WHERE question_id=%s", (question_id,))
+            q_data = cursor.fetchone()
+        conn.close()
+
+    if not q_data:
+        exec_res = execute_code(code, language, stdin_data="")
+        out = exec_res.get('stdout') or exec_res.get('stderr') or 'No Output'
+        return jsonify({
+            'status': 'success',
+            'verdict': exec_res.get('verdict', 'Accepted'),
+            'results': [{
+                'case_num': 1,
+                'status': 'Pass' if exec_res.get('verdict') == 'Accepted' else 'Error',
+                'input': 'None',
+                'expected': 'Execution Success',
+                'actual': out.strip()
+            }],
+            'output': out.strip()
+        })
+
+    raw_inputs = split_test_case_block(q_data.get('test_input'))
+    raw_outputs = split_test_case_block(q_data.get('test_output'))
+
+    if not raw_inputs and not raw_outputs:
+        raw_inputs = [""]
+        raw_outputs = [""]
+    elif not raw_inputs:
+        raw_inputs = [""] * len(raw_outputs)
+    elif not raw_outputs:
+        raw_outputs = [""] * len(raw_inputs)
+
+    case_count = max(len(raw_inputs), len(raw_outputs))
+    results = []
+    passed_count = 0
+    first_error = None
+
+    for idx in range(case_count):
+        inp = raw_inputs[idx] if idx < len(raw_inputs) else ""
+        exp = raw_outputs[idx] if idx < len(raw_outputs) else ""
+
+        run_res = execute_code(code, language, stdin_data=inp)
+        actual = (run_res.get('stdout') or '').strip()
+        err = (run_res.get('stderr') or '').strip()
+        verdict = run_res.get('verdict', 'Accepted')
+
+        if verdict == 'Time Limit Exceeded':
+            case_status = 'Error'
+            actual_display = f"Time Limit Exceeded (3.0s)\n{err}".strip()
+            if not first_error:
+                first_error = 'Time Limit Exceeded'
+        elif err and not actual:
+            case_status = 'Error'
+            actual_display = err
+            if not first_error:
+                first_error = 'Runtime Error' if verdict != 'Compilation Error' else 'Compilation Error'
+        else:
+            norm_actual = normalize_judge_output(actual)
+            norm_exp = normalize_judge_output(exp)
+
+            if norm_actual == norm_exp:
+                case_status = 'Pass'
+                passed_count += 1
+                actual_display = actual
+            else:
+                case_status = 'Fail'
+                actual_display = actual if actual else (err or 'No Output')
+
+        results.append({
+            'case_num': idx + 1,
+            'status': case_status,
+            'input': inp if inp else 'No Input',
+            'expected': exp if exp else 'No expected output configured',
+            'actual': actual_display
+        })
+
+    total_cases = len(results)
+    if passed_count == total_cases and total_cases > 0:
+        final_verdict = 'Accepted'
+    elif first_error:
+        final_verdict = first_error
+    else:
+        final_verdict = 'Wrong Answer'
+
+    # Save code to Quiz_Responses
+    if attempt_id and question_id:
+        conn = get_db_connection()
+        if conn:
+            with conn.cursor() as cursor:
+                cursor.execute('''
+                    INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted)
+                    VALUES (%s, %s, %s, 1)
+                    ON DUPLICATE KEY UPDATE selected_option=VALUES(selected_option), is_attempted=1
+                ''', (attempt_id, question_id, code))
+            conn.close()
+
+    return jsonify({
+        'status': 'success',
+        'verdict': final_verdict,
+        'passed_count': passed_count,
+        'total_cases': total_cases,
+        'results': results
+    })

@@ -2,91 +2,628 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Edit Student | QuizMaster</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Student Profile | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --bg-page: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-page);
+            color: var(--text-main);
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        /* Top Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-title .icon-box {
+            width: 44px;
+            height: 44px;
+            background: var(--primary-light);
+            color: var(--primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .page-title h2 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .page-title p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .btn-back {
+            text-decoration: none;
+            color: var(--text-muted);
+            background: #fff;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .btn-back:hover {
+            color: var(--text-main);
+            border-color: #cbd5e1;
+            transform: translateX(-2px);
+        }
+
+        /* Main Form Card */
+        .form-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 4px 25px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        /* Profile Banner Bar */
+        .profile-banner {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            padding: 24px 30px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .student-identity {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar-circle {
+            width: 54px;
+            height: 54px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .identity-text h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .identity-text p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .status-pill {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .status-locked {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Form Body */
+        .form-body {
+            padding: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .form-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .section-header i {
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .section-header h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .form-group label .required {
+            color: var(--danger);
+            margin-left: 2px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 13.5px;
+            font-family: inherit;
+            color: var(--text-main);
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        select.form-control {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 14px;
+            padding-right: 36px;
+        }
+
+        .hint {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Password input wrapper */
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Footer Actions */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 12px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .btn-cancel {
+            text-decoration: none;
+            color: var(--text-muted);
+            background: #f1f5f9;
+            padding: 11px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 11px 28px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
+        }
+
+        @media (max-width: 650px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            .form-body {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <div class="container mt-5">
-        <div class="card shadow-sm" style="max-width: 600px; margin: 0 auto;">
-            <div class="card-header bg-white">
-                <h4 class="mb-0">Edit Student Profile</h4>
+<body>
+
+    <div class="container">
+        <!-- Top Bar Navigation -->
+        <div class="page-header">
+            <div class="page-title">
+                <div class="icon-box">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div>
+                    <h2>Edit Student Profile</h2>
+                    <p>Update student credentials, academic details, and exam center allocation</p>
+                </div>
             </div>
-            <div class="card-body">
-                <form action="/admin/update_student" method="POST">
-                    <input type="hidden" name="user_id" value="{{ user.user_id }}">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" name="full_name" value="{{ user.full_name }}" required>
+            <a href="/admin/students" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Students
+            </a>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <!-- Student Header Profile Banner -->
+            <div class="profile-banner">
+                <div class="student-identity">
+                    <div class="avatar-circle">
+                        {{ user.full_name[:1] if user.full_name else 'S' }}
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                    <div class="identity-text">
+                        <h3>{{ user.full_name }}</h3>
+                        <p>{{ user.email }} &bull; Roll: {{ user.roll_number or 'Unassigned' }}</p>
+                    </div>
+                </div>
+                <div>
+                    {% if user.is_blocked == 1 %}
+                        <span class="status-pill status-locked"><i class="fas fa-lock me-1"></i> Blocked / Locked</span>
+                    {% else %}
+                        <span class="status-pill status-active"><i class="fas fa-check-circle me-1"></i> Active Student</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form action="/admin/update_student" method="POST" class="form-body">
+                <input type="hidden" name="user_id" value="{{ user.user_id }}">
+
+                <!-- 1. Personal & Contact Information -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-address-card"></i>
+                        <h4>Personal & Contact Details</h4>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Mobile</label>
-                        <input type="text" class="form-control" name="mobile" value="{{ user.mobile }}">
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label class="form-label">Department</label>
-                            <input type="text" class="form-control" name="department" value="{{ user.department }}">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Full Name <span class="required">*</span></label>
+                            <input type="text" class="form-control" name="full_name" value="{{ user.full_name or '' }}" required placeholder="e.g. John Doe">
                         </div>
-                        <div class="col">
-                            <label class="form-label">Year/Sem</label>
-                            <input type="text" class="form-control" name="study_year" value="{{ user.study_year }}">
+
+                        <div class="form-group">
+                            <label>Email Address <span class="required">*</span></label>
+                            <input type="email" class="form-control" name="email" value="{{ user.email or '' }}" required placeholder="student@domain.com">
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Roll Number</label>
-                        <input type="text" class="form-control" name="roll_number" value="{{ user.roll_number }}">
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            <input type="text" class="form-control" name="mobile" value="{{ user.mobile or user.phone_number or '' }}" placeholder="10-digit mobile number">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Roll Number</label>
+                            <input type="text" class="form-control" name="roll_number" value="{{ user.roll_number or '' }}" placeholder="e.g. 21CS045">
+                        </div>
+
+                        <div class="form-group">
+                            <label>College / Institution</label>
+                            <input type="text" class="form-control" name="college" value="{{ user.college or '' }}" placeholder="College Name">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Academic Information -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h4>Academic Configuration</h4>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Enrolled Batch</label>
-                        <select class="form-select" name="enrolled_session">
-                            <option value="">-- None --</option>
-                            {% for s in sessions %}
-                                <option value="{{ s.batch }}" {% if user.enrolled_session == s.batch %}selected{% endif %}>{{ s.batch }}</option>
-                            {% endfor %}
-                        </select>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Department</label>
+                            {% set official_depts = [
+                                'Civil',
+                                'Mechanical',
+                                'CSE',
+                                'CSE- Artificial Intelligence and Machine Learning',
+                                'CSE- Cyber Security',
+                                'CSE- Data Science',
+                                'AI&DS- Artificial Intelligence and Data Science',
+                                'ECE'
+                            ] %}
+                            <select class="form-control" name="department" id="deptSelect" onchange="checkCustomDept(this)">
+                                <option value="">-- Select Department --</option>
+                                <optgroup label="Official Departments">
+                                    {% for d in official_depts %}
+                                        <option value="{{ d }}" {% if user.department == d %}selected{% endif %}>{{ d }}</option>
+                                    {% endfor %}
+                                </optgroup>
+                                {% if departments %}
+                                    {% set extra_depts = [] %}
+                                    {% for d in departments %}
+                                        {% if d not in official_depts %}
+                                            <option value="{{ d }}" {% if user.department == d %}selected{% endif %}>{{ d }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                                {% if user.department and user.department not in official_depts and (not departments or user.department not in departments) %}
+                                    <option value="{{ user.department }}" selected>{{ user.department }} (Current)</option>
+                                {% endif %}
+                                <option value="__custom__">+ Other / Enter Custom Department</option>
+                            </select>
+                            <input type="text" class="form-control" name="custom_department" id="customDeptInput" style="display:none; margin-top:8px;" placeholder="Type custom department name">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Section</label>
+                            <select class="form-control" name="section">
+                                <option value="">-- Select Section --</option>
+                                <option value="A" {% if user.section == 'A' %}selected{% endif %}>Section A</option>
+                                <option value="B" {% if user.section == 'B' %}selected{% endif %}>Section B</option>
+                                <option value="C" {% if user.section == 'C' %}selected{% endif %}>Section C</option>
+                                <option value="D" {% if user.section == 'D' %}selected{% endif %}>Section D</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-primary">Exam Center Allocation</label>
-                        <select class="form-select" name="allotted_center_id">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Study Year / Semester</label>
+                            <select class="form-control" name="study_year">
+                                <option value="">-- Select Year/Sem --</option>
+                                <option value="I/I sem" {% if user.study_year == 'I/I sem' %}selected{% endif %}>I/I sem</option>
+                                <option value="I/II sem" {% if user.study_year == 'I/II sem' %}selected{% endif %}>I/II sem</option>
+                                <option value="II/I sem" {% if user.study_year == 'II/I sem' %}selected{% endif %}>II/I sem</option>
+                                <option value="II/II sem" {% if user.study_year == 'II/II sem' %}selected{% endif %}>II/II sem</option>
+                                <option value="III/I sem" {% if user.study_year == 'III/I sem' %}selected{% endif %}>III/I sem</option>
+                                <option value="III/II sem" {% if user.study_year == 'III/II sem' %}selected{% endif %}>III/II sem</option>
+                                <option value="IV/I sem" {% if user.study_year == 'IV/I sem' %}selected{% endif %}>IV/I sem</option>
+                                <option value="IV/II sem" {% if user.study_year == 'IV/II sem' %}selected{% endif %}>IV/II sem</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Enrolled Batch / Session</label>
+                            <select class="form-control" name="enrolled_session">
+                                <option value="">-- None --</option>
+                                {% for s in sessions %}
+                                    <option value="{{ s.batch }}" {% if user.enrolled_session == s.batch %}selected{% endif %}>{{ s.batch }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Exam Center & Seating -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-building"></i>
+                        <h4>Exam Center & Seating Allocation</h4>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Allotted Exam Center</label>
+                        <select class="form-control" name="allotted_center_id">
                             <option value="">-- Not Allocated --</option>
                             {% for c in centers %}
                                 <option value="{{ c.center_id }}" {% if user.allotted_center_id == c.center_id %}selected{% endif %}>
-                                    {{ c.center_name }} (Filled: {{ c.allocated_count }}/{{ c.capacity }})
+                                    {{ c.center_name }} (Capacity: {{ c.allocated_count or 0 }}/{{ c.capacity or '∞' }})
                                 </option>
                             {% endfor %}
                         </select>
-                        <div class="form-text">Admins can manually override system allocation here.</div>
+                        <div class="hint">Admins can override the automated seat planner allocation here.</div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col">
-                            <label class="form-label">Days Present</label>
-                            <input type="number" class="form-control" name="attendance_present" value="{{ user.attendance_present or 0 }}">
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Seat Row</label>
+                            <input type="number" class="form-control" name="seat_row" value="{{ user.seat_row or '' }}" placeholder="Row Number">
                         </div>
-                        <div class="col">
-                            <label class="form-label">Total Days</label>
-                            <input type="number" class="form-control" name="attendance_total" value="{{ user.attendance_total or 0 }}">
+
+                        <div class="form-group">
+                            <label>Seat Column</label>
+                            <input type="number" class="form-control" name="seat_col" value="{{ user.seat_col or '' }}" placeholder="Column Number">
                         </div>
+                    </div>
+                </div>
+
+                <!-- 4. Security Status & Attendance -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-shield-alt"></i>
+                        <h4>Security & Attendance</h4>
                     </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="/manage_students" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Update Student</button>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Account Access Status</label>
+                            <select class="form-control" name="is_blocked">
+                                <option value="0" {% if user.is_blocked != 1 %}selected{% endif %}>Active / Unlocked</option>
+                                <option value="1" {% if user.is_blocked == 1 %}selected{% endif %}>Locked (Blocked / Violation)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Attendance Present Days</label>
+                            <input type="number" class="form-control" name="attendance_present" value="{{ user.attendance_present or 0 }}" min="0">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Attendance Total Days</label>
+                            <input type="number" class="form-control" name="attendance_total" value="{{ user.attendance_total or 0 }}" min="0">
+                        </div>
                     </div>
-                </form>
-            </div>
+                </div>
+
+                <!-- 5. Optional Password Reset -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <i class="fas fa-key"></i>
+                        <h4>Credentials & Password</h4>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Reset Student Password</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-control" name="password" id="studentPassword" placeholder="Leave blank to keep existing password unchanged">
+                            <i class="fas fa-eye password-toggle" onclick="togglePasswordVisibility()"></i>
+                        </div>
+                        <div class="hint">Type a new password only if you need to manually reset this student's login credential.</div>
+                    </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="form-actions">
+                    <a href="/admin/students" class="btn-cancel">Cancel</a>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-check"></i> Save &amp; Update Profile
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const pwd = document.getElementById('studentPassword');
+            const icon = event.currentTarget;
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function checkCustomDept(sel) {
+            const customInput = document.getElementById('customDeptInput');
+            if (sel.value === '__custom__') {
+                customInput.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+    </script>
 </body>
 </html>

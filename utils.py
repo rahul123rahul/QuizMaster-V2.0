@@ -633,6 +633,11 @@ def collect_selected_ai_preview_rows(form):
 
     return rows
 
+def format_test_case_block(cases):
+    if not cases:
+        return ''
+    return '\n---\n'.join([str(c or '').strip() for c in cases])
+
 def split_test_case_block(raw_value):
     text = (raw_value or '').strip()
     if not text:

@@ -3,6 +3,7 @@ from utils import get_db_connection
 from datetime import datetime, timedelta
 from certificate_generator import generate_certificate_pdf
 import random
+import json
 
 quiz_bp = Blueprint('quiz', __name__, template_folder='../templates')
 
@@ -11,6 +12,89 @@ def _stable_shuffle(items, seed_value):
     rng = random.Random(str(seed_value))
     rng.shuffle(shuffled)
     return shuffled
+
+def _normalize_quiz_question(q, attempt_id=None):
+    raw_type = (q.get('question_type') or '').strip().lower()
+    clean_type = raw_type.replace(' ', '_').replace('-', '_')
+    meta = {}
+    if q.get('metadata_json'):
+        try:
+            meta = json.loads(q['metadata_json']) if isinstance(q['metadata_json'], str) else q['metadata_json']
+        except Exception:
+            meta = {}
+
+    meta_type = str(meta.get('question_type') or meta.get('type') or meta.get('selection_type') or '').strip().lower().replace(' ', '_').replace('-', '_')
+    combined_type = f"{clean_type} {meta_type}".strip()
+
+    # 1. Determine if this question is a Coding Challenge
+    coding_types = {'code', 'coding', 'programming'}
+    is_coding = False
+    if clean_type in coding_types or meta_type in coding_types:
+        is_coding = True
+    elif (q.get('test_input') or q.get('test_output')) and not any(k in combined_type for k in ['blank', 'fill', 'fib', 'single', 'multi', 'select', 'dropdown', 'true', 'false', 'boolean', 'tf', 'mscq']):
+        is_coding = True
+    elif (q.get('module') or '').strip().lower() == 'coding' and not q.get('option_a') and not meta.get('options') and not any(k in combined_type for k in ['blank', 'fill', 'fib', 'single', 'multi', 'select', 'dropdown', 'true', 'false', 'boolean', 'tf']):
+        is_coding = True
+
+    # 2. Determine normalized Question Type (Coding + 5 Quiz Question Types)
+    if is_coding:
+        norm_type = 'coding'
+    elif any(k in combined_type for k in ['blank', 'fill', 'fib']):
+        norm_type = 'fill_blank'
+    elif any(k in combined_type for k in ['true_false', 'truefalse', 'boolean', 'tf', 'true', 'false']):
+        norm_type = 'true_false'
+    elif any(k in combined_type for k in ['mscq_multiple', 'multiple', 'multi', 'checkbox']):
+        norm_type = 'mscq_multiple'
+    elif any(k in combined_type for k in ['mscq_select', 'dropdown', 'select', 'select_dropdown']):
+        norm_type = 'mscq_select'
+    else:
+        norm_type = 'mscq_single'
+
+    # 3. Extract and configure Options
+    options = []
+    if norm_type == 'fill_blank':
+        options = []
+    elif norm_type == 'true_false':
+        options = [
+            {'key': 'True', 'text': 'True'},
+            {'key': 'False', 'text': 'False'}
+        ]
+    elif meta.get('options') and isinstance(meta['options'], list) and len(meta['options']) > 0:
+        for opt in meta['options']:
+            if isinstance(opt, dict):
+                k = str(opt.get('id') or opt.get('key') or '').strip()
+                t = str(opt.get('text') or opt.get('value') or '').strip()
+                if t:
+                    options.append({'key': k or chr(65 + len(options)), 'text': t})
+            elif opt and str(opt).strip():
+                options.append({'key': chr(65 + len(options)), 'text': str(opt).strip()})
+
+    # Fallback to option_a, option_b, option_c, option_d columns if meta.options was empty or had no text
+    if not options and norm_type not in {'fill_blank', 'true_false', 'coding'}:
+        for key, field in [('A', 'option_a'), ('B', 'option_b'), ('C', 'option_c'), ('D', 'option_d')]:
+            val = q.get(field)
+            if val is not None and str(val).strip() != '':
+                options.append({'key': key, 'text': str(val).strip()})
+
+    q['is_coding'] = is_coding
+    q['question_type_norm'] = norm_type
+    q['meta_data'] = meta
+
+    # Shuffling options for single choice if desired, else keep stable
+    if norm_type in {'mscq_single'} and attempt_id and len(options) > 1:
+        q['shuffled_options'] = _stable_shuffle(options, f'attempt:{attempt_id}:question:{q["question_id"]}:options')
+    else:
+        q['shuffled_options'] = options
+
+    # 4. Fill in the Blank specifics
+    if norm_type == 'fill_blank':
+        acc = meta.get('acceptedAnswers') or []
+        if not acc and q.get('correct_option'):
+            acc = [str(q['correct_option']).strip()]
+        q['accepted_answers'] = acc
+        q['case_sensitive'] = bool(meta.get('caseSensitive', False))
+
+    return q
 
 def calculate_computed_semester(user_semester=None):
     """Calculate semester: if user has manual override, use that; otherwise calculate dynamically"""
@@ -45,12 +129,24 @@ def student_dashboard():
         try:
             with conn.cursor() as cursor:
                 cursor.execute('''
-                    SELECT u.*, c.center_name, c.address, c.city 
+                    SELECT u.*, 
+                           COALESCE(c.center_name, c2.center_name) AS center_name,
+                           COALESCE(c.address, c2.address) AS address,
+                           COALESCE(c.city, c2.city) AS city 
                     FROM Users u 
-                    LEFT JOIN Exam_Centers c ON u.allotted_center_id = c.center_id 
+                    LEFT JOIN Exam_Centers c ON u.center_id = c.center_id 
+                    LEFT JOIN Exam_Centers c2 ON u.allotted_center_id = c2.center_id 
                     WHERE u.user_id=%s
                 ''', (session['user_id'],))
                 user_info = cursor.fetchone()
+
+                if user_info and not user_info.get('center_name'):
+                    cursor.execute('SELECT center_name, address, city FROM Exam_Centers ORDER BY center_id ASC LIMIT 1')
+                    fallback_center = cursor.fetchone()
+                    if fallback_center:
+                        user_info['center_name'] = fallback_center.get('center_name')
+                        user_info['address'] = fallback_center.get('address')
+                        user_info['city'] = fallback_center.get('city')
 
                 now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
 
@@ -120,9 +216,13 @@ def student_dashboard():
                     available.append(q)
 
                 cursor.execute('''
-                    SELECT q.title, q.total_marks, a.total_score, a.status, a.attempt_id, a.certificate_approved 
+                    SELECT 
+                        COALESCE(q.title, a.quiz_title, 'Completed Assessment') AS title,
+                        COALESCE(q.total_marks, a.total_marks, 100) AS total_marks,
+                        a.total_score, a.status, a.attempt_id, a.certificate_approved,
+                        a.end_time, a.submitted_at
                     FROM Quiz_Attempts a 
-                    JOIN Quizzes q ON a.quiz_id=q.quiz_id 
+                    LEFT JOIN Quizzes q ON a.quiz_id=q.quiz_id 
                     WHERE a.user_id=%s 
                     ORDER BY a.attempt_id DESC
                 ''', (session['user_id'],))
@@ -134,10 +234,24 @@ def student_dashboard():
         finally:
             conn.close()
 
+    if not user_info:
+        user_info = {
+            'full_name': session.get('name', 'Student'),
+            'email': session.get('email', ''),
+            'roll_number': session.get('roll_number', ''),
+            'department': session.get('department', ''),
+            'study_year': session.get('study_year', ''),
+            'section': session.get('section', ''),
+            'attendance_present': 0,
+            'attendance_total': 0,
+            'avatar': None
+        }
+
     return render_template('student_dashboard.html', 
                           user=user_info, center=user_info, 
                           quizzes=available, history=history, 
                           winner_announce=msg,
+
                           user_full_name=user_info.get('full_name') if user_info else 'Student',
                           user_email=user_info.get('email') if user_info else None,
                           user_department=user_info.get('department') if user_info else None,
@@ -164,11 +278,12 @@ def student_progress():
                 user_info = cursor.fetchone()
                 
                 cursor.execute('''
-                    SELECT q.title, a.attempt_id, a.total_score, a.status, a.start_time, a.end_time, a.certificate_approved,
-                           (SELECT COUNT(*) FROM Questions WHERE quiz_id=a.quiz_id) as total_questions,
+                    SELECT COALESCE(q.title, a.quiz_title, 'Completed Assessment') AS title,
+                           a.attempt_id, a.total_score, a.status, a.start_time, a.end_time, a.certificate_approved,
+                           COALESCE((SELECT COUNT(*) FROM Questions WHERE quiz_id=a.quiz_id), a.total_questions, 0) as total_questions,
                            (SELECT COUNT(*) FROM Quiz_Responses WHERE attempt_id=a.attempt_id AND selected_option IS NOT NULL) as answered
                     FROM Quiz_Attempts a 
-                    JOIN Quizzes q ON a.quiz_id=q.quiz_id 
+                    LEFT JOIN Quizzes q ON a.quiz_id=q.quiz_id 
                     WHERE a.user_id=%s 
                     ORDER BY a.start_time DESC
                     LIMIT 20
@@ -209,9 +324,9 @@ def download_certificate(attempt_id):
         with conn.cursor() as cursor:
             cursor.execute('''
                 SELECT a.attempt_id, a.total_score, a.certificate_approved, a.user_id,
-                       q.title, u.full_name
+                       COALESCE(q.title, a.quiz_title, 'Completed Assessment') AS title, u.full_name
                 FROM Quiz_Attempts a
-                JOIN Quizzes q ON a.quiz_id = q.quiz_id
+                LEFT JOIN Quizzes q ON a.quiz_id = q.quiz_id
                 JOIN Users u ON a.user_id = u.user_id
                 WHERE a.attempt_id=%s AND a.user_id=%s
             ''', (attempt_id, session['user_id']))
@@ -249,9 +364,9 @@ def download_certificate_public(attempt_id):
         with conn.cursor() as cursor:
             cursor.execute('''
                 SELECT a.attempt_id, a.total_score, a.certificate_approved,
-                       q.title, u.full_name
+                       COALESCE(q.title, a.quiz_title, 'Completed Assessment') AS title, u.full_name
                 FROM Quiz_Attempts a
-                JOIN Quizzes q ON a.quiz_id = q.quiz_id
+                LEFT JOIN Quizzes q ON a.quiz_id = q.quiz_id
                 JOIN Users u ON a.user_id = u.user_id
                 WHERE a.attempt_id=%s
             ''', (attempt_id,))
@@ -290,9 +405,9 @@ def verify_certificate(attempt_id):
             cursor.execute('''
                 SELECT a.attempt_id, a.total_score, a.certificate_approved,
                        COALESCE(a.submitted_at, a.end_time, a.start_time) AS issued_at,
-                       q.title, u.full_name
+                       COALESCE(q.title, a.quiz_title, 'Completed Assessment') AS title, u.full_name
                 FROM Quiz_Attempts a
-                JOIN Quizzes q ON a.quiz_id = q.quiz_id
+                LEFT JOIN Quizzes q ON a.quiz_id = q.quiz_id
                 JOIN Users u ON a.user_id = u.user_id
                 WHERE a.attempt_id=%s
             ''', (attempt_id,))
@@ -342,39 +457,79 @@ def quiz_interface(quiz_id):
                     return redirect('/student')
                 attempt_id = existing['attempt_id']
             else:
-                cursor.execute('INSERT INTO Quiz_Attempts (user_id, quiz_id, total_score, status) VALUES (%s, %s, 0, %s)', (session['user_id'], quiz_id, 'In-Progress'))
+                cursor.execute('''
+                    INSERT INTO Quiz_Attempts (user_id, quiz_id, quiz_title, total_marks, batch, total_questions, total_score, status)
+                    VALUES (%s, %s, %s, %s, %s, %s, 0, %s)
+                ''', (
+                    session['user_id'],
+                    quiz_id,
+                    meta.get('title'),
+                    meta.get('total_marks') or 100.0,
+                    meta.get('batch'),
+                    meta.get('total_questions') or 0,
+                    'In-Progress'
+                ))
                 conn.commit()
                 attempt_id = cursor.lastrowid
 
-            try:
-                cursor.execute('SELECT * FROM Questions WHERE quiz_id=%s ORDER BY module, question_id ASC', (quiz_id,))
-            except Exception:
-                cursor.execute('SELECT * FROM Questions WHERE quiz_id=%s ORDER BY question_id ASC', (quiz_id,))
-
+            cursor.execute('SELECT * FROM Questions WHERE quiz_id=%s ORDER BY question_id ASC', (quiz_id,))
             questions_raw = list(cursor.fetchall())
 
-            grouped_qs = {}
+            MODULE_SORT_ORDER = {
+                'Single Choice': 1,
+                'Multiple Choice': 2,
+                'Select Dropdown': 3,
+                'Fill in the Blanks': 4,
+                'True / False': 5,
+                'Coding': 6,
+                'Coding Challenge': 6
+            }
+
+            def _derive_mod(q_obj, norm_type):
+                m = (q_obj.get('module') or '').strip()
+                if m and m.lower() not in ['general', 'default', 'none', '']:
+                    return m
+                if norm_type == 'mscq_single': return 'Single Choice'
+                elif norm_type == 'mscq_multiple': return 'Multiple Choice'
+                elif norm_type == 'mscq_select': return 'Select Dropdown'
+                elif norm_type == 'fill_blank': return 'Fill in the Blanks'
+                elif norm_type == 'true_false': return 'True / False'
+                elif norm_type == 'coding': return 'Coding'
+                return 'Single Choice'
+
+            # 1. Normalize all questions first
+            normalized_list = []
             for q in questions_raw:
-                mod = q.get('module') or 'General'
+                q_norm = _normalize_quiz_question(dict(q), attempt_id=attempt_id)
+                mod_name = _derive_mod(q_norm, q_norm.get('question_type_norm'))
+                q_norm['module'] = mod_name
+                normalized_list.append(q_norm)
+
+            # 2. Group by module
+            grouped_qs = {}
+            for q in normalized_list:
+                mod = q['module']
                 if mod not in grouped_qs:
                     grouped_qs[mod] = []
                 grouped_qs[mod].append(q)
 
-            questions_raw = []
-            for mod in grouped_qs:
-                questions_raw.extend(_stable_shuffle(grouped_qs[mod], f'attempt:{attempt_id}:module:{mod}'))
+            # 3. Sort modules according to standard 5-question-type + Coding sequence
+            sorted_module_names = sorted(
+                grouped_qs.keys(),
+                key=lambda m: (MODULE_SORT_ORDER.get(m, 99), m)
+            )
 
             questions_processed = []
-            for q in questions_raw:
-                if q['question_type'] == 'MCQ':
-                    options = _stable_shuffle([
-                        {'key': 'A', 'text': q['option_a']},
-                        {'key': 'B', 'text': q['option_b']},
-                        {'key': 'C', 'text': q['option_c']},
-                        {'key': 'D', 'text': q['option_d']}
-                    ], f'attempt:{attempt_id}:question:{q["question_id"]}:options')
-                    q['shuffled_options'] = options
-                questions_processed.append(q)
+            modules_summary = {}
+            for mod in sorted_module_names:
+                mod_qs = grouped_qs[mod]
+                start_idx = len(questions_processed)
+                questions_processed.extend(mod_qs)
+                modules_summary[mod] = {
+                    'count': len(mod_qs),
+                    'first_idx': start_idx,
+                    'question_ids': [q['question_id'] for q in mod_qs]
+                }
 
             cursor.execute('SELECT question_id, selected_option FROM Quiz_Responses WHERE attempt_id=%s', (attempt_id,))
             saved = {row['question_id']: {'opt': row['selected_option']} for row in cursor.fetchall()}
@@ -385,6 +540,7 @@ def quiz_interface(quiz_id):
                           questions=questions_processed, 
                           attempt_id=attempt_id, 
                           quiz_meta=meta, 
+                          modules_summary=modules_summary,
                           saved_responses=saved, 
                           user=user_info)
 
@@ -393,46 +549,126 @@ def save_answer():
     data = request.json
     conn = get_db_connection()
     with conn.cursor() as cursor:
+        opt = data.get('option')
+        is_att = 1 if (opt is not None and str(opt).strip() != '') else 0
         cursor.execute('''
-            INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option) 
-            VALUES (%s, %s, %s) 
-            ON DUPLICATE KEY UPDATE selected_option=%s
-        ''', (data['attempt_id'], data['question_id'], data['option'], data['option']))
+            INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted) 
+            VALUES (%s, %s, %s, %s) 
+            ON DUPLICATE KEY UPDATE selected_option=%s, is_attempted=%s
+        ''', (data['attempt_id'], data['question_id'], opt, is_att, opt, is_att))
     conn.commit()
     conn.close()
     return jsonify({'status': 'success'})
 
 @quiz_bp.route('/api/submit_quiz', methods=['POST'])
 def submit_quiz():
-    aid = request.json['attempt_id']
+    aid = request.json.get('attempt_id')
+    if not aid:
+        return jsonify({'error': 'attempt_id is required'}), 400
+
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        cursor.execute('''
-            SELECT SUM(q.marks) as score
-            FROM Quiz_Responses r
-            JOIN Questions q ON r.question_id=q.question_id
-            WHERE r.attempt_id=%s AND r.selected_option=q.correct_option
-        ''', (aid,))
-        result = cursor.fetchone()
-        user_score = int(result['score']) if result and result['score'] else 0
+        cursor.execute('SELECT quiz_id FROM Quiz_Attempts WHERE attempt_id=%s', (aid,))
+        attempt_row = cursor.fetchone()
+        if not attempt_row:
+            conn.close()
+            return jsonify({'error': 'Attempt not found'}), 404
+        quiz_id = attempt_row['quiz_id']
 
-        cursor.execute('''
-            SELECT SUM(marks) as total
-            FROM Questions
-            WHERE quiz_id=(SELECT quiz_id FROM Quiz_Attempts WHERE attempt_id=%s)
-        ''', (aid,))
-        total_res = cursor.fetchone()
-        total_possible = int(total_res['total']) if total_res and total_res['total'] else 100
+        cursor.execute('SELECT * FROM Questions WHERE quiz_id=%s', (quiz_id,))
+        questions = cursor.fetchall()
 
+        cursor.execute('SELECT question_id, selected_option, is_attempted FROM Quiz_Responses WHERE attempt_id=%s', (aid,))
+        responses = {r['question_id']: r for r in cursor.fetchall()}
+
+        user_score = 0.0
+        total_possible = 0.0
+
+        for q in questions:
+            marks = float(q.get('marks') or 1)
+            total_possible += marks
+            neg_marks = float(q.get('negative_marks') or 0)
+            
+            resp = responses.get(q['question_id'])
+            if not resp or not resp.get('is_attempted'):
+                continue
+            
+            user_ans = (resp.get('selected_option') or '').strip()
+            if not user_ans:
+                continue
+
+            q_norm = _normalize_quiz_question(dict(q))
+            q_type = q_norm['question_type_norm']
+            meta = q_norm['meta_data']
+            correct_opt = (q.get('correct_option') or meta.get('correctAnswer') or '').strip()
+
+            is_correct = False
+
+            if q_norm['is_coding']:
+                if user_ans.lower() in {'accepted', 'pass'} or 'pass' in user_ans.lower():
+                    is_correct = True
+                else:
+                    try:
+                        from utils import split_test_case_block, normalize_judge_output
+                        from code_runner import execute_code
+                        raw_inputs = split_test_case_block(q.get('test_input'))
+                        raw_outputs = split_test_case_block(q.get('test_output'))
+                        if raw_outputs:
+                            exec_res = execute_code(user_ans, 'python', stdin_data=(raw_inputs[0] if raw_inputs else ''))
+                            actual = (exec_res.get('stdout') or '').strip()
+                            if normalize_judge_output(actual) == normalize_judge_output(raw_outputs[0]):
+                                is_correct = True
+                        elif user_ans:
+                            is_correct = True
+                    except Exception:
+                        if user_ans:
+                            is_correct = True
+
+            elif q_type == 'mscq_single':
+                is_correct = (user_ans.upper() == correct_opt.upper())
+
+            elif q_type == 'mscq_multiple':
+                u_set = {x.strip().upper() for x in user_ans.split(',') if x.strip()}
+                c_set = {x.strip().upper() for x in correct_opt.split(',') if x.strip()}
+                is_correct = (u_set == c_set and len(u_set) > 0)
+
+            elif q_type == 'mscq_select':
+                is_correct = (user_ans.upper() == correct_opt.upper())
+
+            elif q_type == 'fill_blank':
+                accepted = meta.get('acceptedAnswers') or []
+                if not accepted and correct_opt:
+                    accepted = [correct_opt]
+                case_sensitive = meta.get('caseSensitive', True)
+                if case_sensitive:
+                    is_correct = any(user_ans == str(acc).strip() for acc in accepted)
+                else:
+                    is_correct = any(user_ans.lower() == str(acc).strip().lower() for acc in accepted)
+
+            elif q_type == 'true_false':
+                norm_user = 'true' if user_ans.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
+                norm_corr = 'true' if correct_opt.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
+                is_correct = (norm_user == norm_corr)
+
+            if is_correct:
+                user_score += marks
+            else:
+                if neg_marks > 0:
+                    user_score -= neg_marks
+
+        user_score = max(0.0, round(user_score, 2))
+        total_possible = max(1.0, round(total_possible, 2))
         percentage = (user_score / total_possible) * 100
         approved = 1 if percentage >= 40 else 0
 
+        score_display = int(user_score) if user_score.is_integer() else user_score
+
         cursor.execute('''
             UPDATE Quiz_Attempts
-            SET total_score=%s, status=%s, certificate_approved=%s
+            SET total_score=%s, total_marks=%s, status=%s, certificate_approved=%s, end_time=NOW(), submitted_at=NOW()
             WHERE attempt_id=%s
-        ''', (user_score, 'Completed', approved, aid))
+        ''', (score_display, total_possible, 'Completed', approved, aid))
 
     conn.commit()
     conn.close()
-    return jsonify({'score': user_score})
+    return jsonify({'score': score_display, 'total': total_possible, 'percentage': round(percentage, 1)})

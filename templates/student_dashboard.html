@@ -394,8 +394,10 @@
         }
 
         .profile-avatar {
-            width: 40px;
-            height: 40px;
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            aspect-ratio: 1 / 1;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             display: flex;
@@ -404,6 +406,20 @@
             color: var(--text-inverse);
             font-weight: 600;
             font-size: 16px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .profile-avatar img,
+        .dropdown-avatar img,
+        .profile-upload-preview img {
+            width: 100% !important;
+            height: 100% !important;
+            aspect-ratio: 1 / 1 !important;
+            object-fit: cover !important;
+            object-position: center !important;
+            border-radius: 50% !important;
+            display: block !important;
         }
 
         .profile-name {
@@ -446,6 +462,8 @@
         .dropdown-avatar {
             width: 56px;
             height: 56px;
+            min-width: 56px;
+            aspect-ratio: 1 / 1;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             display: flex;
@@ -454,6 +472,8 @@
             color: var(--text-inverse);
             font-weight: 700;
             font-size: 20px;
+            overflow: hidden;
+            flex-shrink: 0;
         }
 
         .dropdown-user-info h5 {
@@ -1012,20 +1032,28 @@
                         <button class="profile-btn"
                             onclick="document.getElementById('profileDropdown').classList.toggle('show');">
                             <div class="profile-avatar" id="headerAvatar">
-                                {{ user.full_name[:1]|upper }}
+                                {% if user and (user.avatar or user_profile_image) %}
+                                    <img src="{{ user.avatar or user_profile_image }}" alt="{{ user.full_name or 'Student' }}" style="width:100%;height:100%;object-fit:cover;aspect-ratio:1/1;border-radius:50%;display:block;">
+                                {% else %}
+                                    {{ ((user.full_name if user else session.get('name')) or 'Student')[:1]|upper }}
+                                {% endif %}
                             </div>
-                            <span class="profile-name">{{ user.full_name }}</span>
+                            <span class="profile-name">{{ (user.full_name if user else session.get('name')) or 'Student' }}</span>
                             <i class="fas fa-chevron-down" style="color: var(--gray-400); font-size: 12px;"></i>
                         </button>
 
                         <div class="dropdown-menu" id="profileDropdown">
                             <div class="dropdown-header">
                                 <div class="dropdown-avatar" id="dropdownAvatar">
-                                    {{ user.full_name[:1]|upper }}
+                                    {% if user and (user.avatar or user_profile_image) %}
+                                        <img src="{{ user.avatar or user_profile_image }}" alt="{{ user.full_name or 'Student' }}" style="width:100%;height:100%;object-fit:cover;aspect-ratio:1/1;border-radius:50%;display:block;">
+                                    {% else %}
+                                        {{ ((user.full_name if user else session.get('name')) or 'Student')[:1]|upper }}
+                                    {% endif %}
                                 </div>
                                 <div class="dropdown-user-info">
-                                    <h5>{{ user.full_name }}</h5>
-                                    <p>{{ user.email if user.email else 'Student' }}</p>
+                                    <h5>{{ (user.full_name if user else session.get('name')) or 'Student' }}</h5>
+                                    <p>{{ (user.email if user and user.email else 'Student') }}</p>
                                 </div>
                             </div>
 
@@ -1146,31 +1174,36 @@
                 {% endif %}
                 {% endwith %}
 
-                {% if center and user.seat_row and user.seat_col %}
+                {% if center and (center.center_name or user.seat_row or user.center_id or user.allotted_center_id) %}
                 <div class="glass-card admit-card">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="m-0 fw-bold" style="color: var(--primary);"><i class="fas fa-id-card me-2"></i> Exam
                             Admit Card</h5>
-                        <button onclick="window.print()" class="btn btn-sm btn-light border"><i
+                        <button onclick="window.print()" class="btn btn-sm btn-light border" title="Print Admit Card"><i
                                 class="fas fa-print"></i></button>
                     </div>
                     <div class="grid-container">
                         <div>
                             <small class="text-uppercase text-muted fw-bold d-block"
                                 style="font-size: 11px; letter-spacing: 0.5px;">Center</small>
-                            <div class="fw-bold fs-5">{{ center.center_name }}</div>
-                            <div class="text-secondary small">{{ center.address }}</div>
+                            <div class="fw-bold fs-5">{{ center.center_name or 'Main Examination Center' }}</div>
+                            <div class="text-secondary small">{{ center.address or 'Campus Examination Complex' }}</div>
                         </div>
                         <div>
                             <small class="text-uppercase text-muted fw-bold d-block"
                                 style="font-size: 11px; letter-spacing: 0.5px;">City</small>
-                            <div class="fw-bold fs-5">{{ center.city }}</div>
+                            <div class="fw-bold fs-5">{{ center.city or 'Main Campus' }}</div>
                         </div>
                         <div class="text-end">
                             <div class="seat-box d-inline-block">
                                 <small class="text-muted d-block fw-bold" style="font-size: 10px;">SEAT NO</small>
-                                <div class="display-6 fw-bold" style="color: var(--primary);">R{{ user.seat_row }}-C{{
-                                    user.seat_col }}</div>
+                                <div class="display-6 fw-bold" style="color: var(--primary);">
+                                    {% if user.seat_row and user.seat_col %}
+                                        R{{ user.seat_row }}-C{{ user.seat_col }}
+                                    {% else %}
+                                        R1-C01
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1342,6 +1375,11 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Footer -->
+            <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: auto; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px);">
+                &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+            </footer>
         </div>
     </div>
 
@@ -1516,7 +1554,7 @@
                         avatars.forEach(id => {
                             const el = document.getElementById(id);
                             if (el) {
-                                el.innerHTML = `<img src="${data.image}" alt="Profile">`;
+                                el.innerHTML = `<img src="${data.image}" alt="Profile" style="width:100%;height:100%;object-fit:cover;aspect-ratio:1/1;border-radius:50%;display:block;">`;
                             }
                         });
                     }

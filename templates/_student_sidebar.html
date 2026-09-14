@@ -183,7 +183,6 @@
             </div>
             <div class="sidebar-user-info">
                 <div class="sidebar-user-name">{{ user_full_name or user.full_name or session.get('full_name', 'Student') }}</div>
-                <div class="sidebar-user-role"><i class="fas fa-id-badge"></i> View Profile</div>
             </div>
         </div>
     </div>
@@ -280,14 +279,17 @@
     .sidebar-avatar-img {
         width: 48px;
         height: 48px;
+        aspect-ratio: 1 / 1 !important;
         object-fit: cover !important;
         object-position: center !important;
         border-radius: 50%;
+        display: block;
     }
     .sidebar-user-avatar {
         width: 48px;
         height: 48px;
         min-width: 48px;
+        aspect-ratio: 1 / 1 !important;
         border-radius: 50%;
         background: linear-gradient(135deg, var(--primary), var(--accent));
         display: flex;
@@ -298,6 +300,7 @@
         font-size: 18px;
         overflow: hidden;
         text-transform: uppercase;
+        flex-shrink: 0;
     }
     .sidebar-user-avatar .avatar-initials {
         display: flex;
@@ -706,3 +709,5 @@
     // Run on page load
     calculateDynamicSemester();
 </script>
+<!-- Enterprise Inactivity & Single-Device Session Guard -->
+<script src="/static/js/session_idle_guard.js"></script>

@@ -1,0 +1,127 @@
+[
+  {
+    "id": 1,
+    "type": "mscq",
+    "selectionType": "single",
+    "questionText": "Which language is used to structure web pages?",
+    "options": [
+      {
+        "id": "A",
+        "text": "HTML"
+      },
+      {
+        "id": "B",
+        "text": "CSS"
+      },
+      {
+        "id": "C",
+        "text": "Python"
+      },
+      {
+        "id": "D",
+        "text": "SQL"
+      }
+    ],
+    "correctAnswer": "A",
+    "marks": 1,
+    "negativeMarks": 0.25,
+    "explanation": "HTML is used to structure web pages."
+  },
+  {
+    "id": 2,
+    "type": "mscq",
+    "selectionType": "multiple",
+    "questionText": "Which of the following are programming languages?",
+    "options": [
+      {
+        "id": "A",
+        "text": "Java"
+      },
+      {
+        "id": "B",
+        "text": "Python"
+      },
+      {
+        "id": "C",
+        "text": "HTML"
+      },
+      {
+        "id": "D",
+        "text": "C++"
+      }
+    ],
+    "correctAnswer": "A, B, D",
+    "marks": 2,
+    "negativeMarks": 0.5,
+    "explanation": "Java, Python, and C++ are programming languages."
+  },
+  {
+    "id": 3,
+    "type": "mscq",
+    "selectionType": "select",
+    "questionText": "Select the correct database language.",
+    "options": [
+      {
+        "id": "A",
+        "text": "HTML"
+      },
+      {
+        "id": "B",
+        "text": "CSS"
+      },
+      {
+        "id": "C",
+        "text": "SQL"
+      },
+      {
+        "id": "D",
+        "text": "Python"
+      }
+    ],
+    "correctAnswer": "C",
+    "marks": 1,
+    "negativeMarks": 0.25,
+    "explanation": "SQL is used to query and manage relational databases."
+  },
+  {
+    "id": 4,
+    "type": "fillInTheBlanks",
+    "selectionType": "N/A",
+    "questionText": "The first letter of the English alphabet is ____.",
+    "blanks": [
+      {
+        "acceptedAnswers": [
+          "A"
+        ]
+      }
+    ],
+    "acceptedAnswers": [
+      "A"
+    ],
+    "correctAnswer": "A",
+    "caseSensitive": true,
+    "marks": 1,
+    "negativeMarks": 0.25,
+    "explanation": "A is the first letter of the English alphabet."
+  },
+  {
+    "id": 5,
+    "type": "trueFalse",
+    "selectionType": "N/A",
+    "questionText": "HTML is a programming language.",
+    "options": [
+      {
+        "id": "A",
+        "text": "True"
+      },
+      {
+        "id": "B",
+        "text": "False"
+      }
+    ],
+    "correctAnswer": "B",
+    "marks": 1,
+    "negativeMarks": 0.25,
+    "explanation": "HTML is a markup language, not a programming language."
+  }
+]

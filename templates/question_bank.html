@@ -1,0 +1,3245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Builder & Content Management | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-dark: #3730a3;
+            --primary-subtle: rgba(79, 70, 229, 0.08);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --text-dark: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --glass-bg: rgba(255, 255, 255, 0.94);
+            --glass-border: rgba(226, 232, 240, 0.9);
+            --glass-shadow: 0 10px 30px 0 rgba(31, 38, 135, 0.06);
+            --surface-card: #ffffff;
+            --border-color: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #fdf4ff 40%, #f0fdf4 100%);
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* --- GLOBAL NAVIGATION SIDEBAR --- */
+        .sidebar {
+            width: 250px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .nav-item {
+            position: relative;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13.5px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.12);
+        }
+
+        .nav-item.active {
+            border-left: 4px solid var(--primary);
+        }
+
+        .logout { margin-top: auto; color: #ef4444; }
+        .logout:hover { color: #dc2626; background: rgba(254, 226, 226, 0.8); }
+
+        /* --- MAIN WRAPPER --- */
+        .main-wrapper {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+            max-width: 1650px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* --- TOP HEADER --- */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .header-title-area h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-title-area p {
+            font-size: 13.5px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 11px;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        .btn-outline-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 1.5px solid var(--primary);
+        }
+        .btn-outline-primary:hover {
+            background: var(--primary-subtle);
+        }
+
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+        /* --- STATS SUMMARY BAR --- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .stat-badge-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px 16px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            flex-shrink: 0;
+        }
+
+        .stat-val { font-size: 20px; font-weight: 800; line-height: 1.1; }
+        .stat-lbl { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-top: 2px; }
+
+        /* --- CLEAN TWO-PANEL WORKSPACE LAYOUT --- */
+        .builder-workspace-two-panel {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 22px;
+            align-items: start;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1050px) {
+            .builder-workspace-two-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- LEFT SIDEBAR: 5 QUESTION TYPES + ADVANCED SETTINGS --- */
+        .panel-sidebar-left {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-section-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .q-types-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .type-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1.5px solid transparent;
+            background: white;
+            color: var(--text-dark);
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .type-btn:hover {
+            border-color: rgba(79, 70, 229, 0.3);
+            transform: translateX(3px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+        }
+
+        .type-btn.active {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05) 0%, rgba(99, 102, 241, 0.1) 100%);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15);
+        }
+
+        .type-btn.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            bottom: 10px;
+            width: 4px;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .type-btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .type-btn-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .type-btn-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-dark);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .type-btn.active .type-btn-title {
+            color: var(--primary);
+        }
+
+        .type-btn-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        .type-btn-count {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: #f1f5f9;
+            color: var(--text-secondary);
+        }
+        .type-btn.active .type-btn-count {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* --- ADVANCED SETTINGS ACCORDION AT BOTTOM OF LEFT SIDEBAR --- */
+        .advanced-settings-box {
+            margin-top: 10px;
+            padding-top: 14px;
+            border-top: 1.5px dashed var(--border-color);
+        }
+
+        .adv-toggle-btn {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.06) 0%, rgba(147, 51, 234, 0.06) 100%);
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .adv-toggle-btn:hover {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+        }
+
+        .adv-panel-content {
+            display: none;
+            margin-top: 12px;
+            padding: 14px;
+            background: white;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            font-size: 12.5px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+        .adv-panel-content.show { display: block; }
+
+        .adv-row {
+            margin-bottom: 12px;
+        }
+        .adv-row:last-child { margin-bottom: 0; }
+        .adv-row label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+        }
+
+        /* --- RIGHT PANEL: EDITOR + SIMULATOR + QUESTION LIST --- */
+        .panel-main-right {
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        /* Action Toolbar */
+        .main-toolbar-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 18px;
+            padding: 14px 20px;
+            box-shadow: var(--glass-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .toolbar-left-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .current-type-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            background: var(--primary-subtle);
+            color: var(--primary);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+        }
+
+        .toolbar-buttons-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* Editor Card */
+        .editor-container-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .editor-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 11px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+        }
+
+        /* Question Statement area */
+        .statement-box-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .format-toolbar {
+            display: flex;
+            gap: 5px;
+        }
+
+        .format-btn {
+            background: #f1f5f9;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .format-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .statement-textarea {
+            width: 100%;
+            min-height: 95px;
+            resize: vertical;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        /* Configuration Area for Answers */
+        .answer-config-panel {
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 18px 0;
+        }
+
+        .answer-config-title {
+            font-size: 13.5px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Options list for Single/Multiple/Select */
+        .options-list-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .opt-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            transition: all 0.15s ease;
+        }
+        .opt-row.is-correct-row {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .opt-letter-badge {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            color: var(--text-dark);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .opt-row.is-correct-row .opt-letter-badge {
+            background: #10b981;
+            color: white;
+        }
+
+        .opt-selector-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .opt-text-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13.5px;
+            outline: none;
+            padding: 4px 6px;
+        }
+
+        .opt-remove-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 6px;
+            transition: all 0.15s ease;
+        }
+        .opt-remove-btn:hover { color: #ef4444; background: #fee2e2; }
+
+        /* Negative Marks Highlight Field */
+        .scoring-row-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 16px;
+            margin-bottom: 18px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .scoring-row-grid { grid-template-columns: 1fr; }
+        }
+
+        .negative-mark-field-highlight {
+            background: #fff1f2;
+            border: 1.5px solid #fecdd3;
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+        .negative-mark-field-highlight .form-label {
+            color: #be123c;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* --- INTERACTIVE LIVE SIMULATOR & SCORING TEST PANEL --- */
+        .simulator-card {
+            background: white;
+            border: 1.5px solid var(--border-color);
+            border-radius: 18px;
+            padding: 20px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+            margin-top: 10px;
+        }
+
+        .simulator-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .simulator-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sim-question-display {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .sim-interaction-container {
+            margin-bottom: 18px;
+        }
+
+        .sim-option-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            background: #f8fafc;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .sim-option-item:hover {
+            border-color: var(--primary-light);
+            background: white;
+        }
+        .sim-option-item.selected {
+            border-color: var(--primary);
+            background: var(--primary-subtle);
+        }
+
+        /* Live Score Breakdown Cards */
+        .sim-score-breakdown-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 14px;
+            padding: 12px;
+            background: #f8fafc;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+        }
+
+        .sim-score-item {
+            text-align: center;
+            padding: 8px 10px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+        .sim-score-val {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .sim-score-lbl {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .sim-status-banner {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-status-banner.correct {
+            display: flex;
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .sim-status-banner.incorrect {
+            display: flex;
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+        .sim-status-banner.unanswered {
+            display: flex;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* --- QUESTION MANAGEMENT TABLE SECTION --- */
+        .management-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 22px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .manage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 220px;
+        }
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+        .search-input {
+            padding-left: 38px !important;
+        }
+
+        .filter-select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border-color);
+            background: white;
+            border-radius: 11px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            outline: none;
+        }
+
+        .bulk-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            padding: 10px 16px;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .bulk-bar.show { display: flex; }
+
+        .q-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .q-table th {
+            text-align: left;
+            padding: 12px 14px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            border-bottom: 1.5px solid var(--border-color);
+            background: rgba(248, 250, 252, 0.85);
+        }
+        .q-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+        .q-table tr:hover td {
+            background: rgba(248, 250, 252, 0.6);
+        }
+
+        .badge-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .badge-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-published { background: #dcfce7; color: #15803d; }
+        .status-draft { background: #fef3c7; color: #b45309; }
+
+        /* --- MODAL DIALOGS --- */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .modal-backdrop.show { display: flex; }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 820px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-dialog-large {
+            max-width: 1050px;
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 20px 20px 0 0;
+        }
+        .modal-header h3 { font-size: 18px; font-weight: 800; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
+        .modal-close {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+        }
+        .modal-close:hover { color: var(--text-dark); }
+        .modal-body { padding: 22px 24px; }
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: #f8fafc;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Bulk creator cards */
+        .bulk-card-item {
+            background: #f8fafc;
+            border: 1.5px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .bulk-card-item.has-error {
+            border-color: #ef4444;
+            background: #fffbfa;
+        }
+        .bulk-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        /* Pre-Import Preview Table */
+        .preview-stat-chips {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .stat-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .chip-total { background: #e2e8f0; color: #334155; }
+        .chip-valid { background: #dcfce7; color: #166534; }
+        .chip-invalid { background: #fee2e2; color: #991b1b; }
+
+        .import-preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            max-height: 350px;
+        }
+        .import-preview-table th {
+            background: #f1f5f9;
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1.5px solid var(--border-color);
+        }
+        .import-preview-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+        .import-preview-table tr.row-invalid {
+            background: #fff1f2;
+        }
+
+        /* ==========================================================================
+           AUTO-FIT DEVICE RATIO & COMPACT RESPONSIVE ENGINE
+           ========================================================================== */
+
+        /* Prevent accidental horizontal overflow */
+        html, body {
+            overflow-x: hidden !important;
+            width: 100%;
+            max-width: 100vw;
+        }
+
+        /* Fluid Typography & Spacing */
+        .header-title-area h1 {
+            font-size: clamp(20px, 3.2vw, 26px);
+        }
+        .header-title-area p {
+            font-size: clamp(12px, 1.8vw, 13.5px);
+        }
+
+        /* Proportional Scaling for Large Screens & Ultrawide (16:9, 21:9, 32:9) */
+        @media (min-width: 1600px) {
+            .main-wrapper {
+                max-width: 1800px;
+                padding: 30px 48px;
+            }
+            .builder-workspace-two-panel {
+                grid-template-columns: 310px 1fr;
+                gap: 28px;
+            }
+            .editor-meta-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Standard Desktops and Laptops (1200px - 1599px) */
+        @media (min-width: 1200px) and (max-width: 1599px) {
+            .main-wrapper {
+                padding: 24px 28px;
+                max-width: 1480px;
+            }
+            .builder-workspace-two-panel {
+                grid-template-columns: 280px 1fr;
+                gap: 22px;
+            }
+            .editor-meta-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        /* Medium Devices / Tablets Landscape & Laptops (992px - 1199px) */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .sidebar {
+                width: 220px;
+                padding: 16px 14px;
+            }
+            .logo {
+                font-size: 19px;
+                margin-bottom: 18px;
+            }
+            .nav-item {
+                font-size: 12.5px;
+                padding: 8px 10px;
+                gap: 8px;
+            }
+            .main-wrapper {
+                padding: 20px 18px;
+            }
+            .builder-workspace-two-panel {
+                grid-template-columns: 250px 1fr;
+                gap: 18px;
+            }
+            .editor-meta-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stats-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Tablets Portrait & Small Screens (<= 991px) */
+        @media (max-width: 991px) {
+            body {
+                flex-direction: column;
+            }
+
+            /* Sleek Bottom Navigation Bar */
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: fixed;
+                bottom: 0;
+                top: auto;
+                left: 0;
+                right: 0;
+                flex-direction: row;
+                padding: 6px 10px;
+                border-right: none;
+                border-top: 1px solid var(--border-color);
+                background: rgba(255, 255, 255, 0.96);
+                backdrop-filter: blur(20px);
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+                z-index: 1000;
+            }
+            .sidebar .logo {
+                display: none;
+            }
+            .sidebar .nav-container {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 4px;
+                padding: 0;
+                width: 100%;
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .sidebar .nav-container::-webkit-scrollbar {
+                display: none;
+            }
+            .sidebar .nav-item {
+                flex-direction: column;
+                gap: 3px;
+                font-size: 10px;
+                padding: 6px 8px;
+                margin: 0;
+                justify-content: center;
+                border-radius: 10px;
+                min-width: 58px;
+                text-align: center;
+                border-left: none !important;
+            }
+            .sidebar .nav-item i {
+                font-size: 17px;
+                margin: 0 auto;
+            }
+            .sidebar .nav-item span {
+                font-size: 10px;
+                display: block;
+                font-weight: 600;
+            }
+            .sidebar .nav-item.logout {
+                margin-top: 0;
+            }
+            .sidebar .nav-item.active {
+                background: rgba(79, 70, 229, 0.1);
+                color: var(--primary);
+                border-bottom: 2px solid var(--primary);
+            }
+
+            /* Main Wrapper adapts to full width with bottom bar clearance */
+            .main-wrapper {
+                padding: 16px 16px 85px 16px !important;
+                max-width: 100%;
+                width: 100%;
+                margin: 0;
+            }
+
+            /* Two-panel builder stacks into clean single column */
+            .builder-workspace-two-panel {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            /* Left panel becomes compact responsive selector */
+            .panel-sidebar-left {
+                position: static;
+                padding: 14px 16px;
+                border-radius: 16px;
+            }
+
+            /* Question Types list adapts to a responsive touch-card grid */
+            .q-types-list {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+                gap: 8px;
+            }
+            .type-btn {
+                padding: 8px 10px;
+                gap: 8px;
+                border-radius: 12px;
+            }
+            .type-btn-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+                border-radius: 8px;
+            }
+            .type-btn-title {
+                font-size: 12.5px;
+            }
+            .type-btn-subtitle {
+                display: none; /* Keep cards compact on tablet/mobile */
+            }
+            .type-btn-count {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+
+            .advanced-settings-box {
+                margin-top: 8px;
+                padding-top: 10px;
+            }
+
+            /* Header Actions Wrap Nicely */
+            .top-header {
+                gap: 12px;
+            }
+            .header-actions {
+                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .header-actions .btn {
+                flex: 1 1 auto;
+                padding: 8px 12px;
+                font-size: 12.5px;
+                text-align: center;
+                justify-content: center;
+            }
+        }
+
+        /* Mobile Phones Portrait & Small Devices (<= 640px) */
+        @media (max-width: 640px) {
+            .main-wrapper {
+                padding: 12px 10px 85px 10px !important;
+            }
+
+            /* Compact Stats Grid */
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                margin-bottom: 14px;
+            }
+            .stat-badge-card {
+                padding: 8px 10px;
+                gap: 8px;
+                border-radius: 12px;
+            }
+            .stat-icon {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+                border-radius: 8px;
+            }
+            .stat-val {
+                font-size: 16px;
+            }
+            .stat-lbl {
+                font-size: 10px;
+            }
+
+            /* Header Actions on Mobile: 2-column touch grid */
+            .header-actions {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .header-actions .btn {
+                padding: 7px 8px;
+                font-size: 11.5px;
+            }
+            .header-actions .btn#btnOpenBulkModal {
+                grid-column: span 2;
+            }
+
+            /* Question Types Grid: 2 columns */
+            .q-types-list {
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .type-btn {
+                padding: 7px 8px;
+                gap: 6px;
+            }
+            .type-btn-title {
+                font-size: 11.5px;
+            }
+
+            /* Editor Card */
+            .editor-container-card {
+                padding: 14px 12px;
+                border-radius: 16px;
+            }
+            .editor-meta-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .form-label {
+                font-size: 11.5px;
+                margin-bottom: 4px;
+            }
+            .form-control {
+                padding: 8px 10px;
+                font-size: 12.5px;
+                border-radius: 9px;
+            }
+
+            /* Toolbar Card */
+            .main-toolbar-card {
+                padding: 10px 12px;
+                border-radius: 14px;
+                gap: 8px;
+            }
+            .toolbar-buttons-group {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+            }
+            .toolbar-buttons-group .btn {
+                padding: 7px 8px;
+                font-size: 11.5px;
+            }
+
+            /* Option Builder Rows */
+            .opt-row {
+                padding: 6px 8px;
+                gap: 6px;
+                border-radius: 10px;
+            }
+            .opt-letter-badge {
+                width: 24px;
+                height: 24px;
+                font-size: 11px;
+                border-radius: 6px;
+            }
+            .opt-text-input {
+                font-size: 12.5px;
+                min-width: 0;
+            }
+
+            /* Scoring & Negative Marks Grid */
+            .scoring-row-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            /* Simulator Card */
+            .simulator-card {
+                padding: 14px 12px;
+                border-radius: 16px;
+            }
+            .sim-question-display {
+                font-size: 13.5px;
+                margin-bottom: 12px;
+            }
+            .sim-option-item {
+                padding: 8px 10px;
+                font-size: 12.5px;
+                gap: 8px;
+            }
+            .sim-score-breakdown-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                padding: 8px;
+            }
+            .sim-score-item {
+                padding: 6px 4px;
+            }
+            .sim-score-val {
+                font-size: 15px;
+            }
+            .sim-score-lbl {
+                font-size: 9.5px;
+            }
+
+            /* Modals on Small Screens */
+            .modal-backdrop {
+                padding: 8px;
+            }
+            .modal-dialog {
+                border-radius: 14px;
+                max-height: 94vh;
+            }
+            .modal-header {
+                padding: 12px 14px;
+            }
+            .modal-header h3 {
+                font-size: 14px;
+            }
+            .modal-body {
+                padding: 12px 14px;
+            }
+            .modal-footer {
+                padding: 10px 14px;
+                flex-wrap: wrap;
+            }
+            .modal-footer .btn {
+                flex: 1 1 auto;
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+            .bulk-card-item {
+                padding: 10px;
+            }
+        }
+
+        /* Ultra-Narrow Screen (< 360px Foldables / Small devices) */
+        @media (max-width: 360px) {
+            .q-types-list {
+                grid-template-columns: 1fr;
+            }
+            .editor-meta-grid {
+                grid-template-columns: 1fr;
+            }
+            .header-actions {
+                grid-template-columns: 1fr;
+            }
+            .header-actions .btn#btnOpenBulkModal {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false">
+
+    <!-- GLOBAL SIDEBAR -->
+    <div class="sidebar">
+        <a href="/admin" class="logo"><i class="fas fa-cube"></i> QuizMaster</a>
+        <div class="nav-container">
+            <a href="/admin" class="nav-item"><i class="fas fa-chart-pie"></i> <span>Dashboard</span></a>
+            <a href="/admin/sessions" class="nav-item"><i class="fas fa-calendar-alt"></i> <span>Sessions</span></a>
+            <a href="/admin/manage_centers" class="nav-item"><i class="fas fa-map-marker-alt"></i> <span>Centers</span></a>
+            <a href="/admin/content" class="nav-item active"><i class="fas fa-layer-group"></i> <span>Content</span></a>
+            <a href="/admin/coding" class="nav-item"><i class="fas fa-code"></i> <span>Coding</span></a>
+            <a href="/admin/repository" class="nav-item"><i class="fas fa-database"></i> <span>Question Repository</span></a>
+            <a href="/admin/study" class="nav-item"><i class="fas fa-book-open"></i> <span>Study Material</span></a>
+            <a href="/admin/results" class="nav-item"><i class="fas fa-poll"></i> <span>Results</span></a>
+            <a href="/admin/students" class="nav-item"><i class="fas fa-user-graduate"></i> <span>Students</span></a>
+            <a href="/admin/coordinators" class="nav-item"><i class="fas fa-user-shield"></i> <span>Coords</span></a>
+            <a href="/logout" class="nav-item logout"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-wrapper">
+
+        <!-- FLASH NOTIFICATIONS -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div style="padding:12px 18px; border-radius:12px; margin-bottom:18px; font-weight:600; font-size:14px; display:flex; align-items:center; gap:10px; background:{% if category=='error' or category=='danger' %}#fee2e2; color:#991b1b; border:1px solid #fca5a5;{% else %}#dcfce7; color:#166534; border:1px solid #86efac;{% endif %}">
+                        <i class="fas {% if category=='error' or category=='danger' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- TOP PAGE HEADER -->
+        <div class="top-header">
+            <div class="header-title-area">
+                <h1><i class="fas fa-drafting-compass" style="color:var(--primary);"></i> Question Builder</h1>
+                <p>Build, test, and manage the 5 standard question formats with real-time scoring simulation.</p>
+            </div>
+            <div class="header-actions">
+                <a href="/admin/repository" class="btn btn-secondary">
+                    <i class="fas fa-database" style="color:var(--primary);"></i> Question Repository
+                </a>
+                <button onclick="openBulkCreatorModal()" class="btn btn-primary" id="btnOpenBulkModal">
+                    <i class="fas fa-plus-circle"></i> + Add Multiple Questions
+                </button>
+                <button onclick="openImportModal()" class="btn btn-secondary">
+                    <i class="fas fa-file-import"></i> Import Questions
+                </button>
+                <button onclick="openExportModal()" class="btn btn-secondary">
+                    <i class="fas fa-file-export"></i> Export Questions
+                </button>
+                <button onclick="scrollToSimulator()" class="btn btn-outline-primary">
+                    <i class="fas fa-play-circle"></i> Preview Question
+                </button>
+            </div>
+        </div>
+
+        <!-- STATS SUMMARY BAR -->
+        <div class="stats-row">
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#e0e7ff; color:#4338ca;"><i class="fas fa-layer-group"></i></div>
+                <div>
+                    <div class="stat-val">{{ total_all_questions or total_questions }}</div>
+                    <div class="stat-lbl">Total Questions</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#dcfce7; color:#15803d;"><i class="fas fa-check-circle"></i></div>
+                <div>
+                    <div class="stat-val">{{ published_count }}</div>
+                    <div class="stat-lbl">Published</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#fef3c7; color:#b45309;"><i class="fas fa-pen-fancy"></i></div>
+                <div>
+                    <div class="stat-val">{{ draft_count }}</div>
+                    <div class="stat-lbl">Drafts</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce;"><i class="fas fa-shapes"></i></div>
+                <div>
+                    <div class="stat-val">5</div>
+                    <div class="stat-lbl">Core Question Types</div>
+                </div>
+            </div>
+            <div class="stat-badge-card">
+                <div class="stat-icon" style="background:#e0f2fe; color:#0369a1;"><i class="fas fa-award"></i></div>
+                <div>
+                    <div class="stat-val">{{ total_marks }}</div>
+                    <div class="stat-lbl">Total Marks Pool</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLEAN TWO-PANEL WORKSPACE -->
+        <div class="builder-workspace-two-panel" id="builderWorkspace">
+
+            <!-- LEFT SIDEBAR: STRICTLY 5 QUESTION TYPES + ADVANCED SETTINGS -->
+            <div class="panel-sidebar-left">
+                <div class="sidebar-section-title">
+                    <span>Question Types (5)</span>
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+
+                <div class="q-types-list">
+                    <!-- 1. MSCQ — Single Choice -->
+                    <button class="type-btn active" id="typeBtn_mscq_single" onclick="switchQuestionType('mscq_single')">
+                        <div class="type-btn-icon" style="background:#ede9fe; color:#6d28d9;">
+                            <i class="fas fa-dot-circle"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">Single Choice</div>
+                            <div class="type-btn-subtitle">Radio (1 correct answer)</div>
+                        </div>
+                        <span class="type-btn-count" id="count_mscq_single">{{ category_counts.get('mscq_single', 0) }}</span>
+                    </button>
+
+                    <!-- 2. MSCQ — Multiple Choice -->
+                    <button class="type-btn" id="typeBtn_mscq_multiple" onclick="switchQuestionType('mscq_multiple')">
+                        <div class="type-btn-icon" style="background:#e0e7ff; color:#4338ca;">
+                            <i class="fas fa-check-square"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">Multiple Choice</div>
+                            <div class="type-btn-subtitle">Checkboxes (multiple answers)</div>
+                        </div>
+                        <span class="type-btn-count" id="count_mscq_multiple">{{ category_counts.get('mscq_multiple', 0) }}</span>
+                    </button>
+
+                    <!-- 3. MSCQ — Select Dropdown -->
+                    <button class="type-btn" id="typeBtn_mscq_select" onclick="switchQuestionType('mscq_select')">
+                        <div class="type-btn-icon" style="background:#fce7f3; color:#be185d;">
+                            <i class="fas fa-caret-square-down"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">Select Dropdown</div>
+                            <div class="type-btn-subtitle">Dropdown selector choice</div>
+                        </div>
+                        <span class="type-btn-count" id="count_mscq_select">{{ category_counts.get('mscq_select', 0) }}</span>
+                    </button>
+
+                    <!-- 4. Fill in the Blanks -->
+                    <button class="type-btn" id="typeBtn_fill_blank" onclick="switchQuestionType('fill_blank')">
+                        <div class="type-btn-icon" style="background:#fef3c7; color:#b45309;">
+                            <i class="fas fa-pen-nib"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">Fill in the Blanks</div>
+                            <div class="type-btn-subtitle">Case-sensitive evaluation</div>
+                        </div>
+                        <span class="type-btn-count" id="count_fill_blank">{{ category_counts.get('fill_blank', 0) }}</span>
+                    </button>
+
+                    <!-- 5. True / False -->
+                    <button class="type-btn" id="typeBtn_true_false" onclick="switchQuestionType('true_false')">
+                        <div class="type-btn-icon" style="background:#dcfce7; color:#047857;">
+                            <i class="fas fa-toggle-on"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">True / False</div>
+                            <div class="type-btn-subtitle">Binary truth options</div>
+                        </div>
+                        <span class="type-btn-count" id="count_true_false">{{ category_counts.get('true_false', 0) }}</span>
+                    </button>
+                </div>
+
+                <!-- ADVANCED SETTINGS ACCORDION AT BOTTOM -->
+                <div class="advanced-settings-box">
+                    <button class="adv-toggle-btn" onclick="toggleAdvancedSettings()">
+                        <span><i class="fas fa-cog"></i> Advanced Settings</span>
+                        <i class="fas fa-chevron-down" id="advChevron"></i>
+                    </button>
+
+                    <div class="adv-panel-content" id="advPanel">
+                        <div class="adv-row">
+                            <label>
+                                <input type="checkbox" id="adv_enable_negative_marking" checked>
+                                <span>Enable Negative Marking</span>
+                            </label>
+                        </div>
+                        <div class="adv-row">
+                            <label>
+                                <input type="checkbox" id="adv_negative_carry_allowed" checked>
+                                <span>Negative Marks Carry to Total</span>
+                            </label>
+                        </div>
+                        <div class="adv-row" style="margin-top:8px;">
+                            <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Radio Button Deduct:</div>
+                            <input type="number" id="adv_radio_incorrect_deduct" step="0.05" min="0" value="0.25" class="form-control" style="padding:6px 10px; font-size:12px;">
+                        </div>
+                        <div class="adv-row">
+                            <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Multiple Select Deduct:</div>
+                            <input type="number" id="adv_checkbox_incorrect_deduct" step="0.05" min="0" value="0.50" class="form-control" style="padding:6px 10px; font-size:12px;">
+                        </div>
+                        <div class="adv-row" style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:8px;">
+                            <label>
+                                <input type="checkbox" id="adv_fill_blank_case_sensitive" checked>
+                                <span>Blanks: Case Sensitive (A != a)</span>
+                            </label>
+                        </div>
+                        <div class="adv-row">
+                            <label>
+                                <input type="checkbox" id="adv_fill_blank_trim_whitespace" checked>
+                                <span>Blanks: Auto-Trim Whitespace</span>
+                            </label>
+                        </div>
+                        <button onclick="saveAdvancedSettings()" class="btn btn-primary btn-sm" style="width:100%; margin-top:8px;">
+                            <i class="fas fa-save"></i> Save Rules
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: QUESTION EDITOR + LIVE TEST SIMULATOR + QUESTION LIST -->
+            <div class="panel-main-right">
+
+                <!-- Action Toolbar Card -->
+                <div class="main-toolbar-card">
+                    <div class="toolbar-left-info">
+                        <span class="current-type-pill" id="activeTypePill">
+                            <i class="fas fa-dot-circle"></i> MSCQ — Single Choice
+                        </span>
+                        <span style="font-size:13px; font-weight:700; color:var(--text-secondary);" id="editorModeLabel">
+                            New Question
+                        </span>
+                    </div>
+
+                    <div class="toolbar-buttons-group">
+                        <button onclick="openBulkCreatorModal()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-layer-group" style="color:var(--primary);"></i> + Add Multiple
+                        </button>
+                        <button onclick="openImportModal()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-file-import" style="color:var(--info);"></i> Import (DOCX/JSON/CSV)
+                        </button>
+                        <button onclick="openExportModal()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-download" style="color:var(--warning);"></i> Export
+                        </button>
+                        <button onclick="resetQuestionEditor()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-redo"></i> Reset Form
+                        </button>
+                        <button onclick="saveQuestionDirectly()" class="btn btn-primary btn-sm" id="btnSaveQuestion">
+                            <i class="fas fa-save"></i> Save Question
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Central Question Editor Card -->
+                <div class="editor-container-card">
+                    <form id="questionForm" method="POST" action="/admin/question_bank/save">
+                        <input type="hidden" name="q_id" id="q_id" value="">
+                        <input type="hidden" name="question_type" id="question_type" value="mscq_single">
+                        <input type="hidden" name="metadata_json" id="metadata_json" value="{}">
+
+                        <!-- Session, Subject, Difficulty, Status Row -->
+                        <div class="editor-meta-grid">
+                            <div>
+                                <label class="form-label"><i class="fas fa-calendar-alt"></i> Assessment Session *</label>
+                                <select name="quiz_id" id="quiz_id" class="form-control" required>
+                                    <option value="">-- Select Target Assessment --</option>
+                                    {% for qz in quizzes %}
+                                        <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fas fa-book"></i> Subject / Module</label>
+                                <input type="text" name="subject" id="subject" class="form-control" placeholder="e.g. Web Development" value="General">
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fas fa-tachometer-alt"></i> Difficulty</label>
+                                <select name="difficulty" id="difficulty" class="form-control">
+                                    <option value="Easy">Easy</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="Hard">Hard</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label"><i class="fas fa-eye"></i> Status</label>
+                                <select name="status" id="status" class="form-control">
+                                    <option value="Published" selected>Published</option>
+                                    <option value="Draft">Draft</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Question Statement Area -->
+                        <div style="margin-bottom:18px;">
+                            <div class="statement-box-header">
+                                <label class="form-label" style="margin-bottom:0;"><i class="fas fa-question-circle"></i> Question Statement *</label>
+                                <div class="format-toolbar">
+                                    <button type="button" class="format-btn" onclick="insertFormat('**', '**')"><b>B</b></button>
+                                    <button type="button" class="format-btn" onclick="insertFormat('*', '*')"><i>I</i></button>
+                                    <button type="button" class="format-btn" onclick="insertFormat('`', '`')"><code>&lt;&gt;</code></button>
+                                    <button type="button" class="format-btn" onclick="insertFormat(' ____ ')">Insert Blank <u>____</u></button>
+                                    <button type="button" class="format-btn" onclick="clearStatement()">Clear</button>
+                                </div>
+                            </div>
+                            <textarea name="question_text" id="question_text" class="form-control statement-textarea" placeholder="Enter your question statement here..." required oninput="handleStatementChange()"></textarea>
+                        </div>
+
+                        <!-- DYNAMIC TYPE CONFIGURATION AREA -->
+                        <div class="answer-config-panel" id="answerConfigPanel">
+                            <div class="answer-config-title" id="answerConfigTitle">
+                                <i class="fas fa-list-ul"></i> Answer Options Configuration
+                            </div>
+
+                            <div id="dynamicConfigContainer">
+                                <!-- Populated dynamically by JS for selected question type -->
+                            </div>
+                        </div>
+
+                        <!-- SCORING & NEGATIVE MARKING ROW -->
+                        <div class="scoring-row-grid">
+                            <div>
+                                <label class="form-label"><i class="fas fa-plus-circle" style="color:#10b981;"></i> Positive Marks *</label>
+                                <input type="number" name="marks" id="marks" step="0.25" min="0" value="1" class="form-control" required oninput="handleScoreInputsChange()">
+                                <small style="color:var(--text-muted); font-size:11px;">Points awarded when answered correctly</small>
+                            </div>
+
+                            <div class="negative-mark-field-highlight">
+                                <label class="form-label">
+                                    <i class="fas fa-minus-circle"></i> Enter marks to deduct for an incorrect answer *
+                                </label>
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <input type="number" name="negative_marks" id="negative_marks" step="0.05" min="0" value="0.25" class="form-control" required oninput="handleScoreInputsChange()" style="font-weight:800; color:#be123c;">
+                                    <span style="font-size:12px; color:#9f1239; font-weight:600; white-space:nowrap;">Points deducted</span>
+                                </div>
+                                <small style="color:#be123c; font-size:11px; margin-top:4px; display:block;">
+                                    Deducted from candidate's score on a wrong answer. Set to 0 to disable deduction.
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Explanation / Solution -->
+                        <div style="margin-bottom:18px;">
+                            <label class="form-label"><i class="fas fa-lightbulb" style="color:var(--warning);"></i> Explanation / Solution</label>
+                            <textarea name="explanation" id="explanation" class="form-control" style="min-height:65px;" placeholder="Optional explanation displayed to student upon quiz review..."></textarea>
+                        </div>
+
+                        <!-- Bottom Submit Row -->
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <button type="button" onclick="resetQuestionEditor()" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel / Clear
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="btnSubmitForm">
+                                <i class="fas fa-save"></i> Save Question to Bank
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- INTERACTIVE LIVE SIMULATOR / TEST AREA -->
+                <div class="simulator-card" id="simulatorCard">
+                    <div class="simulator-header">
+                        <div class="simulator-title">
+                            <i class="fas fa-laptop-code"></i> Live Candidate Test Simulator & Scoring Engine
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="runSimulation()" class="btn btn-success btn-sm">
+                                <i class="fas fa-play"></i> Simulate Student Answer
+                            </button>
+                            <button type="button" onclick="resetSimulator()" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-redo"></i> Reset Test
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sim-question-display" id="simQuestionText">
+                        Which language is used to structure web pages?
+                    </div>
+
+                    <div class="sim-interaction-container" id="simInteractionArea">
+                        <!-- Populated by JS for student testing -->
+                    </div>
+
+                    <!-- Simulator status feedback -->
+                    <div class="sim-status-banner" id="simStatusBanner">
+                        <!-- Shows Correct / Incorrect / Unanswered -->
+                    </div>
+
+                    <!-- Live Score Breakdown Dashboard -->
+                    <div class="sim-score-breakdown-grid">
+                        <div class="sim-score-item">
+                            <div class="sim-score-val" id="simTotalMarksDisplay" style="color:var(--primary);">1.0</div>
+                            <div class="sim-score-lbl">Question Total</div>
+                        </div>
+                        <div class="sim-score-item">
+                            <div class="sim-score-val" id="simObtainedMarksDisplay" style="color:#10b981;">0.0</div>
+                            <div class="sim-score-lbl">Marks Obtained</div>
+                        </div>
+                        <div class="sim-score-item">
+                            <div class="sim-score-val" id="simDeductedMarksDisplay" style="color:#ef4444;">0.0</div>
+                            <div class="sim-score-lbl">Marks Deducted</div>
+                        </div>
+                        <div class="sim-score-item">
+                            <div class="sim-score-val" id="simCorrectCountDisplay" style="color:#10b981;">0</div>
+                            <div class="sim-score-lbl">Correct Answers</div>
+                        </div>
+                        <div class="sim-score-item">
+                            <div class="sim-score-val" id="simIncorrectCountDisplay" style="color:#ef4444;">0</div>
+                            <div class="sim-score-lbl">Incorrect Answers</div>
+                        </div>
+                    </div>
+
+                    <div id="simExplanationBox" style="display:none; margin-top:12px; padding:12px 14px; background:#f8fafc; border-radius:10px; font-size:12.5px; border-left:4px solid var(--primary);">
+                        <strong>Explanation:</strong> <span id="simExplanationText"></span>
+                    </div>
+                </div>
+
+                <!-- LINK TO QUESTION REPOSITORY (SEPARATE PAGE) -->
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; background:var(--glass-bg); border-radius:16px; border:1px solid var(--border-color); box-shadow:var(--glass-shadow); margin-top:8px;">
+                    <div>
+                        <div style="font-weight:800; font-size:14px; color:var(--text-dark);">
+                            <i class="fas fa-database" style="color:var(--primary); margin-right:6px;"></i> Ready to view or manage questions?
+                        </div>
+                        <div style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">
+                            Browse, search, batch-delete, or edit all saved questions in the dedicated Question Repository.
+                        </div>
+                    </div>
+                    <a href="/admin/repository" class="btn btn-primary btn-sm">
+                        <i class="fas fa-arrow-right"></i> Open Question Repository
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
+    </div>
+
+    <!-- MODAL 1: BULK QUESTION CREATOR (+ ADD MULTIPLE QUESTIONS) -->
+    <div class="modal-backdrop" id="bulkCreatorModal">
+        <div class="modal-dialog modal-dialog-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-layer-group" style="color:var(--primary);"></i> Add Multiple Questions (Bulk Authoring)</h3>
+                <button class="modal-close" onclick="closeBulkCreatorModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                    <div style="flex:1; min-width:240px;">
+                        <label class="form-label">Target Assessment Session *</label>
+                        <select id="bulk_quiz_id" class="form-control" required>
+                            <option value="">-- Select Target Assessment --</option>
+                            {% for qz in quizzes %}
+                                <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:flex-end;">
+                        <button type="button" onclick="addBulkCard()" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-plus"></i> + Add Card
+                        </button>
+                        <button type="button" onclick="validateAllBulkCards()" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-double"></i> Validate Cards
+                        </button>
+                    </div>
+                </div>
+
+                <div id="bulkCardsContainer" style="max-height:55vh; overflow-y:auto; padding-right:4px;">
+                    <!-- Dynamically created question cards -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="bulkStatusSummary" style="font-size:13px; font-weight:700; color:var(--text-secondary); margin-right:auto;">
+                    1 card ready
+                </span>
+                <button type="button" class="btn btn-secondary" onclick="closeBulkCreatorModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkQuestions()" id="btnSubmitBulk">
+                    <i class="fas fa-save"></i> Save All Questions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: MULTI-FORMAT IMPORT (JSON, CSV, DOCX) -->
+    <div class="modal-backdrop" id="importModal">
+        <div class="modal-dialog modal-dialog-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-import" style="color:var(--primary);"></i> Import Assessment Questions</h3>
+                <button class="modal-close" onclick="closeImportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Download Sample Templates Section -->
+                <div style="background:#f8fafc; border:1.5px solid var(--border-color); border-radius:14px; padding:14px 18px; margin-bottom:18px;">
+                    <div style="font-size:13px; font-weight:800; color:var(--text-dark); margin-bottom:6px;">
+                        <i class="fas fa-download" style="color:var(--primary);"></i> Download Working Sample Templates:
+                    </div>
+                    <div style="font-size:12px; color:var(--text-secondary); margin-bottom:10px;">
+                        Choose your preferred format to see the required schema. Microsoft Word (.docx) format uses clean question tables.
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <a href="/admin/api/questions/sample/docx" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-word" style="color:#2563eb;"></i> Word Sample (.docx)
+                        </a>
+                        <a href="/admin/api/questions/sample/json" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-code" style="color:#d97706;"></i> JSON Sample (.json)
+                        </a>
+                        <a href="/admin/api/questions/sample/csv" class="btn btn-secondary btn-sm" download>
+                            <i class="fas fa-file-csv" style="color:#059669;"></i> CSV Sample (.csv)
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Step 1: Upload & Target Session -->
+                <form id="importUploadForm" onsubmit="handleAnalyzeImportFile(event)">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;">
+                        <div>
+                            <label class="form-label">Target Assessment Session *</label>
+                            <select id="import_quiz_id" class="form-control" required>
+                                <option value="">-- Select Target Assessment --</option>
+                                {% for qz in quizzes %}
+                                    <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Select File (.docx, .json, .csv) *</label>
+                            <input type="file" id="import_file" class="form-control" accept=".docx,.json,.csv" required>
+                        </div>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary btn-sm" id="btnAnalyzeFile">
+                            <i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Step 2: Pre-Import Preview Table (Populated by /admin/api/questions/import_preview) -->
+                <div id="importPreviewArea" style="display:none; margin-top:18px; border-top:1px solid var(--border-color); padding-top:16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="font-size:14px; font-weight:800; color:var(--text-dark);">
+                            <i class="fas fa-list-check"></i> Validation Preview Results
+                        </h4>
+                        <div class="preview-stat-chips" id="previewStatChips">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border-color); border-radius:12px;">
+                        <table class="import-preview-table" id="importPreviewTable">
+                            <thead>
+                                <tr>
+                                    <th style="width:40px;">#</th>
+                                    <th style="width:100px;">Type</th>
+                                    <th>Question</th>
+                                    <th style="width:80px;">Correct</th>
+                                    <th style="width:70px;">Marks</th>
+                                    <th style="width:80px;">Status</th>
+                                    <th>Diagnostics / Errors</th>
+                                </tr>
+                            </thead>
+                            <tbody id="importPreviewTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeImportModal()">Close</button>
+                <button type="button" class="btn btn-success" id="btnConfirmImport" style="display:none;" onclick="confirmAndSaveImportedQuestions()">
+                    <i class="fas fa-check-circle"></i> Confirm & Import Valid Questions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PREVIEW QUESTION MODAL -->
+    <div class="modal-backdrop" id="previewModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye" style="color:var(--primary);"></i> Question Preview</h3>
+                <button class="modal-close" onclick="closePreviewModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="previewModalContent">
+                <!-- Injected by JS -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closePreviewModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EXPORT QUESTIONS (CHOOSE FORMAT: WORD, JSON, CSV) -->
+    <div class="modal-backdrop" id="exportModal">
+        <div class="modal-dialog" style="max-width:540px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-export" style="color:var(--primary);"></i> Export Questions</h3>
+                <button class="modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:16px;">
+                    Choose the format you want to export your questions to:
+                </p>
+
+                <div style="margin-bottom:18px;">
+                    <label class="form-label" style="font-weight:700;">Select Format *</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                        <label id="lblFmtWord" style="border:2px solid var(--primary); background:rgba(79,70,229,0.06); border-radius:14px; padding:14px 10px; text-align:center; cursor:pointer; display:block; transition:all 0.2s ease;">
+                            <input type="radio" name="exportFormatRadio" value="docx" checked onchange="highlightExportCard('docx')" style="display:none;">
+                            <div style="font-size:26px; color:#2563eb; margin-bottom:6px;"><i class="fas fa-file-word"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">Word (.docx)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Formatted Doc</div>
+                        </label>
+                        <label id="lblFmtJson" style="border:1.5px solid var(--border-color); background:white; border-radius:14px; padding:14px 10px; text-align:center; cursor:pointer; display:block; transition:all 0.2s ease;">
+                            <input type="radio" name="exportFormatRadio" value="json" onchange="highlightExportCard('json')" style="display:none;">
+                            <div style="font-size:26px; color:#d97706; margin-bottom:6px;"><i class="fas fa-file-code"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">JSON (.json)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Data Schema</div>
+                        </label>
+                        <label id="lblFmtCsv" style="border:1.5px solid var(--border-color); background:white; border-radius:14px; padding:14px 10px; text-align:center; cursor:pointer; display:block; transition:all 0.2s ease;">
+                            <input type="radio" name="exportFormatRadio" value="csv" onchange="highlightExportCard('csv')" style="display:none;">
+                            <div style="font-size:26px; color:#059669; margin-bottom:6px;"><i class="fas fa-file-csv"></i></div>
+                            <div style="font-size:13px; font-weight:800; color:var(--text-dark);">CSV (.csv)</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Spreadsheet</div>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label">Filter by Assessment Session</label>
+                    <select id="export_quiz_filter" class="form-control">
+                        <option value="all">All Assessment Sessions</option>
+                        {% for qz in quizzes %}
+                            <option value="{{ qz.quiz_id }}">{{ qz.title }} (ID: #{{ qz.quiz_id }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="triggerExportDownload()">
+                    <i class="fas fa-download"></i> Download Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // --- 5 CORE QUESTION TYPES STATE ---
+        let currentType = 'mscq_single'; // 'mscq_single', 'mscq_multiple', 'mscq_select', 'fill_blank', 'true_false'
+
+        // Active question configuration state
+        let currentOptions = [
+            { id: 'A', text: 'HTML' },
+            { id: 'B', text: 'CSS' },
+            { id: 'C', text: 'Python' },
+            { id: 'D', text: 'SQL' }
+        ];
+        let currentCorrectAnswer = 'A'; // string: 'A', 'A, B, D', 'True', etc.
+        let currentBlankAccepted = ['A'];
+        let currentCaseSensitive = true;
+
+        // Validated questions cache for file import
+        let parsedValidQuestionsCache = [];
+
+        // --- TYPE DEFINITIONS & LABELS ---
+        const TYPE_MAP = {
+            'mscq_single': { name: 'MSCQ — Single Choice', icon: 'fa-dot-circle', sub: 'Radio button (1 correct answer)' },
+            'mscq_multiple': { name: 'MSCQ — Multiple Choice', icon: 'fa-check-square', sub: 'Checkboxes (multiple answers)' },
+            'mscq_select': { name: 'MSCQ — Select Dropdown', icon: 'fa-caret-square-down', sub: 'Dropdown select (1 correct answer)' },
+            'fill_blank': { name: 'Fill in the Blanks', icon: 'fa-pen-nib', sub: 'Case-sensitive blank evaluation' },
+            'true_false': { name: 'True / False', icon: 'fa-toggle-on', sub: 'Binary truth evaluation' }
+        };
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check default initial values
+            if (!document.getElementById('question_text').value) {
+                document.getElementById('question_text').value = 'Which language is used to structure web pages?';
+            }
+            switchQuestionType('mscq_single');
+
+            // Check if ?edit=<id> is in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            if (editId) {
+                loadQuestionIntoEditor(editId);
+            }
+        });
+
+        // --- SWITCH QUESTION TYPE ---
+        function switchQuestionType(typeKey) {
+            currentType = typeKey;
+            document.getElementById('question_type').value = typeKey;
+
+            // Update sidebar buttons
+            document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`typeBtn_${typeKey}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Update pill in toolbar
+            const typeInfo = TYPE_MAP[typeKey] || { name: typeKey, icon: 'fa-question' };
+            document.getElementById('activeTypePill').innerHTML = `<i class="fas ${typeInfo.icon}"></i> ${typeInfo.name}`;
+
+            // Reset or adjust options if transitioning to true_false or blanks
+            if (typeKey === 'true_false') {
+                currentOptions = [
+                    { id: 'A', text: 'True' },
+                    { id: 'B', text: 'False' }
+                ];
+                currentCorrectAnswer = 'A';
+            } else if (typeKey === 'fill_blank') {
+                if (!currentBlankAccepted || currentBlankAccepted.length === 0) {
+                    currentBlankAccepted = ['A'];
+                }
+                currentCorrectAnswer = currentBlankAccepted[0] || 'A';
+            } else {
+                if (!currentOptions || currentOptions.length < 2) {
+                    currentOptions = [
+                        { id: 'A', text: 'Option A' },
+                        { id: 'B', text: 'Option B' },
+                        { id: 'C', text: 'Option C' },
+                        { id: 'D', text: 'Option D' }
+                    ];
+                    currentCorrectAnswer = 'A';
+                }
+            }
+
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        // --- RENDER DYNAMIC ANSWER EDITOR ---
+        function renderDynamicAnswerEditor() {
+            const container = document.getElementById('dynamicConfigContainer');
+            const title = document.getElementById('answerConfigTitle');
+
+            if (currentType === 'mscq_single') {
+                title.innerHTML = `<i class="fas fa-dot-circle" style="color:#6d28d9;"></i> Single Choice Options (Select 1 Correct)`;
+                let html = `<div class="options-list-editor" id="optionsListEditor">`;
+                currentOptions.forEach((opt, idx) => {
+                    const isChecked = currentCorrectAnswer === opt.id ? 'checked' : '';
+                    const isRowChecked = currentCorrectAnswer === opt.id ? 'is-correct-row' : '';
+                    html += `
+                        <div class="opt-row ${isRowChecked}" id="optRow_${opt.id}">
+                            <input type="radio" name="editor_single_correct" value="${opt.id}" ${isChecked} class="opt-selector-input" onchange="setSingleCorrect('${opt.id}')" title="Mark as correct option">
+                            <span class="opt-letter-badge">${opt.id}</span>
+                            <input type="text" class="opt-text-input" value="${escapeHtml(opt.text)}" placeholder="Option text..." oninput="updateOptionText('${opt.id}', this.value)">
+                            ${currentOptions.length > 2 ? `<button type="button" class="opt-remove-btn" onclick="removeOption('${opt.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>`;
+                });
+                html += `</div>
+                    <div style="margin-top:12px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewOption()"><i class="fas fa-plus"></i> Add Another Option</button>
+                    </div>`;
+                container.innerHTML = html;
+
+            } else if (currentType === 'mscq_multiple') {
+                title.innerHTML = `<i class="fas fa-check-square" style="color:#4338ca;"></i> Multiple Choice Options (Check all correct answers)`;
+                const correctArr = currentCorrectAnswer.split(',').map(s => s.trim().toUpperCase());
+                let html = `<div class="options-list-editor" id="optionsListEditor">`;
+                currentOptions.forEach((opt) => {
+                    const isChecked = correctArr.includes(opt.id) ? 'checked' : '';
+                    const isRowChecked = correctArr.includes(opt.id) ? 'is-correct-row' : '';
+                    html += `
+                        <div class="opt-row ${isRowChecked}" id="optRow_${opt.id}">
+                            <input type="checkbox" value="${opt.id}" ${isChecked} class="opt-selector-input" onchange="toggleMultipleCorrect('${opt.id}')" title="Check if correct answer">
+                            <span class="opt-letter-badge">${opt.id}</span>
+                            <input type="text" class="opt-text-input" value="${escapeHtml(opt.text)}" placeholder="Option text..." oninput="updateOptionText('${opt.id}', this.value)">
+                            ${currentOptions.length > 2 ? `<button type="button" class="opt-remove-btn" onclick="removeOption('${opt.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>`;
+                });
+                html += `</div>
+                    <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewOption()"><i class="fas fa-plus"></i> Add Another Option</button>
+                        <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">Correct: <strong style="color:var(--primary);">${currentCorrectAnswer || 'None selected'}</strong></span>
+                    </div>`;
+                container.innerHTML = html;
+
+            } else if (currentType === 'mscq_select') {
+                title.innerHTML = `<i class="fas fa-caret-square-down" style="color:#be185d;"></i> Select Dropdown Configuration`;
+                let html = `<div class="options-list-editor" id="optionsListEditor">`;
+                currentOptions.forEach((opt) => {
+                    const isChecked = currentCorrectAnswer === opt.id ? 'checked' : '';
+                    const isRowChecked = currentCorrectAnswer === opt.id ? 'is-correct-row' : '';
+                    html += `
+                        <div class="opt-row ${isRowChecked}" id="optRow_${opt.id}">
+                            <input type="radio" name="editor_select_correct" value="${opt.id}" ${isChecked} class="opt-selector-input" onchange="setSingleCorrect('${opt.id}')">
+                            <span class="opt-letter-badge">${opt.id}</span>
+                            <input type="text" class="opt-text-input" value="${escapeHtml(opt.text)}" placeholder="Dropdown option text..." oninput="updateOptionText('${opt.id}', this.value)">
+                            ${currentOptions.length > 2 ? `<button type="button" class="opt-remove-btn" onclick="removeOption('${opt.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                        </div>`;
+                });
+                html += `</div>
+                    <div style="margin-top:12px;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewOption()"><i class="fas fa-plus"></i> Add Option</button>
+                    </div>`;
+                container.innerHTML = html;
+
+            } else if (currentType === 'fill_blank') {
+                title.innerHTML = `<i class="fas fa-pen-nib" style="color:#b45309;"></i> Fill in the Blanks Answers & Case Sensitivity`;
+                let html = `
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div>
+                            <label class="form-label">Primary Accepted Answer *</label>
+                            <input type="text" class="form-control" id="blankPrimaryAns" value="${escapeHtml(currentBlankAccepted[0] || 'A')}" placeholder="e.g. A" oninput="updateBlankPrimary(this.value)">
+                            <small style="color:var(--text-muted); font-size:11px;">Candidate must type this answer exactly in the blank placeholder ____</small>
+                        </div>
+                        <div>
+                            <label class="form-label">Alternative Accepted Answers (Separated by |)</label>
+                            <input type="text" class="form-control" id="blankAltAnswers" value="${escapeHtml(currentBlankAccepted.slice(1).join(' | '))}" placeholder="e.g. Alpha | First Letter" oninput="updateBlankAlternatives(this.value)">
+                        </div>
+                        <div style="background:white; padding:12px 14px; border-radius:12px; border:1px solid var(--border-color);">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:0; font-weight:700; color:var(--text-dark);">
+                                <input type="checkbox" id="blankCaseSensitiveToggle" ${currentCaseSensitive ? 'checked' : ''} onchange="toggleBlankCaseSensitivity(this.checked)">
+                                <span>Case Sensitive Evaluation (e.g. 'A' is correct, but 'a' will be evaluated as incorrect)</span>
+                            </label>
+                        </div>
+                    </div>`;
+                container.innerHTML = html;
+
+            } else if (currentType === 'true_false') {
+                title.innerHTML = `<i class="fas fa-toggle-on" style="color:#047857;"></i> True / False Answer Selection`;
+                let html = `
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+                        <label class="opt-row ${currentCorrectAnswer === 'A' || currentCorrectAnswer === 'True' ? 'is-correct-row' : ''}" style="cursor:pointer; padding:14px;">
+                            <input type="radio" name="tf_answer" value="True" ${currentCorrectAnswer === 'A' || currentCorrectAnswer === 'True' ? 'checked' : ''} onchange="setTFCorrect('True')" class="opt-selector-input">
+                            <span class="opt-letter-badge" style="background:#dcfce7; color:#15803d;"><i class="fas fa-check"></i></span>
+                            <span style="font-weight:800; font-size:15px; color:#15803d;">True</span>
+                        </label>
+                        <label class="opt-row ${currentCorrectAnswer === 'B' || currentCorrectAnswer === 'False' ? 'is-correct-row' : ''}" style="cursor:pointer; padding:14px;">
+                            <input type="radio" name="tf_answer" value="False" ${currentCorrectAnswer === 'B' || currentCorrectAnswer === 'False' ? 'checked' : ''} onchange="setTFCorrect('False')" class="opt-selector-input">
+                            <span class="opt-letter-badge" style="background:#fee2e2; color:#b91c1c;"><i class="fas fa-times"></i></span>
+                            <span style="font-weight:800; font-size:15px; color:#b91c1c;">False</span>
+                        </label>
+                    </div>`;
+                container.innerHTML = html;
+            }
+
+            syncMetadataJson();
+        }
+
+        // --- OPTION MANAGEMENT HELPERS ---
+        function setSingleCorrect(optId) {
+            currentCorrectAnswer = optId;
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function toggleMultipleCorrect(optId) {
+            let correctArr = currentCorrectAnswer ? currentCorrectAnswer.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) : [];
+            if (correctArr.includes(optId)) {
+                correctArr = correctArr.filter(id => id !== optId);
+            } else {
+                correctArr.push(optId);
+                correctArr.sort();
+            }
+            currentCorrectAnswer = correctArr.join(', ');
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function setTFCorrect(val) {
+            currentCorrectAnswer = val;
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function updateOptionText(optId, newText) {
+            const opt = currentOptions.find(o => o.id === optId);
+            if (opt) opt.text = newText;
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function addNewOption() {
+            const nextCharCode = 65 + currentOptions.length;
+            if (nextCharCode > 90) return; // limit to A-Z
+            const newLetter = String.fromCharCode(nextCharCode);
+            currentOptions.push({ id: newLetter, text: `Option ${newLetter}` });
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function removeOption(optId) {
+            if (currentOptions.length <= 2) return;
+            currentOptions = currentOptions.filter(o => o.id !== optId);
+            // re-index letters
+            currentOptions.forEach((o, i) => { o.id = String.fromCharCode(65 + i); });
+            if (!currentOptions.some(o => o.id === currentCorrectAnswer)) {
+                currentCorrectAnswer = currentOptions[0].id;
+            }
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function updateBlankPrimary(val) {
+            currentBlankAccepted[0] = val;
+            currentCorrectAnswer = val;
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function updateBlankAlternatives(val) {
+            const alts = val.split('|').map(s => s.trim()).filter(Boolean);
+            currentBlankAccepted = [currentBlankAccepted[0] || '', ...alts];
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function toggleBlankCaseSensitivity(checked) {
+            currentCaseSensitive = checked;
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function handleStatementChange() {
+            updateSimulator();
+        }
+
+        function handleScoreInputsChange() {
+            updateSimulator();
+        }
+
+        function syncMetadataJson() {
+            const marks = parseFloat(document.getElementById('marks').value) || 1;
+            const negMarks = parseFloat(document.getElementById('negative_marks').value) || 0.25;
+
+            const meta = {
+                options: currentOptions,
+                correctAnswer: currentCorrectAnswer,
+                selectionType: currentType === 'mscq_multiple' ? 'multiple' : (currentType === 'mscq_select' ? 'select' : 'single'),
+                marks: marks,
+                negativeMarks: negMarks,
+                caseSensitive: currentCaseSensitive,
+                acceptedAnswers: currentBlankAccepted
+            };
+            document.getElementById('metadata_json').value = JSON.stringify(meta);
+        }
+
+        // --- INTERACTIVE SIMULATOR IMPLEMENTATION ---
+        let simUserSelection = null; // can be string or array
+
+        function updateSimulator() {
+            syncMetadataJson();
+            const qText = document.getElementById('question_text').value || 'Enter question statement...';
+            document.getElementById('simQuestionText').textContent = qText;
+
+            const marks = parseFloat(document.getElementById('marks').value) || 1;
+            document.getElementById('simTotalMarksDisplay').textContent = marks.toFixed(2);
+
+            const container = document.getElementById('simInteractionArea');
+
+            if (currentType === 'mscq_single') {
+                let html = '';
+                currentOptions.forEach(opt => {
+                    const isSel = simUserSelection === opt.id ? 'selected' : '';
+                    html += `
+                        <div class="sim-option-item ${isSel}" onclick="simSelectSingle('${opt.id}')">
+                            <input type="radio" name="simRadio" value="${opt.id}" ${simUserSelection === opt.id ? 'checked' : ''}>
+                            <strong>${opt.id}.</strong> <span>${escapeHtml(opt.text)}</span>
+                        </div>`;
+                });
+                container.innerHTML = html;
+
+            } else if (currentType === 'mscq_multiple') {
+                let html = '';
+                const selArr = Array.isArray(simUserSelection) ? simUserSelection : [];
+                currentOptions.forEach(opt => {
+                    const isSel = selArr.includes(opt.id) ? 'selected' : '';
+                    html += `
+                        <div class="sim-option-item ${isSel}" onclick="simToggleMulti('${opt.id}')">
+                            <input type="checkbox" value="${opt.id}" ${selArr.includes(opt.id) ? 'checked' : ''}>
+                            <strong>${opt.id}.</strong> <span>${escapeHtml(opt.text)}</span>
+                        </div>`;
+                });
+                container.innerHTML = html;
+
+            } else if (currentType === 'mscq_select') {
+                let html = `
+                    <select id="simSelectDropdown" class="form-control" onchange="simSelectSingle(this.value)" style="max-width:350px;">
+                        <option value="">-- Choose an option --</option>`;
+                currentOptions.forEach(opt => {
+                    html += `<option value="${opt.id}" ${simUserSelection === opt.id ? 'selected' : ''}>${opt.id}. ${escapeHtml(opt.text)}</option>`;
+                });
+                html += `</select>`;
+                container.innerHTML = html;
+
+            } else if (currentType === 'fill_blank') {
+                const val = typeof simUserSelection === 'string' ? simUserSelection : '';
+                container.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <input type="text" id="simBlankInput" class="form-control" style="max-width:320px;" placeholder="Type student answer here..." value="${escapeHtml(val)}" oninput="simSetBlank(this.value)">
+                        <span style="font-size:12px; color:var(--text-secondary);">(${currentCaseSensitive ? 'Case Sensitive: A != a' : 'Case Insensitive'})</span>
+                    </div>`;
+
+            } else if (currentType === 'true_false') {
+                container.innerHTML = `
+                    <div style="display:flex; gap:14px;">
+                        <div class="sim-option-item ${simUserSelection === 'True' || simUserSelection === 'A' ? 'selected' : ''}" onclick="simSelectSingle('True')" style="flex:1;">
+                            <input type="radio" name="simTF" value="True" ${simUserSelection === 'True' || simUserSelection === 'A' ? 'checked' : ''}>
+                            <strong>True</strong>
+                        </div>
+                        <div class="sim-option-item ${simUserSelection === 'False' || simUserSelection === 'B' ? 'selected' : ''}" onclick="simSelectSingle('False')" style="flex:1;">
+                            <input type="radio" name="simTF" value="False" ${simUserSelection === 'False' || simUserSelection === 'B' ? 'checked' : ''}>
+                            <strong>False</strong>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function simSelectSingle(val) {
+            simUserSelection = val;
+            updateSimulator();
+        }
+
+        function simToggleMulti(optId) {
+            let selArr = Array.isArray(simUserSelection) ? [...simUserSelection] : [];
+            if (selArr.includes(optId)) {
+                selArr = selArr.filter(id => id !== optId);
+            } else {
+                selArr.push(optId);
+                selArr.sort();
+            }
+            simUserSelection = selArr;
+            updateSimulator();
+        }
+
+        function simSetBlank(val) {
+            simUserSelection = val;
+        }
+
+        function resetSimulator() {
+            simUserSelection = null;
+            document.getElementById('simStatusBanner').className = 'sim-status-banner';
+            document.getElementById('simStatusBanner').style.display = 'none';
+            document.getElementById('simObtainedMarksDisplay').textContent = '0.0';
+            document.getElementById('simDeductedMarksDisplay').textContent = '0.0';
+            document.getElementById('simCorrectCountDisplay').textContent = '0';
+            document.getElementById('simIncorrectCountDisplay').textContent = '0';
+            document.getElementById('simExplanationBox').style.display = 'none';
+            updateSimulator();
+        }
+
+        // --- RUN SIMULATION & SCORING EVALUATION ---
+        function runSimulation() {
+            const marks = parseFloat(document.getElementById('marks').value) || 1;
+            const negDeduct = parseFloat(document.getElementById('negative_marks').value) || 0.25;
+
+            let isCorrect = false;
+            let isUnanswered = false;
+
+            if (currentType === 'mscq_single' || currentType === 'mscq_select') {
+                if (!simUserSelection) {
+                    isUnanswered = true;
+                } else {
+                    isCorrect = simUserSelection.toUpperCase() === currentCorrectAnswer.toUpperCase();
+                }
+
+            } else if (currentType === 'mscq_multiple') {
+                const selArr = Array.isArray(simUserSelection) ? simUserSelection : [];
+                if (selArr.length === 0) {
+                    isUnanswered = true;
+                } else {
+                    const correctArr = currentCorrectAnswer.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+                    const userSorted = [...selArr].sort().join(',');
+                    const targetSorted = [...correctArr].sort().join(',');
+                    isCorrect = userSorted === targetSorted;
+                }
+
+            } else if (currentType === 'fill_blank') {
+                const userVal = document.getElementById('simBlankInput') ? document.getElementById('simBlankInput').value.trim() : (simUserSelection || '').trim();
+                if (!userVal) {
+                    isUnanswered = true;
+                } else {
+                    const validAnswers = currentBlankAccepted.filter(Boolean);
+                    if (currentCaseSensitive) {
+                        isCorrect = validAnswers.includes(userVal);
+                    } else {
+                        const lowerUser = userVal.toLowerCase();
+                        isCorrect = validAnswers.some(ans => ans.toLowerCase() === lowerUser);
+                    }
+                }
+
+            } else if (currentType === 'true_false') {
+                if (!simUserSelection) {
+                    isUnanswered = true;
+                } else {
+                    const normTarget = (currentCorrectAnswer === 'True' || currentCorrectAnswer === 'A') ? 'True' : 'False';
+                    const normUser = (simUserSelection === 'True' || simUserSelection === 'A') ? 'True' : 'False';
+                    isCorrect = normUser === normTarget;
+                }
+            }
+
+            // Score computation
+            let obtained = 0;
+            let deducted = 0;
+            const banner = document.getElementById('simStatusBanner');
+
+            if (isUnanswered) {
+                obtained = 0;
+                deducted = 0;
+                banner.className = 'sim-status-banner unanswered';
+                banner.innerHTML = `<i class="fas fa-info-circle"></i> Question was left unanswered. Score: 0 (No deduction applied).`;
+                document.getElementById('simCorrectCountDisplay').textContent = '0';
+                document.getElementById('simIncorrectCountDisplay').textContent = '0';
+
+            } else if (isCorrect) {
+                obtained = marks;
+                deducted = 0;
+                banner.className = 'sim-status-banner correct';
+                banner.innerHTML = `<i class="fas fa-check-circle"></i> Correct Answer! Full Marks Awarded (+${marks}).`;
+                document.getElementById('simCorrectCountDisplay').textContent = '1';
+                document.getElementById('simIncorrectCountDisplay').textContent = '0';
+
+            } else {
+                obtained = -negDeduct;
+                deducted = negDeduct;
+                banner.className = 'sim-status-banner incorrect';
+                banner.innerHTML = `<i class="fas fa-times-circle"></i> Incorrect Answer! Negative marking penalty applied (-${negDeduct}).`;
+                document.getElementById('simCorrectCountDisplay').textContent = '0';
+                document.getElementById('simIncorrectCountDisplay').textContent = '1';
+            }
+
+            banner.style.display = 'flex';
+            document.getElementById('simObtainedMarksDisplay').textContent = obtained.toFixed(2);
+            document.getElementById('simDeductedMarksDisplay').textContent = deducted.toFixed(2);
+
+            const explanation = document.getElementById('explanation').value.trim();
+            if (explanation) {
+                document.getElementById('simExplanationText').textContent = explanation;
+                document.getElementById('simExplanationBox').style.display = 'block';
+            }
+        }
+
+        // --- ADVANCED SETTINGS TOGGLE & PERSISTENCE ---
+        function toggleAdvancedSettings() {
+            const panel = document.getElementById('advPanel');
+            const chev = document.getElementById('advChevron');
+            panel.classList.toggle('show');
+            chev.className = panel.classList.contains('show') ? 'fas fa-chevron-up' : 'fas fa-chevron-down';
+        }
+
+        function saveAdvancedSettings() {
+            const payload = {
+                enable_negative_marking: document.getElementById('adv_enable_negative_marking').checked,
+                negative_carry_allowed: document.getElementById('adv_negative_carry_allowed').checked,
+                radio_incorrect_deduct: parseFloat(document.getElementById('adv_radio_incorrect_deduct').value) || 0.25,
+                checkbox_incorrect_deduct: parseFloat(document.getElementById('adv_checkbox_incorrect_deduct').value) || 0.50,
+                fill_blank_case_sensitive: document.getElementById('adv_fill_blank_case_sensitive').checked,
+                fill_blank_trim_whitespace: document.getElementById('adv_fill_blank_trim_whitespace').checked
+            };
+
+            fetch('/admin/api/advance_settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Advanced settings saved successfully!');
+                    toggleAdvancedSettings();
+                } else {
+                    alert('Failed to save settings: ' + data.error);
+                }
+            })
+            .catch(err => alert('Network error: ' + err));
+        }
+
+        // --- BULK QUESTION CREATOR MODAL LOGIC (+ ADD MULTIPLE QUESTIONS) ---
+        let bulkCards = [];
+
+        function openBulkCreatorModal() {
+            const modal = document.getElementById('bulkCreatorModal');
+            modal.classList.add('show');
+            if (bulkCards.length === 0) {
+                bulkCards = [createInitialBulkCard(1), createInitialBulkCard(2)];
+                renderBulkCards();
+            }
+        }
+
+        function closeBulkCreatorModal() {
+            document.getElementById('bulkCreatorModal').classList.remove('show');
+        }
+
+        function createInitialBulkCard(id) {
+            return {
+                id: id,
+                type: 'mscq',
+                selectionType: 'single',
+                questionText: '',
+                options: [
+                    { id: 'A', text: '' },
+                    { id: 'B', text: '' },
+                    { id: 'C', text: '' },
+                    { id: 'D', text: '' }
+                ],
+                correctAnswer: 'A',
+                marks: 1,
+                negativeMarks: 0.25,
+                explanation: '',
+                caseSensitive: true,
+                errors: []
+            };
+        }
+
+        function addBulkCard() {
+            const nextId = bulkCards.length + 1;
+            bulkCards.push(createInitialBulkCard(nextId));
+            renderBulkCards();
+            const container = document.getElementById('bulkCardsContainer');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeBulkCard(index) {
+            if (bulkCards.length <= 1) return;
+            bulkCards.splice(index, 1);
+            renderBulkCards();
+        }
+
+        function duplicateBulkCard(index) {
+            const card = JSON.parse(JSON.stringify(bulkCards[index]));
+            card.id = bulkCards.length + 1;
+            bulkCards.push(card);
+            renderBulkCards();
+        }
+
+        function renderBulkCards() {
+            const container = document.getElementById('bulkCardsContainer');
+            let html = '';
+
+            bulkCards.forEach((card, idx) => {
+                const hasError = card.errors && card.errors.length > 0;
+                html += `
+                    <div class="bulk-card-item ${hasError ? 'has-error' : ''}">
+                        <div class="bulk-card-header">
+                            <span style="font-weight:800; font-size:14px; color:var(--primary);">
+                                Card #${idx + 1}
+                            </span>
+                            <div style="display:flex; gap:6px;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="duplicateBulkCard(${idx})" title="Duplicate card">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                                ${bulkCards.length > 1 ? `
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="removeBulkCard(${idx})" title="Remove card" style="color:#ef4444;">
+                                    <i class="fas fa-trash"></i>
+                                </button>` : ''}
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                            <div>
+                                <label class="form-label">Question Type</label>
+                                <select class="form-control" onchange="updateBulkCardType(${idx}, this.value)">
+                                    <option value="mscq_single" ${card.type==='mscq'&&card.selectionType==='single'?'selected':''}>MSCQ — Single Choice</option>
+                                    <option value="mscq_multiple" ${card.type==='mscq'&&card.selectionType==='multiple'?'selected':''}>MSCQ — Multiple Choice</option>
+                                    <option value="mscq_select" ${card.type==='mscq'&&card.selectionType==='select'?'selected':''}>MSCQ — Select Dropdown</option>
+                                    <option value="fill_blank" ${card.type==='fillInTheBlanks'||card.type==='fill_blank'?'selected':''}>Fill in the Blanks</option>
+                                    <option value="true_false" ${card.type==='trueFalse'||card.type==='true_false'?'selected':''}>True / False</option>
+                                </select>
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <div>
+                                    <label class="form-label">+ Marks</label>
+                                    <input type="number" class="form-control" value="${card.marks}" step="0.25" min="0" oninput="bulkCards[${idx}].marks=parseFloat(this.value)||1">
+                                </div>
+                                <div>
+                                    <label class="form-label">- Deduct</label>
+                                    <input type="number" class="form-control" value="${card.negativeMarks}" step="0.05" min="0" oninput="bulkCards[${idx}].negativeMarks=parseFloat(this.value)||0.25">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:12px;">
+                            <label class="form-label">Question Statement *</label>
+                            <input type="text" class="form-control" value="${escapeHtml(card.questionText)}" placeholder="Enter question..." oninput="bulkCards[${idx}].questionText=this.value">
+                        </div>
+
+                        ${renderBulkCardAnswerArea(card, idx)}
+
+                        <div style="margin-top:10px;">
+                            <input type="text" class="form-control" value="${escapeHtml(card.explanation)}" placeholder="Explanation / Solution (optional)..." oninput="bulkCards[${idx}].explanation=this.value" style="font-size:12px;">
+                        </div>
+
+                        ${hasError ? `
+                            <div style="margin-top:8px; font-size:11.5px; color:#ef4444; font-weight:700;">
+                                <i class="fas fa-exclamation-circle"></i> ${card.errors.join(' &bull; ')}
+                            </div>` : ''}
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('bulkStatusSummary').textContent = `${bulkCards.length} question cards in queue`;
+        }
+
+        function renderBulkCardAnswerArea(card, idx) {
+            const isTF = card.type === 'trueFalse' || card.type === 'true_false';
+            const isBlank = card.type === 'fillInTheBlanks' || card.type === 'fill_blank';
+
+            if (isBlank) {
+                return `
+                    <div style="display:grid; grid-template-columns:2fr 1fr; gap:10px;">
+                        <div>
+                            <label class="form-label">Correct Blank Answer *</label>
+                            <input type="text" class="form-control" value="${escapeHtml(card.correctAnswer)}" placeholder="e.g. A" oninput="bulkCards[${idx}].correctAnswer=this.value">
+                        </div>
+                        <div style="display:flex; align-items:center; margin-top:20px;">
+                            <label style="font-size:12px; font-weight:700; cursor:pointer;">
+                                <input type="checkbox" ${card.caseSensitive ? 'checked' : ''} onchange="bulkCards[${idx}].caseSensitive=this.checked">
+                                Case Sensitive
+                            </label>
+                        </div>
+                    </div>`;
+            } else if (isTF) {
+                return `
+                    <div>
+                        <label class="form-label">Correct Answer *</label>
+                        <select class="form-control" onchange="bulkCards[${idx}].correctAnswer=this.value">
+                            <option value="True" ${card.correctAnswer==='True'||card.correctAnswer==='A'?'selected':''}>True</option>
+                            <option value="False" ${card.correctAnswer==='False'||card.correctAnswer==='B'?'selected':''}>False</option>
+                        </select>
+                    </div>`;
+            } else {
+                return `
+                    <div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                            <input type="text" class="form-control" placeholder="A. Option text" value="${escapeHtml(card.options[0]?.text||'')}" oninput="bulkCards[${idx}].options[0]={id:'A',text:this.value}">
+                            <input type="text" class="form-control" placeholder="B. Option text" value="${escapeHtml(card.options[1]?.text||'')}" oninput="bulkCards[${idx}].options[1]={id:'B',text:this.value}">
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                            <input type="text" class="form-control" placeholder="C. Option text" value="${escapeHtml(card.options[2]?.text||'')}" oninput="bulkCards[${idx}].options[2]={id:'C',text:this.value}">
+                            <input type="text" class="form-control" placeholder="D. Option text" value="${escapeHtml(card.options[3]?.text||'')}" oninput="bulkCards[${idx}].options[3]={id:'D',text:this.value}">
+                        </div>
+                        <div>
+                            <label class="form-label">Correct Answer Letter(s) * (e.g. A or A, B)</label>
+                            <input type="text" class="form-control" placeholder="e.g. A" value="${escapeHtml(card.correctAnswer)}" oninput="bulkCards[${idx}].correctAnswer=this.value">
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function updateBulkCardType(idx, val) {
+            if (val === 'mscq_single') {
+                bulkCards[idx].type = 'mscq';
+                bulkCards[idx].selectionType = 'single';
+            } else if (val === 'mscq_multiple') {
+                bulkCards[idx].type = 'mscq';
+                bulkCards[idx].selectionType = 'multiple';
+            } else if (val === 'mscq_select') {
+                bulkCards[idx].type = 'mscq';
+                bulkCards[idx].selectionType = 'select';
+            } else if (val === 'fill_blank') {
+                bulkCards[idx].type = 'fillInTheBlanks';
+                bulkCards[idx].selectionType = 'N/A';
+            } else if (val === 'true_false') {
+                bulkCards[idx].type = 'trueFalse';
+                bulkCards[idx].selectionType = 'N/A';
+            }
+            renderBulkCards();
+        }
+
+        function validateAllBulkCards() {
+            let validCount = 0;
+            bulkCards.forEach(card => {
+                card.errors = [];
+                if (!card.questionText.trim()) card.errors.push('Question statement is missing');
+                if (!card.correctAnswer.trim()) card.errors.push('Correct answer is required');
+                if (card.errors.length === 0) validCount++;
+            });
+            renderBulkCards();
+            document.getElementById('bulkStatusSummary').textContent = `${validCount} of ${bulkCards.length} cards valid`;
+            return validCount === bulkCards.length;
+        }
+
+        function submitBulkQuestions() {
+            const quizId = document.getElementById('bulk_quiz_id').value;
+            if (!quizId) {
+                alert('Please select a Target Assessment Session first.');
+                return;
+            }
+            if (!validateAllBulkCards()) {
+                alert('Please resolve card errors highlighted in red before saving.');
+                return;
+            }
+
+            const btn = document.getElementById('btnSubmitBulk');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Questions...';
+
+            fetch('/admin/api/questions/bulk_create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    quiz_id: quizId,
+                    questions: bulkCards
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save All Questions';
+                if (data.success) {
+                    alert(data.message || 'Questions successfully added!');
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save All Questions';
+                alert('Network error: ' + err);
+            });
+        }
+
+        // --- IMPORT QUESTIONS MODAL LOGIC (DOCX, JSON, CSV) ---
+        function openImportModal() {
+            document.getElementById('importModal').classList.add('show');
+        }
+        function closeImportModal() {
+            document.getElementById('importModal').classList.remove('show');
+        }
+
+        function handleAnalyzeImportFile(e) {
+            e.preventDefault();
+            const fileInput = document.getElementById('import_file');
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select a file to import.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const btn = document.getElementById('btnAnalyzeFile');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing File...';
+
+            fetch('/admin/api/questions/import_preview', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions';
+
+                if (!data.success) {
+                    alert('Import Analysis Failed: ' + data.error);
+                    return;
+                }
+
+                parsedValidQuestionsCache = data.valid_questions || [];
+                renderImportPreview(data);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Analyze & Preview Questions';
+                alert('Network error: ' + err);
+            });
+        }
+
+        function renderImportPreview(data) {
+            const previewArea = document.getElementById('importPreviewArea');
+            const chips = document.getElementById('previewStatChips');
+            const tbody = document.getElementById('importPreviewTbody');
+            const btnConfirm = document.getElementById('btnConfirmImport');
+
+            const summary = data.summary || { total: 0, valid: 0, invalid: 0 };
+            chips.innerHTML = `
+                <span class="stat-chip chip-total">Total: ${summary.total}</span>
+                <span class="stat-chip chip-valid"><i class="fas fa-check"></i> Valid: ${summary.valid}</span>
+                <span class="stat-chip chip-invalid"><i class="fas fa-exclamation"></i> Invalid: ${summary.invalid}</span>`;
+
+            let rowsHtml = '';
+            const allItems = [...(data.valid_questions || []), ...(data.invalid_questions || [])];
+
+            allItems.forEach((q, idx) => {
+                const isValid = q.status === 'valid';
+                rowsHtml += `
+                    <tr class="${isValid ? '' : 'row-invalid'}">
+                        <td>${idx + 1}</td>
+                        <td><span class="badge-type" style="background:#f1f5f9; font-size:10px;">${q.question_type_norm || q.type}</span></td>
+                        <td>${escapeHtml((q.question_text_norm || q.questionText || '').substring(0, 75))}...</td>
+                        <td><strong>${escapeHtml(q.correctAnswer || '-')}</strong></td>
+                        <td>+${q.marks_norm || q.marks || 1} / -${q.negative_marks_norm || q.negativeMarks || 0.25}</td>
+                        <td>
+                            <span class="badge-status ${isValid ? 'status-published' : 'status-draft'}" style="font-size:10px;">
+                                ${isValid ? 'Valid' : 'Errors'}
+                            </span>
+                        </td>
+                        <td style="font-size:11.5px; color:${isValid ? '#15803d' : '#ef4444'};">
+                            ${isValid ? '<i class="fas fa-check"></i> Ready for import' : q.errors.join('; ')}
+                        </td>
+                    </tr>`;
+            });
+
+            tbody.innerHTML = rowsHtml;
+            previewArea.style.display = 'block';
+
+            if (summary.valid > 0) {
+                btnConfirm.style.display = 'inline-flex';
+                btnConfirm.innerHTML = `<i class="fas fa-check-circle"></i> Confirm & Import ${summary.valid} Valid Questions`;
+            } else {
+                btnConfirm.style.display = 'none';
+            }
+        }
+
+        function confirmAndSaveImportedQuestions() {
+            const quizId = document.getElementById('import_quiz_id').value;
+            if (!quizId) {
+                alert('Please select a Target Assessment Session first.');
+                return;
+            }
+            if (parsedValidQuestionsCache.length === 0) {
+                alert('No valid questions found to import.');
+                return;
+            }
+
+            const btn = document.getElementById('btnConfirmImport');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing Questions...';
+
+            fetch('/admin/api/questions/import_confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    quiz_id: quizId,
+                    questions: parsedValidQuestionsCache
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    alert(data.message || 'Successfully imported questions!');
+                    window.location.reload();
+                } else {
+                    alert('Import failed: ' + data.error);
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                alert('Network error: ' + err);
+            });
+        }
+
+        // --- EXPORT QUESTIONS MODAL ---
+        let currentExportFmt = 'docx';
+
+        function openExportModal() {
+            document.getElementById('exportModal').classList.add('show');
+            highlightExportCard(currentExportFmt);
+        }
+
+        function closeExportModal() {
+            document.getElementById('exportModal').classList.remove('show');
+        }
+
+        function highlightExportCard(fmt) {
+            currentExportFmt = fmt;
+            ['docx', 'json', 'csv'].forEach(f => {
+                const capitalF = f.charAt(0).toUpperCase() + f.slice(1);
+                const lbl = document.getElementById(`lblFmt${capitalF}`);
+                if (!lbl) return;
+                if (f === fmt) {
+                    lbl.style.border = '2px solid var(--primary)';
+                    lbl.style.background = 'rgba(79, 70, 229, 0.08)';
+                } else {
+                    lbl.style.border = '1.5px solid var(--border-color)';
+                    lbl.style.background = 'white';
+                }
+            });
+        }
+
+        function triggerExportDownload() {
+            const quizFilter = document.getElementById('export_quiz_filter')?.value || 'all';
+            let url = `/admin/api/questions/export?format=${currentExportFmt}`;
+            if (quizFilter && quizFilter !== 'all') {
+                url += `&quiz_id=${quizFilter}`;
+            }
+            closeExportModal();
+            window.location.href = url;
+        }
+
+        // --- PREVIEW & EDIT REPOSITORY ACTIONS ---
+        function previewQuestionModal(qId) {
+            fetch(`/admin/question_bank/api/get/${qId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Could not fetch question details.');
+                        return;
+                    }
+                    const q = data.question;
+                    const container = document.getElementById('previewModalContent');
+                    container.innerHTML = `
+                        <div style="font-size:16px; font-weight:800; color:var(--text-dark); margin-bottom:12px;">
+                            ${escapeHtml(q.question_text)}
+                        </div>
+                        <div style="font-size:13px; color:var(--text-secondary); margin-bottom:14px; display:flex; gap:12px;">
+                            <span><strong>Type:</strong> ${q.question_type}</span>
+                            <span><strong>Marks:</strong> +${q.marks}</span>
+                            <span><strong>Deduction:</strong> -${q.negative_marks || 0}</span>
+                            <span><strong>Correct:</strong> <strong style="color:var(--primary);">${q.correct_option || '-'}</strong></span>
+                        </div>
+                        <div style="background:#f8fafc; padding:12px; border-radius:10px; font-size:12.5px;">
+                            <strong>Explanation:</strong> ${escapeHtml(q.explanation || 'None provided.')}
+                        </div>`;
+                    document.getElementById('previewModal').classList.add('show');
+                });
+        }
+        function closePreviewModal() {
+            document.getElementById('previewModal').classList.remove('show');
+        }
+
+        function loadQuestionIntoEditor(qId) {
+            fetch(`/admin/question_bank/api/get/${qId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Could not load question.');
+                        return;
+                    }
+                    const q = data.question;
+                    document.getElementById('q_id').value = q.question_id;
+                    document.getElementById('question_text').value = q.question_text || '';
+                    document.getElementById('quiz_id').value = q.quiz_id;
+                    document.getElementById('subject').value = q.subject || q.module || 'General';
+                    document.getElementById('difficulty').value = q.difficulty || 'Medium';
+                    document.getElementById('status').value = q.status || 'Published';
+                    document.getElementById('marks').value = q.marks || 1;
+                    document.getElementById('negative_marks').value = q.negative_marks || 0.25;
+                    document.getElementById('explanation').value = q.explanation || '';
+                    document.getElementById('editorModeLabel').textContent = `Editing Question #${q.question_id}`;
+
+                    const meta = q.meta || {};
+                    if (meta.options && meta.options.length > 0) currentOptions = meta.options;
+                    if (meta.correctAnswer) currentCorrectAnswer = meta.correctAnswer;
+                    if (meta.acceptedAnswers) currentBlankAccepted = meta.acceptedAnswers;
+                    if (typeof meta.caseSensitive !== 'undefined') currentCaseSensitive = !!meta.caseSensitive;
+
+                    let qType = q.question_type;
+                    if (qType === 'MCQ' || qType === 'single_choice') qType = 'mscq_single';
+                    if (qType === 'multiple_select') qType = 'mscq_multiple';
+
+                    switchQuestionType(qType);
+                    scrollToBuilder();
+                });
+        }
+
+        function confirmDeleteQuestion(qId, textSnippet) {
+            document.getElementById('deleteQuestionSnippet').textContent = `Q#${qId}: "${textSnippet}"`;
+            document.getElementById('deleteFormDirect').action = `/admin/question_bank/delete/${qId}`;
+            document.getElementById('deleteConfirmModal').classList.add('show');
+        }
+        function closeDeleteConfirmModal() {
+            document.getElementById('deleteConfirmModal').classList.remove('show');
+        }
+
+        // --- DIRECT SAVE & RESET ---
+        function saveQuestionDirectly() {
+            document.getElementById('questionForm').submit();
+        }
+
+        function resetQuestionEditor() {
+            document.getElementById('questionForm').reset();
+            document.getElementById('q_id').value = '';
+            document.getElementById('editorModeLabel').textContent = 'New Question';
+            document.getElementById('question_text').value = '';
+            currentOptions = [
+                { id: 'A', text: 'Option A' },
+                { id: 'B', text: 'Option B' },
+                { id: 'C', text: 'Option C' },
+                { id: 'D', text: 'Option D' }
+            ];
+            currentCorrectAnswer = 'A';
+            switchQuestionType('mscq_single');
+        }
+
+        // --- TABLE FILTERING & BULK SELECTION ---
+        function filterQuestionsTable() {
+            const query = document.getElementById('tableSearchInput').value.toLowerCase();
+            const typeFilter = document.getElementById('tableTypeFilter').value;
+            const sessionFilter = document.getElementById('tableSessionFilter').value;
+            const statusFilter = document.getElementById('tableStatusFilter').value;
+
+            document.querySelectorAll('.q-row').forEach(row => {
+                const text = row.getAttribute('data-text') || '';
+                const type = row.getAttribute('data-type') || '';
+                const quizId = row.getAttribute('data-quiz-id') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                const matchesQuery = !query || text.includes(query);
+                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice'));
+                const matchesSession = sessionFilter === 'all' || quizId === sessionFilter;
+                const matchesStatus = statusFilter === 'all' || status === statusFilter;
+
+                if (matchesQuery && matchesType && matchesSession && matchesStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleSelectAll(masterCb) {
+            document.querySelectorAll('.q-row-cb').forEach(cb => cb.checked = masterCb.checked);
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            const checked = document.querySelectorAll('.q-row-cb:checked');
+            const bulkBar = document.getElementById('bulkBar');
+            if (checked.length > 0) {
+                bulkBar.classList.add('show');
+                document.getElementById('bulkCountLabel').textContent = `${checked.length} question(s) selected`;
+            } else {
+                bulkBar.classList.remove('show');
+            }
+        }
+
+        function executeBulkStatus(newStatus) {
+            const selectedIds = Array.from(document.querySelectorAll('.q-row-cb:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            fetch('/admin/api/questions/bulk_status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q_ids: selectedIds, status: newStatus })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        function executeBulkDelete() {
+            const selectedIds = Array.from(document.querySelectorAll('.q-row-cb:checked')).map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+            if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} question(s)?`)) return;
+
+            fetch('/admin/question_bank/delete_bulk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q_ids: selectedIds })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        // --- UTILITY FORMATTERS ---
+        function insertFormat(prefix, suffix = '') {
+            const textarea = document.getElementById('question_text');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const sel = text.substring(start, end);
+            textarea.value = text.substring(0, start) + prefix + sel + suffix + text.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+            updateSimulator();
+        }
+
+        function clearStatement() {
+            document.getElementById('question_text').value = '';
+            document.getElementById('question_text').focus();
+            updateSimulator();
+        }
+
+        function scrollToBuilder() {
+            document.getElementById('builderWorkspace').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('question_text').focus();
+        }
+
+        function scrollToSimulator() {
+            document.getElementById('simulatorCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
+</body>
+</html>

@@ -253,14 +253,14 @@
             <a href="/admin/manage_centers" class="nav-item">
                 <i class="fas fa-map-marker-alt"></i> <span>Centers</span>
             </a>
-            <a href="#content" class="nav-item">
+            <a href="/admin/content" class="nav-item">
                 <i class="fas fa-layer-group"></i> <span>Content</span>
             </a>
-            <a href="/admin/ai_generate" class="nav-item">
-                <i class="fas fa-robot"></i> <span>AI Q-Gen</span>
+            <a href="/admin/coding" class="nav-item">
+                <i class="fas fa-code"></i> <span>Coding</span>
             </a>
-            <a href="#question-bank" class="nav-item">
-                <i class="fas fa-database"></i> <span>Q-Bank</span>
+            <a href="/admin/repository" class="nav-item">
+                <i class="fas fa-database"></i> <span>Question Repository</span>
             </a>
             <a href="/admin/study" class="nav-item">
                 <i class="fas fa-book-open"></i> <span>Study Material</span>
@@ -280,6 +280,26 @@
             <a href="#banners" class="nav-item">
                 <i class="fas fa-images"></i> <span>Banners</span>
             </a>
+
+            <!-- Settings Menu -->
+            <div class="nav-dropdown" id="settingsDropdown">
+                <a href="javascript:void(0)" class="nav-item" onclick="toggleSettingsMenu(event)" id="settingsParent" style="cursor: pointer;">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
+                    <i class="fas fa-chevron-down dropdown-arrow" style="margin-left: auto; font-size: 11px; transition: transform 0.3s ease;"></i>
+                </a>
+                <div class="submenu" id="settingsSubmenu" style="display: none; padding-left: 15px; flex-direction: column; gap: 4px; margin-top: 4px;">
+                    <a href="/admin/settings/general" class="nav-item submenu-item" style="font-size: 12px; padding: 8px 12px;">
+                        <i class="fas fa-sliders-h" style="font-size: 12px;"></i> <span>General Settings</span>
+                    </a>
+                    <a href="/admin/settings/assets" class="nav-item submenu-item" style="font-size: 12px; padding: 8px 12px;">
+                        <i class="fas fa-signature" style="font-size: 12px;"></i> <span>Signature & Seal</span>
+                    </a>
+                    <a href="/admin/settings/users" class="nav-item submenu-item" style="font-size: 12px; padding: 8px 12px;">
+                        <i class="fas fa-users-cog" style="font-size: 12px;"></i> <span>User Logins</span>
+                    </a>
+                </div>
+            </div>
+
             <a href="/logout" class="nav-item logout" title="Logout">
                 <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
             </a>
@@ -379,6 +399,18 @@
             }
             // Load initial chart
             document.addEventListener("DOMContentLoaded", updateChart);
+
+            function toggleDashContentMenu() {
+                const m = document.getElementById('dashContentSubMenu');
+                const a = document.getElementById('dashContentArrow');
+                if (m.style.display === 'none' || !m.style.display) {
+                    m.style.display = 'flex';
+                    if (a) a.style.transform = 'rotate(0deg)';
+                } else {
+                    m.style.display = 'none';
+                    if (a) a.style.transform = 'rotate(-90deg)';
+                }
+            }
         </script>
 
         <div class="grid-3" id="content">
@@ -539,6 +571,7 @@
                             {% endfor %}
                         </select>
                     </form>
+                    <a href="/admin/question_bank" class="btn-primary" style="text-decoration:none; padding:5px 12px; font-size:12px; width:auto; margin:0; display:inline-flex; align-items:center; gap:6px;"><i class="fas fa-layer-group"></i> Advanced Questions Bank</a>
                 </div>
 
                 <form action="/admin/delete_bulk_questions" method="POST" id="bulkForm" style="margin:0; margin-left:auto;">
@@ -579,7 +612,10 @@
         <div class="glass-card" id="results">
             <div class="card-header">
                 <span><i class="fas fa-poll"></i> Results & Approvals</span>
-                <a href="/admin/export_results" class="btn-primary" style="text-decoration:none; padding:5px 15px; width:auto; font-size:12px; margin-left:auto;">Export CSV</a>
+                <div style="margin-left:auto; display:flex; gap:8px;">
+                    <a href="/admin/results" class="btn-primary" style="text-decoration:none; padding:5px 12px; width:auto; font-size:12px; background:#4f46e5;"><i class="fas fa-list"></i> View All Results</a>
+                    <a href="/admin/download_results_csv" class="btn-primary" style="text-decoration:none; padding:5px 12px; width:auto; font-size:12px; background:#10b981;"><i class="fas fa-file-csv"></i> Export CSV</a>
+                </div>
             </div>
             <div class="table-container" style="max-height:400px; overflow-y:auto;">
                 <table>
@@ -675,6 +711,10 @@
             {% else %}<p>No results yet.</p>{% endif %}
         </div>
 
+        <!-- Footer -->
+        <footer class="app-footer" style="padding: 18px 24px; text-align: center; font-size: 13px; color: var(--text-secondary, #64748b); border-top: 1px solid var(--border-light, #e2e8f0); margin-top: 40px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(10px); border-radius: 12px;">
+            &copy; 2026 QuizMaster. All Rights Reserved. Powered by <a href="https://nexhydigital.in" target="_blank" rel="noopener noreferrer" style="color: var(--primary, #4f46e5); font-weight: 700; text-decoration: none;">Nexhydigital.in</a>
+        </footer>
     </div>
 
     <a href="#" onclick="openModal()" class="fab"><i class="fas fa-user-plus"></i></a>
@@ -870,6 +910,19 @@
                 options += `<option value="${q.quiz_id}">${q.title}</option>`;
             });
             sessionSelect.innerHTML = options;
+        }
+
+        function toggleSettingsMenu(e) {
+            if (e) e.preventDefault();
+            const submenu = document.getElementById('settingsSubmenu');
+            const arrow = document.querySelector('#settingsParent .dropdown-arrow');
+            if (submenu.style.display === 'none' || submenu.style.display === '') {
+                submenu.style.display = 'flex';
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                submenu.style.display = 'none';
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
         }
 
         document.onkeydown = function(e) {

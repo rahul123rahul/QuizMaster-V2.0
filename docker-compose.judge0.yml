@@ -1,0 +1,78 @@
+# ==============================================================================
+# Judge0 CE - High Concurrency Production Cluster (500+ Concurrent Users)
+# ==============================================================================
+# Usage:
+#   docker-compose -f docker-compose.judge0.yml up -d
+#
+# Check health:
+#   curl http://localhost:2358/system_info
+# ==============================================================================
+
+version: '3.8'
+
+services:
+  judge0-server:
+    image: judge0/judge0:1.13.1
+    container_name: judge0-server
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    ports:
+      - "2358:2358"
+    environment:
+      - REDIS_HOST=judge0-redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=judge0-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=judge0_password
+      - POSTGRES_DB=judge0
+    privileged: true
+    restart: unless-stopped
+    depends_on:
+      - judge0-redis
+      - judge0-db
+
+  judge0-workers:
+    image: judge0/judge0:1.13.1
+    container_name: judge0-workers
+    command: ["./scripts/workers"]
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      - REDIS_HOST=judge0-redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=judge0-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=judge0_password
+      - POSTGRES_DB=judge0
+      # 32 parallel sandbox workers handle up to ~1,500-2,000 runs/minute smoothly
+      - NUMBER_OF_WORKERS=32
+    privileged: true
+    restart: unless-stopped
+    depends_on:
+      - judge0-redis
+      - judge0-db
+
+  judge0-db:
+    image: postgres:13-alpine
+    container_name: judge0-db
+    environment:
+      - POSTGRES_USER=judge0
+      - POSTGRES_PASSWORD=judge0_password
+      - POSTGRES_DB=judge0
+    volumes:
+      - judge0-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  judge0-redis:
+    image: redis:7-alpine
+    container_name: judge0-redis
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "1gb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - judge0-redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  judge0-db-data:
+  judge0-redis-data:

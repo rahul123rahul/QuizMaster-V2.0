@@ -2,6 +2,9 @@ from flask import Flask, request, redirect, session, render_template, jsonify, f
 from datetime import timedelta, datetime
 import os
 import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import random
 import csv
 import io
@@ -15,17 +18,22 @@ from database import get_db_connection
 from certificate_generator import generate_certificate_pdf
 from utils import *
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-change-me')
 
+# Production Secret Key Handling
+flask_secret = os.getenv('FLASK_SECRET_KEY')
+if not flask_secret or flask_secret in ('change-me', 'dev-secret-change-me'):
+    flask_secret = os.getenv('FLASK_SECRET_KEY', 'qm-prod-' + secrets.token_hex(24))
+app.secret_key = flask_secret
+
+is_dev = os.getenv('FLASK_DEBUG', '0') == '1'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', '0') == '1'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.jinja_env.auto_reload = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['TEMPLATES_AUTO_RELOAD'] = is_dev
+app.jinja_env.auto_reload = is_dev
 
 # Blueprint Registration
 from routes.auth import auth_bp
@@ -35,6 +43,7 @@ from routes.coordinator import coordinator_bp
 from routes.quiz import quiz_bp
 from routes.study_materials import study_bp
 from routes.api import api_bp
+from routes.coding import coding_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(home_bp)
@@ -43,8 +52,110 @@ app.register_blueprint(coordinator_bp)
 app.register_blueprint(quiz_bp)
 app.register_blueprint(study_bp)
 app.register_blueprint(api_bp)
+app.register_blueprint(coding_bp)
 
-@app.route('/admin/save_ai_questions', methods=['POST'])
+# Session Security & Single-Device Concurrency Middleware
+from session_manager import validate_user_session, is_inactive, has_active_exam_session, INACTIVITY_TIMEOUT_SECONDS
+
+@app.before_request
+def enforce_session_security():
+    path = request.path
+    # Allow static files, authentication routes, and public endpoints
+    if path.startswith('/static') or path in ['/login', '/logout', '/register', '/api/platform_stats', '/change-password', '/api/auth/change-password', '/api/auth/password-change-required']:
+        return None
+
+    user_id = session.get('user_id')
+
+    # Security rule: Force password change on first login before accessing anything else
+    if user_id and session.get('must_change_password') == 1:
+        if path not in ['/change-password', '/logout', '/api/auth/change-password', '/api/auth/password-change-required']:
+            if path.startswith('/api/') or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html):
+                return jsonify({
+                    'success': False,
+                    'error': 'password_change_required',
+                    'message': 'Password change required before accessing platform features.',
+                    'redirect': '/change-password'
+                }), 403
+            return redirect('/change-password')
+
+    role = session.get('role')
+
+    # Security policy specifically for Student and Coordinator roles
+    if role in ['Student', 'Coordinator'] and user_id:
+        session_token = session.get('session_token')
+
+        is_api = path.startswith('/api/') or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html)
+
+        # 1. Single-Device Concurrency Check:
+        # If user logged in on another device, this session token has been superseded.
+        if session_token and not validate_user_session(user_id, session_token):
+            session.clear()
+            if is_api:
+                return jsonify({
+                    'success': False,
+                    'error': 'concurrent_login',
+                    'message': 'You have been logged out because your account was logged in on another device.',
+                    'redirect': '/login?reason=concurrent_login'
+                }), 401
+            flash('You have been logged out because your account was logged in on another device.', 'warning')
+            return redirect('/login?reason=concurrent_login')
+
+        # 2. Inactivity Timeout Check (25 minutes):
+        # Auto logout after 25 minutes if without an active session
+        last_activity = session.get('last_activity')
+        if last_activity and is_inactive(last_activity):
+            # Check if user has an active examination attempt in progress
+            if not has_active_exam_session(user_id):
+                session.clear()
+                if is_api:
+                    return jsonify({
+                        'success': False,
+                        'error': 'session_timeout',
+                        'message': 'You have been logged out after 25 minutes of inactivity.',
+                        'redirect': '/login?reason=timeout'
+                    }), 401
+                flash('You have been logged out after 25 minutes of inactivity.', 'info')
+                return redirect('/login?reason=timeout')
+
+        # Update last activity timestamp on active request
+        session['last_activity'] = time.time()
+
+    return None
+
+@app.after_request
+def add_security_headers(response):
+    """Applies OWASP standard production security headers to all HTTP responses."""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return response
+
+@app.errorhandler(404)
+def page_not_found(e):
+    if request.path.startswith('/api/') or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html):
+        return jsonify({'success': False, 'error': 'Endpoint not found', 'status': 404}), 404
+    return render_template('error.html', error_title='Page Not Found', error_message='The requested page could not be found.'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    if request.path.startswith('/api/') or (request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html):
+        return jsonify({'success': False, 'error': 'Internal server error', 'status': 500}), 500
+    return render_template('error.html', error_title='Server Error', error_message='An unexpected internal error occurred. Please try again later.'), 500
+
+@app.route('/api/session/heartbeat', methods=['GET', 'POST'])
+def session_heartbeat():
+    role = session.get('role')
+    user_id = session.get('user_id')
+    if not user_id or role not in ['Student', 'Coordinator']:
+        return jsonify({'active': False}), 401
+    session_token = session.get('session_token')
+    if session_token and not validate_user_session(user_id, session_token):
+        session.clear()
+        return jsonify({'active': False, 'error': 'concurrent_login'}), 401
+    session['last_activity'] = time.time()
+    return jsonify({'active': True, 'timeout_seconds': INACTIVITY_TIMEOUT_SECONDS})
+
 def save_ai_questions():
     from flask import request, redirect, flash
     from utils import collect_selected_ai_preview_rows, get_cached_ai_preview_state
@@ -203,130 +314,114 @@ def delete_question(question_id):
 
 @app.route('/upload_docx', methods=['POST'])
 def upload_docx():
-    from flask import request, jsonify
-    from docx import Document
-    
+    from flask import request, jsonify, flash, redirect
+    import json
+    from routes.admin import parse_questions_from_file
+
     if 'file' not in request.files:
-        return jsonify({'success': False, 'error': 'No file uploaded'})
-    
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'success': False, 'error': 'No file uploaded'})
+        flash('No file uploaded', 'error')
+        return redirect('/admin/sessions')
+
     file = request.files['file']
     if file.filename == '':
-        return jsonify({'success': False, 'error': 'No file selected'})
-    
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'success': False, 'error': 'No file selected'})
+        flash('No file selected', 'error')
+        return redirect('/admin/sessions')
+
     quiz_id = request.form.get('quiz_id')
     if not quiz_id:
-        return jsonify({'success': False, 'error': 'No quiz/session selected'})
-    
-    module_name = request.form.get('module_name', 'General')
-    
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'success': False, 'error': 'No assessment session selected'})
+        flash('No assessment session selected', 'error')
+        return redirect('/admin/sessions')
+
+    fallback_module = request.form.get('module_name', '').strip()
+
     try:
-        doc = Document(file)
-        questions_added = 0
-        
+        valid_q, invalid_q = parse_questions_from_file(file, file.filename)
+        if not valid_q:
+            err_msg = 'No valid questions could be extracted from this Word document.'
+            if invalid_q and invalid_q[0].get('errors'):
+                err_msg += ' ' + '; '.join(invalid_q[0]['errors'])
+            if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+                return jsonify({'success': False, 'error': err_msg})
+            flash(err_msg, 'error')
+            return redirect(f'/admin/edit_session/{quiz_id}')
+
+        MODULE_MAP = {
+            'mscq_single': 'Single Choice',
+            'mscq_multiple': 'Multiple Choice',
+            'mscq_select': 'Select Dropdown',
+            'fill_blank': 'Fill in the Blanks',
+            'true_false': 'True / False',
+            'coding': 'Coding'
+        }
+
         conn = get_db_connection()
+        questions_added = 0
         with conn.cursor() as cursor:
-            # Try to parse as table first (columns: Question, Option A, Option B, Option C, Option D, Correct, Marks)
-            tables = doc.tables
-            
-            if tables:
-                # Use first table - skip header row
-                table = tables[0]
-                for i, row in enumerate(table.rows):
-                    if i == 0:  # Skip header
-                        continue
-                    
-                    cells = row.cells
-                    if len(cells) >= 2 and cells[0].text.strip():
-                        question_text = cells[0].text.strip()
-                        option_a = cells[1].text.strip() if len(cells) > 1 else ''
-                        option_b = cells[2].text.strip() if len(cells) > 2 else ''
-                        option_c = cells[3].text.strip() if len(cells) > 3 else ''
-                        option_d = cells[4].text.strip() if len(cells) > 4 else ''
-                        correct = cells[5].text.strip().upper() if len(cells) > 5 else 'A'
-                        marks = int(cells[6].text.strip()) if len(cells) > 6 else 1
-                        
-                        # Validate correct option
-                        if correct not in ['A', 'B', 'C', 'D']:
-                            correct = 'A'
-                        
-                        if question_text:
-                            cursor.execute('''
-                                INSERT INTO Questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, module)
-                                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                            ''', (quiz_id, question_text, option_a, option_b, option_c, option_d, correct, marks, module_name))
-                            questions_added += 1
-            else:
-                # Fallback: parse paragraphs
-                current_question = None
-                current_options = {}
-                current_correct = 'A'
-                current_marks = 1
-                
-                def save_question():
-                    nonlocal questions_added
-                    if current_question and current_options:
-                        cursor.execute('''
-                            INSERT INTO Questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_option, marks, module)
-                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                        ''', (quiz_id, current_question, 
-                              current_options.get('A', ''), current_options.get('B', ''), 
-                              current_options.get('C', ''), current_options.get('D', ''),
-                              current_correct, current_marks, module_name))
-                        questions_added += 1
-                
-                for para in doc.paragraphs:
-                    text = para.text.strip()
-                    if not text:
-                        continue
-                    
-                    is_new_question = False
-                    if text[0].isdigit() and (text[1:].startswith('.') or text[1:].startswith(')')):
-                        is_new_question = True
-                    elif len(text) < 100 and not any(x in text.upper() for x in ['OPTION', 'ANSWER', 'CORRECT']):
-                        is_new_question = True
-                    
-                    if is_new_question and current_question:
-                        save_question()
-                        current_question = None
-                        current_options = {}
-                        current_correct = 'A'
-                    
-                    if not current_question:
-                        current_question = text
-                    else:
-                        line = text.strip()
-                        upper_line = line.upper()
-                        
-                        if line.startswith('A)') or line.startswith('A.'):
-                            current_options['A'] = line[2:].strip() if len(line) > 2 else ''
-                        elif line.startswith('B)') or line.startswith('B.'):
-                            current_options['B'] = line[2:].strip() if len(line) > 2 else ''
-                        elif line.startswith('C)') or line.startswith('C.'):
-                            current_options['C'] = line[2:].strip() if len(line) > 2 else ''
-                        elif line.startswith('D)') or line.startswith('D.'):
-                            current_options['D'] = line[2:].strip() if len(line) > 2 else ''
-                        elif 'ANSWER:' in upper_line or 'CORRECT:' in upper_line:
-                            for opt in ['A', 'B', 'C', 'D']:
-                                if opt in upper_line:
-                                    current_correct = opt
-                                    break
-                        elif upper_line.startswith('MARKS:') or upper_line.startswith('MARK:'):
-                            try:
-                                current_marks = int(''.join(filter(str.isdigit, line)))
-                            except:
-                                current_marks = 1
-                
-                if current_question:
-                    save_question()
-            
+            for q in valid_q:
+                q_text = q.get('question_text_norm') or q.get('questionText') or ''
+                q_type = q.get('question_type_norm') or q.get('type') or 'mscq_single'
+                marks = q.get('marks_norm', 1)
+                neg = q.get('negative_marks_norm', 0.25)
+                explanation = q.get('explanation', '')
+                correct_ans = q.get('correctAnswer', '')
+                options = q.get('options', [])
+
+                mod_name = q.get('module_norm') or q.get('module')
+                if not mod_name or mod_name.lower() == 'general':
+                    mod_name = fallback_module or MODULE_MAP.get(q_type, 'General')
+
+                meta = {
+                    'options': options,
+                    'correctAnswer': correct_ans,
+                    'negativeMarks': neg,
+                    'caseSensitive': bool(q.get('caseSensitive', False)),
+                    'acceptedAnswers': q.get('acceptedAnswers') or [correct_ans]
+                }
+
+                opt_a = options[0].get('text', '') if len(options) > 0 else ''
+                opt_b = options[1].get('text', '') if len(options) > 1 else ''
+                opt_c = options[2].get('text', '') if len(options) > 2 else ''
+                opt_d = options[3].get('text', '') if len(options) > 3 else ''
+
+                cursor.execute('''
+                    INSERT INTO Questions (
+                        quiz_id, question_type, question_text,
+                        option_a, option_b, option_c, option_d,
+                        correct_option, marks, module, subject,
+                        difficulty, status, explanation,
+                        negative_marks, metadata_json
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ''', (
+                    quiz_id, q_type, q_text,
+                    opt_a, opt_b, opt_c, opt_d,
+                    correct_ans, marks, mod_name, 'General',
+                    'Medium', 'Published', explanation,
+                    neg, json.dumps(meta)
+                ))
+                questions_added += 1
+
             conn.commit()
         conn.close()
-        
-        return jsonify({'success': True, 'count': questions_added})
-        
+
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'success': True, 'count': questions_added, 'message': f'Successfully imported {questions_added} questions.'})
+        flash(f'Successfully imported {questions_added} questions across modules.', 'success')
+        return redirect(f'/admin/edit_session/{quiz_id}')
+
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)})
+        if request.accept_mimetypes.accept_json and not request.accept_mimetypes.accept_html:
+            return jsonify({'success': False, 'error': str(e)})
+        flash(f'Import error: {str(e)}', 'error')
+        return redirect(f'/admin/edit_session/{quiz_id}')
 
 if __name__ == '__main__':
     debug_mode = os.getenv('FLASK_DEBUG', '0') == '1'
-    app.run(debug=debug_mode, use_reloader=False, port=5000)
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=debug_mode, use_reloader=debug_mode, host=host, port=port)

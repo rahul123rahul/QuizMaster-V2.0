@@ -1,0 +1,6 @@
+id,type,selectionType,questionText,options,correctAnswer,marks,negativeMarks,explanation,caseSensitive
+1,mscq,single,Which language is used to structure web pages?,A. HTML | B. CSS | C. Python | D. SQL,A,1,0.25,HTML is used to structure web pages.,false
+2,mscq,multiple,Which of the following are programming languages?,A. Java | B. Python | C. HTML | D. C++,"A, B, D",2,0.5,"Java, Python, and C++ are programming languages.",false
+3,mscq,select,Select the correct database language.,A. HTML | B. CSS | C. SQL | D. Python,C,1,0.25,SQL is used to query and manage relational databases.,false
+4,fillInTheBlanks,N/A,The first letter of the English alphabet is ____.,,A,1,0.25,A is the first letter of the English alphabet.,true
+5,trueFalse,N/A,HTML is a programming language.,A. True | B. False,B,1,0.25,"HTML is a markup language, not a programming language.",false

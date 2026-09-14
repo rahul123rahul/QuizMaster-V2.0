@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Login Management | QuizMaster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --success-light: #d1fae5;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fee2e2;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.9);
+            --glass-shadow: 0 10px 30px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            background-attachment: fixed;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid var(--glass-border);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex-shrink: 0;
+        }
+
+        .logo { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 12px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.7);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.15);
+        }
+
+        .nav-dropdown { display: flex; flex-direction: column; }
+        .submenu { display: flex; flex-direction: column; gap: 4px; padding-left: 15px; margin-top: 4px; }
+        .submenu .nav-item { font-size: 13px; padding: 8px 12px; }
+
+        .logout { margin-top: auto; color: #ef4444; }
+        .logout:hover { color: #dc2626; background: rgba(254, 226, 226, 0.6); }
+
+        /* --- MAIN CONTENT --- */
+        .main {
+            flex: 1;
+            padding: 35px 40px;
+            overflow-y: auto;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .breadcrumb a { color: var(--primary); text-decoration: none; }
+
+        .page-header { margin-bottom: 25px; }
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header p { color: var(--text-light); font-size: 14px; margin-top: 5px; }
+
+        /* --- TABS NAV --- */
+        .tabs-header {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.4);
+            padding: 6px;
+            border-radius: 16px;
+            width: fit-content;
+            border: 1px solid var(--glass-border);
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            border: none;
+            background: transparent;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-light);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; animation: fadeIn 0.3s ease-out; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- CARDS & FORMS --- */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 26px;
+            box-shadow: var(--glass-shadow);
+            margin-bottom: 25px;
+        }
+
+        .card-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px; }
+        .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .form-group label span.req { color: var(--danger); }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1.5px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 13.5px;
+            color: var(--text-dark);
+            outline: none;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus {
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+        }
+
+        .input-error {
+            border-color: var(--danger) !important;
+            background: #fff5f5 !important;
+        }
+        .field-error-msg {
+            color: var(--danger);
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 4px;
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+
+        .btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #fecaca; }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        .btn-outline { background: white; color: var(--text-dark); border: 1px solid #cbd5e1; }
+        .btn-outline:hover { background: #f8fafc; border-color: var(--primary); color: var(--primary); }
+
+        /* Dynamic Bulk Table / Cards */
+        .bulk-rows-container {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .bulk-user-card {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1.5px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            position: relative;
+            transition: all 0.2s;
+        }
+        .bulk-user-card:hover {
+            background: white;
+            border-color: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        }
+
+        .card-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .row-num-badge {
+            background: var(--primary-light);
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .row-inputs-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1.5fr 1.1fr 1fr 1.2fr 1fr 0.9fr 1.2fr;
+            gap: 8px;
+            align-items: start;
+        }
+
+        @media (max-width: 1200px) {
+            .row-inputs-grid { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        /* CSV Upload Zone */
+        .upload-dropzone {
+            border: 2px dashed #94a3b8;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .upload-dropzone:hover, .upload-dropzone.dragover {
+            border-color: var(--primary);
+            background: rgba(238, 242, 255, 0.8);
+        }
+        .upload-dropzone i { font-size: 42px; color: var(--primary); margin-bottom: 10px; }
+        .upload-dropzone h4 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+        .upload-dropzone p { font-size: 13px; color: var(--text-light); }
+
+        /* Stats Counter Bar */
+        .stats-counter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .counter-badge {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+        }
+        .counter-badge.valid { color: #065f46; border-color: #a7f3d0; background: var(--success-light); }
+        .counter-badge.invalid { color: #991b1b; border-color: #fecaca; background: var(--danger-light); }
+        .counter-badge.dup { color: #92400e; border-color: #fde68a; background: var(--warning-light); }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 12px 14px;
+            color: var(--text-light);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            border-bottom: 1.5px solid rgba(0,0,0,0.06);
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .data-table td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+        }
+        .data-table tr:hover { background: rgba(255, 255, 255, 0.6); }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-active { background: var(--success-light); color: #065f46; }
+        .badge-blocked { background: var(--danger-light); color: #991b1b; }
+        .badge-required { background: var(--warning-light); color: #92400e; }
+        .badge-done { background: #f1f5f9; color: #475569; }
+
+        /* Filter Box */
+        .filter-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        @media (max-width: 900px) {
+            .filter-container { grid-template-columns: 1fr; }
+        }
+
+        .pw-code {
+            font-family: 'JetBrains Mono', monospace;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #4338ca;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo"><i class="fas fa-cube"></i> QuizMaster</div>
+
+        <div class="nav-container">
+            <a href="/admin" class="nav-item">
+                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+            <a href="/admin/sessions" class="nav-item">
+                <i class="fas fa-calendar-alt"></i> <span>Sessions</span>
+            </a>
+            <a href="/admin/manage_centers" class="nav-item">
+                <i class="fas fa-map-marker-alt"></i> <span>Centers</span>
+            </a>
+            <a href="/admin/content" class="nav-item">
+                <i class="fas fa-layer-group"></i> <span>Content</span>
+            </a>
+            <a href="/admin/coding" class="nav-item">
+                <i class="fas fa-code"></i> <span>Coding</span>
+            </a>
+            <a href="/admin/repository" class="nav-item">
+                <i class="fas fa-database"></i> <span>Question Repository</span>
+            </a>
+            <a href="/admin/study" class="nav-item">
+                <i class="fas fa-book-open"></i> <span>Study Material</span>
+            </a>
+            <a href="/admin/results" class="nav-item">
+                <i class="fas fa-poll"></i> <span>Results</span>
+            </a>
+            <a href="/admin/students" class="nav-item">
+                <i class="fas fa-user-graduate"></i> <span>Students</span>
+            </a>
+            <a href="/admin/coordinators" class="nav-item">
+                <i class="fas fa-user-shield"></i> <span>Coords</span>
+            </a>
+            <a href="/admin#cert-tools" class="nav-item">
+                <i class="fas fa-certificate"></i> <span>Certs</span>
+            </a>
+            <a href="/admin#banners" class="nav-item">
+                <i class="fas fa-images"></i> <span>Banners</span>
+            </a>
+
+            <!-- Settings Menu Active -->
+            <div class="nav-dropdown">
+                <a href="javascript:void(0)" class="nav-item active" style="font-weight: 700;">
+                    <i class="fas fa-cog"></i> <span>Settings</span>
+                    <i class="fas fa-chevron-up dropdown-arrow" style="margin-left: auto; font-size: 11px;"></i>
+                </a>
+                <div class="submenu">
+                    <a href="/admin/settings/general" class="nav-item">
+                        <i class="fas fa-sliders-h"></i> <span>General Settings</span>
+                    </a>
+                    <a href="/admin/settings/assets" class="nav-item">
+                        <i class="fas fa-signature"></i> <span>Signature & Seal</span>
+                    </a>
+                    <a href="/admin/settings/users" class="nav-item active" style="color: var(--primary); font-weight: 700;">
+                        <i class="fas fa-users-cog"></i> <span>User Logins</span>
+                    </a>
+                </div>
+            </div>
+
+            <a href="/logout" class="nav-item logout" title="Logout">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        <div class="breadcrumb">
+            <a href="/admin">Admin Dashboard</a>
+            <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+            <a href="/admin/settings/general">Settings</a>
+            <i class="fas fa-chevron-right" style="font-size: 10px;"></i>
+            <span>User Login Management</span>
+        </div>
+
+        <div class="page-header">
+            <h1><i class="fas fa-users-cog" style="color: var(--primary);"></i> User Login Provisioning & Management</h1>
+            <p>Single & bulk account creation matching the official signup schema, CSV import with preview, temporary password controls, and user directory.</p>
+        </div>
+
+        <!-- TABS NAV -->
+        <div class="tabs-header">
+            <button class="tab-btn active" onclick="switchUserTab('manual')">
+                <i class="fas fa-user-plus"></i> Manual Account Creation
+            </button>
+            <button class="tab-btn" onclick="switchUserTab('csv')">
+                <i class="fas fa-file-csv"></i> CSV Bulk Import
+            </button>
+            <button class="tab-btn" onclick="switchUserTab('directory')">
+                <i class="fas fa-address-book"></i> User Directory & Status
+            </button>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- TAB 1: MANUAL ACCOUNT CREATION -->
+        <!-- ============================================================= -->
+        <div id="tab-manual" class="tab-pane active">
+            <!-- Mode Toggle -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button type="button" class="btn btn-outline" id="modeSingleBtn" onclick="toggleManualMode('single')">
+                    <i class="fas fa-user"></i> Single User Account
+                </button>
+                <button type="button" class="btn btn-primary" id="modeBulkBtn" onclick="toggleManualMode('bulk')">
+                    <i class="fas fa-users"></i> Add Multiple Users (Bulk Rows)
+                </button>
+            </div>
+
+            <!-- Single User Form -->
+            <div id="singleUserSection" class="glass-card" style="display: none;">
+                <div class="card-header-bar">
+                    <div class="card-title">
+                        <i class="fas fa-user-plus" style="color: var(--primary);"></i>
+                        <span>Create Single User Account</span>
+                    </div>
+                </div>
+
+                <form id="singleUserForm" onsubmit="handleSingleUserSubmit(event)">
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label>Full Name <span class="req">*</span></label>
+                            <input type="text" id="s_full_name" required placeholder="e.g. John Doe">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address <span class="req">*</span></label>
+                            <input type="email" id="s_email" required placeholder="e.g. john@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Mobile Number <span class="req">*</span></label>
+                            <input type="text" id="s_mobile" required placeholder="10-digit mobile">
+                        </div>
+                    </div>
+
+                    <div class="form-grid-3">
+                        <div class="form-group">
+                            <label>Role <span class="req">*</span></label>
+                            <select id="s_role" onchange="handleSingleRoleChange()">
+                                {% for r in roles %}
+                                <option value="{{ r }}">{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Occupation <span class="req">*</span></label>
+                            <select id="s_occupation">
+                                <option value="Student">Student</option>
+                                <option value="Employee">Employee</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Enrolled Batch / Session</label>
+                            <select id="s_enrolled_session">
+                                <option value="">-- Select Batch --</option>
+                                {% for b in batches %}
+                                <option value="{{ b.batch }}">{{ b.batch }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Student Specific Fields -->
+                    <div id="singleStudentFields">
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label>College Name <span class="req">*</span></label>
+                                <input type="text" id="s_college" placeholder="College of Engineering">
+                            </div>
+                            <div class="form-group">
+                                <label>Department <span class="req">*</span></label>
+                                <select id="s_department">
+                                    <option value="">-- Select Department --</option>
+                                    {% for d in departments %}
+                                    <option value="{{ d }}">{{ d }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid-3">
+                            <div class="form-group">
+                                <label>Roll Number <span class="req">*</span></label>
+                                <input type="text" id="s_roll_number" placeholder="e.g. 22CS101">
+                            </div>
+                            <div class="form-group">
+                                <label>Section</label>
+                                <select id="s_section">
+                                    <option value="">-- Section --</option>
+                                    {% for sec in sections %}
+                                    <option value="{{ sec }}">{{ sec }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Year / Semester</label>
+                                <select id="s_study_year">
+                                    <option value="">-- Select Semester --</option>
+                                    {% for y in years %}
+                                    <option value="{{ y }}">{{ y }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid-2" style="background: rgba(238, 242, 255, 0.6); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                        <div class="form-group">
+                            <label>Temporary Password Policy</label>
+                            <p style="font-size: 13px; color: var(--text-light); margin-top: 4px;">
+                                User will be assigned a secure password and required to change it on their first login.
+                            </p>
+                        </div>
+                        <div class="form-group">
+                            <label>Custom Temporary Password (Leave blank to auto-generate)</label>
+                            <input type="text" id="s_custom_password" placeholder="Leave empty for auto-generated password">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 14px;">
+                        <i class="fas fa-check"></i> Create Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- Bulk Users (Multiple Rows) Section -->
+            <div id="bulkUsersSection" class="glass-card">
+                <div class="card-header-bar">
+                    <div>
+                        <div class="card-title">
+                            <i class="fas fa-users" style="color: var(--primary);"></i>
+                            <span>Add Multiple Users (Batch Entry)</span>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-light); margin-top: 4px;">
+                            Fill in the user records below. In-batch duplicates and invalid fields will be detected automatically.
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-outline" onclick="addBulkRow()">
+                            <i class="fas fa-plus"></i> Add User Row
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="clearAllBulkRows()">
+                            <i class="fas fa-times"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bulk-rows-container" id="bulkRowsContainer">
+                    <!-- Dynamic cards injected via JS -->
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.06);">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--text-dark);" id="bulkStatusSummary">
+                        Total Rows: 0
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" class="btn btn-outline" onclick="validateAllBulkRows()">
+                            <i class="fas fa-check-double"></i> Validate All Rows
+                        </button>
+                        <button type="button" class="btn btn-success" id="saveBulkBtn" onclick="saveAllBulkUsers()">
+                            <i class="fas fa-save"></i> Save All Valid Users
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- TAB 2: CSV BULK IMPORT -->
+        <!-- ============================================================= -->
+        <div id="tab-csv" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="card-title">
+                        <i class="fas fa-file-csv" style="color: var(--primary);"></i>
+                        <span>CSV User Import Workflow</span>
+                    </div>
+
+                    <a href="/admin/api/users/csv-template" class="btn btn-outline">
+                        <i class="fas fa-download"></i> Download Sample CSV Template
+                    </a>
+                </div>
+
+                <p style="font-size: 13.5px; color: var(--text-light); margin-bottom: 20px; line-height: 1.6;">
+                    Upload a UTF-8 encoded CSV file matching the QuizMaster signup schema. Required columns: <code>full_name</code>, <code>email</code>, <code>mobile</code>, <code>role</code>, <code>college</code>, <code>department</code>, <code>roll_number</code>, <code>password</code> (optional - auto-generated if blank).
+                </p>
+
+                <!-- CSV Upload Zone -->
+                <div class="upload-dropzone" id="csvDropzone" onclick="document.getElementById('csvFileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h4>Choose or Drag & Drop CSV File</h4>
+                    <p>Standard UTF-8 CSV &bull; Max 10 MB</p>
+                    <input type="file" id="csvFileInput" accept=".csv" onchange="handleCsvUpload(this)">
+                </div>
+
+                <!-- Preview Box -->
+                <div id="csvPreviewSection" style="display: none;">
+                    <div class="stats-counter-bar">
+                        <div class="counter-badge">
+                            <i class="fas fa-list"></i> Total Rows: <span id="cntTotal">0</span>
+                        </div>
+                        <div class="counter-badge valid">
+                            <i class="fas fa-check-circle"></i> Valid: <span id="cntValid">0</span>
+                        </div>
+                        <div class="counter-badge invalid">
+                            <i class="fas fa-exclamation-triangle"></i> Invalid: <span id="cntInvalid">0</span>
+                        </div>
+                        <div class="counter-badge dup">
+                            <i class="fas fa-copy"></i> Duplicates: <span id="cntDup">0</span>
+                        </div>
+                        <div class="counter-badge valid" style="margin-left: auto;">
+                            <i class="fas fa-user-check"></i> To be Created: <span id="cntToCreate">0</span>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto; max-height: 450px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Row</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Department</th>
+                                    <th>Roll No</th>
+                                    <th>Status</th>
+                                    <th>Details / Error</th>
+                                </tr>
+                            </thead>
+                            <tbody id="csvPreviewBody">
+                                <!-- Injected rows -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                        <button type="button" class="btn btn-outline" id="btnDownloadErrors" style="display: none;" onclick="downloadCsvErrors()">
+                            <i class="fas fa-file-excel"></i> Download Errors CSV
+                        </button>
+                        <button type="button" class="btn btn-success" id="btnConfirmImport" onclick="confirmExecuteImport()">
+                            <i class="fas fa-file-import"></i> Confirm & Import Valid Accounts
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- TAB 3: USER DIRECTORY & STATUS MANAGEMENT -->
+        <!-- ============================================================= -->
+        <div id="tab-directory" class="tab-pane">
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="card-title">
+                        <i class="fas fa-address-book" style="color: var(--primary);"></i>
+                        <span>User Account Directory</span>
+                    </div>
+
+                    <button class="btn btn-outline" onclick="loadUserDirectory(1)">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filter-container">
+                    <input type="text" id="dirSearch" placeholder="Search by name, email, roll no..." oninput="debounceDirectorySearch()">
+                    <select id="dirRole" onchange="loadUserDirectory(1)">
+                        <option value="">All Roles</option>
+                        {% for r in roles %}
+                        <option value="{{ r }}">{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="dirDept" onchange="loadUserDirectory(1)">
+                        <option value="">All Departments</option>
+                        {% for d in departments %}
+                        <option value="{{ d }}">{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                    <select id="dirStatus" onchange="loadUserDirectory(1)">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active Accounts</option>
+                        <option value="blocked">Blocked Accounts</option>
+                    </select>
+                    <select id="dirMustChange" onchange="loadUserDirectory(1)">
+                        <option value="">Password Policy</option>
+                        <option value="1">Pending Password Change</option>
+                        <option value="0">Normal (Changed)</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto; margin-bottom: 20px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email / Mobile</th>
+                                <th>Role</th>
+                                <th>Department & Batch</th>
+                                <th>Roll Number</th>
+                                <th>Status</th>
+                                <th>Temp Password</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="directoryTableBody">
+                            <tr><td colspan="9" style="text-align: center; padding: 30px;">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 13px; color: var(--text-light);" id="paginationInfo">
+                        Showing 0 to 0 of 0 users
+                    </div>
+                    <div style="display: flex; gap: 8px;" id="paginationBtns">
+                        <!-- Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JS LOGIC -->
+    <script>
+        const DEPARTMENTS = {{ departments|tojson }};
+        const BATCHES = {{ batches|tojson }};
+        const SECTIONS = {{ sections|tojson }};
+        const YEARS = {{ years|tojson }};
+        const ROLES = {{ roles|tojson }};
+
+        let bulkRowsData = [];
+        let csvValidatedPreview = [];
+        let csvFailedRows = [];
+
+        function switchUserTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+            if (tabName === 'manual') {
+                document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                document.getElementById('tab-manual').classList.add('active');
+            } else if (tabName === 'csv') {
+                document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                document.getElementById('tab-csv').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                document.getElementById('tab-directory').classList.add('active');
+                loadUserDirectory(1);
+            }
+        }
+
+        function toggleManualMode(mode) {
+            if (mode === 'single') {
+                document.getElementById('singleUserSection').style.display = 'block';
+                document.getElementById('bulkUsersSection').style.display = 'none';
+                document.getElementById('modeSingleBtn').className = 'btn btn-primary';
+                document.getElementById('modeBulkBtn').className = 'btn btn-outline';
+            } else {
+                document.getElementById('singleUserSection').style.display = 'none';
+                document.getElementById('bulkUsersSection').style.display = 'block';
+                document.getElementById('modeSingleBtn').className = 'btn btn-outline';
+                document.getElementById('modeBulkBtn').className = 'btn btn-primary';
+            }
+        }
+
+        // --- SINGLE USER CREATION ---
+        function handleSingleRoleChange() {
+            const role = document.getElementById('s_role').value;
+            const studentFields = document.getElementById('singleStudentFields');
+            if (role === 'Student') {
+                studentFields.style.display = 'block';
+            } else {
+                studentFields.style.display = 'none';
+            }
+        }
+
+        async function handleSingleUserSubmit(e) {
+            e.preventDefault();
+            const data = {
+                full_name: document.getElementById('s_full_name').value.trim(),
+                email: document.getElementById('s_email').value.trim(),
+                mobile: document.getElementById('s_mobile').value.trim(),
+                role: document.getElementById('s_role').value,
+                occupation: document.getElementById('s_occupation').value,
+                enrolled_session: document.getElementById('s_enrolled_session').value,
+                college: document.getElementById('s_college').value.trim(),
+                department: document.getElementById('s_department').value,
+                roll_number: document.getElementById('s_roll_number').value.trim(),
+                section: document.getElementById('s_section').value,
+                study_year: document.getElementById('s_study_year').value,
+                password: document.getElementById('s_custom_password').value.trim()
+            };
+
+            try {
+                const res = await fetch('/admin/api/users/create-single', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Account Created!',
+                        html: `
+                            <p>${result.message}</p>
+                            <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin: 15px 0; font-family: monospace;">
+                                <strong>Temporary Password:</strong> <span id="tempPwCopy">${result.temp_password}</span>
+                            </div>
+                            <button onclick="navigator.clipboard.writeText('${result.temp_password}'); Swal.showValidationMessage('Copied to clipboard!');" class="btn btn-outline" style="font-size: 12px;">
+                                <i class="fas fa-copy"></i> Copy Password
+                            </button>
+                        `
+                    });
+                    document.getElementById('singleUserForm').reset();
+                } else {
+                    let errMsg = result.message || 'Failed to create user.';
+                    if (result.errors) {
+                        errMsg += '<br><br>' + Object.entries(result.errors).map(([k, v]) => `<strong>${k}:</strong> ${v}`).join('<br>');
+                    }
+                    Swal.fire('Validation Failed', errMsg, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        }
+
+        // --- BULK USERS MANUAL UI ---
+        function addBulkRow(initialData = null) {
+            const container = document.getElementById('bulkRowsContainer');
+            const rowId = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+            const d = initialData || {
+                full_name: '', email: '', mobile: '', role: 'Student',
+                enrolled_session: '', department: '', roll_number: '', password: ''
+            };
+
+            const deptOptions = DEPARTMENTS.map(dept => `<option value="${dept}" ${d.department === dept ? 'selected' : ''}>${dept}</option>`).join('');
+            const batchOptions = BATCHES.map(b => `<option value="${b.batch}" ${d.enrolled_session === b.batch ? 'selected' : ''}>${b.batch}</option>`).join('');
+
+            const card = document.createElement('div');
+            card.className = 'bulk-user-card';
+            card.id = rowId;
+            card.innerHTML = `
+                <div class="card-row-header">
+                    <span class="row-num-badge">User Entry</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" class="btn btn-outline" style="padding: 4px 8px; font-size: 11px;" onclick="duplicateBulkRow('${rowId}')" title="Duplicate Row">
+                            <i class="fas fa-copy"></i> Duplicate
+                        </button>
+                        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="removeBulkRow('${rowId}')" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="row-inputs-grid">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" class="b-name" value="${d.full_name}" placeholder="Name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" class="b-email" value="${d.email}" placeholder="email@domain.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile *</label>
+                        <input type="text" class="b-mobile" value="${d.mobile}" placeholder="10-digit" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <select class="b-role">
+                            <option value="Student" ${d.role === 'Student' ? 'selected' : ''}>Student</option>
+                            <option value="Coordinator" ${d.role === 'Coordinator' ? 'selected' : ''}>Coordinator</option>
+                            <option value="Admin" ${d.role === 'Admin' ? 'selected' : ''}>Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="b-dept">
+                            <option value="">-- Dept --</option>
+                            ${deptOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Batch</label>
+                        <select class="b-batch">
+                            <option value="">-- Batch --</option>
+                            ${batchOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Roll No</label>
+                        <input type="text" class="b-roll" value="${d.roll_number}" placeholder="Roll No">
+                    </div>
+                    <div class="form-group">
+                        <label>Temp Password</label>
+                        <input type="text" class="b-pw" value="${d.password}" placeholder="Auto-gen if empty">
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+            updateBulkCount();
+        }
+
+        function removeBulkRow(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) row.remove();
+            updateBulkCount();
+        }
+
+        function duplicateBulkRow(rowId) {
+            const card = document.getElementById(rowId);
+            if (!card) return;
+            const data = {
+                full_name: card.querySelector('.b-name').value,
+                email: '',
+                mobile: card.querySelector('.b-mobile').value,
+                role: card.querySelector('.b-role').value,
+                department: card.querySelector('.b-dept').value,
+                enrolled_session: card.querySelector('.b-batch').value,
+                roll_number: '',
+                password: ''
+            };
+            addBulkRow(data);
+        }
+
+        function clearAllBulkRows() {
+            document.getElementById('bulkRowsContainer').innerHTML = '';
+            addBulkRow();
+            addBulkRow();
+            updateBulkCount();
+        }
+
+        function updateBulkCount() {
+            const count = document.querySelectorAll('.bulk-user-card').length;
+            document.getElementById('bulkStatusSummary').textContent = `Total Rows: ${count}`;
+        }
+
+        function collectBulkRows() {
+            const cards = document.querySelectorAll('.bulk-user-card');
+            const users = [];
+            cards.forEach(card => {
+                users.push({
+                    full_name: card.querySelector('.b-name').value.trim(),
+                    email: card.querySelector('.b-email').value.trim(),
+                    mobile: card.querySelector('.b-mobile').value.trim(),
+                    role: card.querySelector('.b-role').value,
+                    department: card.querySelector('.b-dept').value,
+                    enrolled_session: card.querySelector('.b-batch').value,
+                    roll_number: card.querySelector('.b-roll').value.trim(),
+                    college: 'Main Campus',
+                    password: card.querySelector('.b-pw').value.trim()
+                });
+            });
+            return users;
+        }
+
+        async function validateAllBulkRows() {
+            const users = collectBulkRows();
+            if (users.length === 0) {
+                Swal.fire('Empty', 'Please add at least one user row.', 'warning');
+                return false;
+            }
+
+            // Client-side quick check
+            let errors = 0;
+            const emails = new Set();
+            const cards = document.querySelectorAll('.bulk-user-card');
+
+            cards.forEach((card, idx) => {
+                const u = users[idx];
+                const emailInput = card.querySelector('.b-email');
+                const nameInput = card.querySelector('.b-name');
+
+                let rowErr = false;
+                if (!u.full_name) { nameInput.classList.add('input-error'); rowErr = true; } else { nameInput.classList.remove('input-error'); }
+                if (!u.email || emails.has(u.email)) { emailInput.classList.add('input-error'); rowErr = true; } else { emailInput.classList.remove('input-error'); emails.add(u.email); }
+
+                if (rowErr) errors++;
+            });
+
+            if (errors > 0) {
+                Swal.fire('Validation Issues', `Found errors or duplicate emails in ${errors} row(s). Highlighted in red.`, 'warning');
+                return false;
+            }
+
+            Swal.fire('Valid!', 'All rows pass client-side validation checks.', 'success');
+            return true;
+        }
+
+        async function saveAllBulkUsers() {
+            const users = collectBulkRows();
+            if (users.length === 0) {
+                Swal.fire('No Users', 'Please add user rows first.', 'warning');
+                return;
+            }
+
+            const saveBtn = document.getElementById('saveBulkBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const res = await fetch('/admin/api/users/create-bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ users: users })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Users Created!',
+                        text: data.message
+                    }).then(() => {
+                        clearAllBulkRows();
+                    });
+                } else {
+                    let msg = data.message;
+                    if (data.errors) {
+                        msg += '<br><br>' + data.errors.slice(0, 5).map(e => `Row ${e.row_number}: ${Object.values(e.errors).join(', ')}`).join('<br>');
+                    }
+                    Swal.fire('Batch Save Failed', msg, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save All Valid Users';
+            }
+        }
+
+        // --- CSV IMPORT LOGIC ---
+        async function handleCsvUpload(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            Swal.fire({
+                title: 'Parsing & Validating CSV...',
+                text: 'Validating rows, detecting duplicates, and checking database constraints.',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const res = await fetch('/admin/api/users/validate-csv', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                Swal.close();
+
+                if (data.success) {
+                    csvValidatedPreview = data.preview_data;
+                    document.getElementById('cntTotal').textContent = data.total_rows;
+                    document.getElementById('cntValid').textContent = data.valid_rows;
+                    document.getElementById('cntInvalid').textContent = data.invalid_rows;
+                    document.getElementById('cntDup').textContent = data.duplicate_rows;
+                    document.getElementById('cntToCreate').textContent = data.rows_to_create;
+
+                    const tbody = document.getElementById('csvPreviewBody');
+                    tbody.innerHTML = '';
+
+                    data.preview_data.forEach(r => {
+                        const tr = document.createElement('tr');
+                        const isVal = r.status === 'valid';
+                        tr.innerHTML = `
+                            <td>${r.row_number}</td>
+                            <td><strong>${r.full_name}</strong></td>
+                            <td>${r.email}</td>
+                            <td><span class="badge ${r.role === 'Student' ? 'badge-done' : 'badge-active'}">${r.role}</span></td>
+                            <td>${r.department || 'N/A'}</td>
+                            <td>${r.roll_number || 'N/A'}</td>
+                            <td><span class="badge ${isVal ? 'badge-active' : 'badge-blocked'}">${isVal ? 'Valid' : 'Invalid'}</span></td>
+                            <td style="font-size: 12px; color: ${isVal ? 'var(--success)' : 'var(--danger)'};">${r.status_text}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('csvPreviewSection').style.display = 'block';
+                } else {
+                    Swal.fire('CSV Validation Error', data.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        }
+
+        async function confirmExecuteImport() {
+            if (!csvValidatedPreview || csvValidatedPreview.length === 0) return;
+
+            const res = await Swal.fire({
+                title: 'Confirm Bulk Import?',
+                text: `You are about to import valid user accounts. Accounts will be initialized with temporary passwords requiring first-login password changes.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Import Now',
+                confirmButtonColor: '#10b981'
+            });
+
+            if (!res.isConfirmed) return;
+
+            Swal.fire({
+                title: 'Importing Accounts...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const response = await fetch('/admin/api/users/import-csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ preview_data: csvValidatedPreview })
+                });
+                const result = await response.json();
+                Swal.close();
+
+                if (result.success) {
+                    csvFailedRows = result.failed_rows || [];
+                    if (csvFailedRows.length > 0) {
+                        document.getElementById('btnDownloadErrors').style.display = 'inline-flex';
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Import Completed',
+                        html: `
+                            <p><strong>Created:</strong> ${result.created_count}</p>
+                            <p><strong>Skipped / Failed:</strong> ${result.skipped_count}</p>
+                        `
+                    });
+                } else {
+                    Swal.fire('Import Error', result.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        }
+
+        async function downloadCsvErrors() {
+            if (!csvFailedRows || csvFailedRows.length === 0) return;
+            const res = await fetch('/admin/api/users/export-errors', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ failed_rows: csvFailedRows })
+            });
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'user_import_errors.csv';
+            a.click();
+        }
+
+        // --- DIRECTORY & ACTIONS ---
+        let debounceTimer;
+        function debounceDirectorySearch() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => loadUserDirectory(1), 300);
+        }
+
+        async function loadUserDirectory(page = 1) {
+            const search = document.getElementById('dirSearch').value;
+            const role = document.getElementById('dirRole').value;
+            const dept = document.getElementById('dirDept').value;
+            const status = document.getElementById('dirStatus').value;
+            const mustChange = document.getElementById('dirMustChange').value;
+
+            const url = `/admin/api/users/list?page=${page}&per_page=15&search=${encodeURIComponent(search)}&role=${encodeURIComponent(role)}&department=${encodeURIComponent(dept)}&status=${encodeURIComponent(status)}&must_change_password=${encodeURIComponent(mustChange)}`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const tbody = document.getElementById('directoryTableBody');
+                tbody.innerHTML = '';
+
+                if (!data.users || data.users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 30px; color: var(--text-light);">No user accounts match your filters.</td></tr>';
+                    document.getElementById('paginationInfo').textContent = 'Showing 0 users';
+                    document.getElementById('paginationBtns').innerHTML = '';
+                    return;
+                }
+
+                data.users.forEach(u => {
+                    const tr = document.createElement('tr');
+                    const isBlocked = u.is_blocked === 1;
+                    const mustChangePw = u.must_change_password === 1;
+
+                    tr.innerHTML = `
+                        <td>
+                            <strong>${u.full_name}</strong>
+                            <div style="font-size: 11px; color: var(--text-light);">${u.college || ''}</div>
+                        </td>
+                        <td>
+                            <div>${u.email}</div>
+                            <div style="font-size: 11px; color: var(--text-light);">${u.mobile || ''}</div>
+                        </td>
+                        <td><span class="badge ${u.role === 'Admin' ? 'badge-active' : (u.role === 'Coordinator' ? 'badge-required' : 'badge-done')}">${u.role}</span></td>
+                        <td>
+                            <div>${u.department || 'N/A'}</div>
+                            <small style="color: var(--text-light);">${u.enrolled_session || ''}</small>
+                        </td>
+                        <td>${u.roll_number || 'N/A'}</td>
+                        <td>
+                            <span class="badge ${isBlocked ? 'badge-blocked' : 'badge-active'}">
+                                ${isBlocked ? 'Blocked' : 'Active'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge ${mustChangePw ? 'badge-required' : 'badge-done'}">
+                                ${mustChangePw ? 'Required' : 'Set'}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="font-size: 11px;">${u.created_at_formatted}</div>
+                            <small style="color: var(--text-light);">${u.creator_name ? 'By: ' + u.creator_name : 'Self'}</small>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="btn btn-outline" style="padding: 5px 8px; font-size: 11px;" onclick="toggleUserStatus(${u.user_id}, ${isBlocked ? 0 : 1})" title="${isBlocked ? 'Unblock' : 'Block'}">
+                                    <i class="fas ${isBlocked ? 'fa-unlock' : 'fa-ban'}"></i>
+                                </button>
+                                <button class="btn btn-outline" style="padding: 5px 8px; font-size: 11px;" onclick="resetTempPassword(${u.user_id}, '${u.full_name}')" title="Reset Temp Password">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button class="btn btn-danger" style="padding: 5px 8px; font-size: 11px;" onclick="deleteUser(${u.user_id}, '${u.full_name}')" title="Delete Account">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('paginationInfo').textContent = `Showing page ${data.page} of ${data.pages} (${data.total} total users)`;
+
+                // Pagination buttons
+                const pBtns = document.getElementById('paginationBtns');
+                pBtns.innerHTML = '';
+                if (data.page > 1) {
+                    pBtns.innerHTML += `<button class="btn btn-outline" onclick="loadUserDirectory(${data.page - 1})"><i class="fas fa-chevron-left"></i> Prev</button>`;
+                }
+                if (data.page < data.pages) {
+                    pBtns.innerHTML += `<button class="btn btn-outline" onclick="loadUserDirectory(${data.page + 1})">Next <i class="fas fa-chevron-right"></i></button>`;
+                }
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function toggleUserStatus(userId, newBlockedState) {
+            try {
+                const res = await fetch(`/admin/api/users/${userId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ is_blocked: newBlockedState })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadUserDirectory();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        }
+
+        async function resetTempPassword(userId, userName) {
+            const confirm = await Swal.fire({
+                title: 'Reset Password?',
+                text: `Generate a new temporary password for ${userName}? The user will be required to change it on next login.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Reset'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                const res = await fetch(`/admin/api/users/${userId}/reset-temp-password`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Temporary Password Reset',
+                        html: `
+                            <p>${data.message}</p>
+                            <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin: 15px 0; font-family: monospace;">
+                                <strong>New Temporary Password:</strong> <span>${data.temp_password}</span>
+                            </div>
+                            <button onclick="navigator.clipboard.writeText('${data.temp_password}'); Swal.showValidationMessage('Copied to clipboard!');" class="btn btn-outline" style="font-size: 12px;">
+                                <i class="fas fa-copy"></i> Copy Password
+                            </button>
+                        `
+                    });
+                    loadUserDirectory();
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', err.message, 'error');
+            }
+        }
+
+        function deleteUser(userId, userName) {
+            Swal.fire({
+                title: 'Delete Account?',
+                text: `Are you sure you want to permanently delete user "${userName}"? This cannot be undone.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, Delete'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(`/admin/api/users/${userId}`, { method: 'DELETE' });
+                        const data = await res.json();
+                        if (data.success) {
+                            Swal.fire('Deleted!', data.message, 'success');
+                            loadUserDirectory();
+                        } else {
+                            Swal.fire('Error', data.message, 'error');
+                        }
+                    } catch (err) {
+                        Swal.fire('Error', err.message, 'error');
+                    }
+                }
+            });
+        }
+
+        // Initialize with 2 rows on load
+        window.addEventListener('DOMContentLoaded', () => {
+            addBulkRow();
+            addBulkRow();
+        });
+    </script>
+</body>
+</html>
