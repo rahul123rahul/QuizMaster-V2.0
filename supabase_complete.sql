@@ -86,7 +86,7 @@ CREATE TABLE banners (
 CREATE TABLE announcements (
   id INTEGER PRIMARY KEY,
   message TEXT DEFAULT NULL,
-  is_active BOOLEAN DEFAULT FALSE
+  is_active SMALLINT DEFAULT 0
 );
 
 -- ----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ CREATE TABLE users (
   goal_type VARCHAR(50) DEFAULT NULL,
   team_name VARCHAR(100) DEFAULT NULL,
   team_members TEXT DEFAULT NULL,
-  is_blocked BOOLEAN DEFAULT FALSE,
+  is_blocked SMALLINT DEFAULT 0,
   attendance_present INTEGER DEFAULT 0,
   attendance_total INTEGER DEFAULT 0,
   allotted_center_id INTEGER DEFAULT NULL REFERENCES exam_centers(center_id) ON DELETE SET NULL,
@@ -160,7 +160,7 @@ CREATE TABLE users (
   last_year_update DATE DEFAULT NULL,
   active_session_token VARCHAR(64) DEFAULT NULL,
   last_active_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  must_change_password BOOLEAN DEFAULT FALSE,
+  must_change_password SMALLINT DEFAULT 0,
   temporary_password_created_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_by INTEGER DEFAULT NULL,
@@ -182,7 +182,7 @@ CREATE TABLE official_assets (
   original_file_name VARCHAR(255) NOT NULL,
   mime_type VARCHAR(100) NOT NULL,
   file_size INTEGER NOT NULL,
-  is_active BOOLEAN DEFAULT FALSE,
+  is_active SMALLINT DEFAULT 0,
   uploaded_by INTEGER DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -201,7 +201,7 @@ CREATE TABLE quizzes (
   total_marks INTEGER DEFAULT 0,
   start_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   instructions TEXT DEFAULT NULL,
-  reg_status BOOLEAN DEFAULT TRUE,
+  reg_status SMALLINT DEFAULT 1,
   batch VARCHAR(100) DEFAULT NULL,
   department VARCHAR(255) DEFAULT NULL,
   section VARCHAR(50) DEFAULT NULL,
@@ -288,12 +288,12 @@ CREATE TABLE quiz_attempts (
   quiz_id INTEGER DEFAULT NULL REFERENCES quizzes(quiz_id) ON DELETE SET NULL,
   total_score NUMERIC(10,2) DEFAULT 0.00,
   status VARCHAR(50) DEFAULT 'In-Progress' CHECK (status IN ('In-Progress', 'Completed', 'Terminated')),
-  cheat_detected BOOLEAN DEFAULT FALSE,
-  certificate_approved BOOLEAN DEFAULT FALSE,
+  cheat_detected SMALLINT DEFAULT 0,
+  certificate_approved SMALLINT DEFAULT 0,
   start_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  is_winner BOOLEAN DEFAULT FALSE,
+  is_winner SMALLINT DEFAULT 0,
   quiz_title VARCHAR(255) DEFAULT NULL,
   total_marks NUMERIC(10,2) DEFAULT 100.00,
   batch VARCHAR(100) DEFAULT NULL,
@@ -321,8 +321,8 @@ CREATE TABLE quiz_responses (
   attempt_id INTEGER NOT NULL REFERENCES quiz_attempts(attempt_id) ON DELETE CASCADE,
   question_id INTEGER NOT NULL REFERENCES questions(question_id) ON DELETE CASCADE,
   selected_option TEXT DEFAULT NULL,
-  is_attempted BOOLEAN DEFAULT FALSE,
-  is_flagged BOOLEAN DEFAULT FALSE,
+  is_attempted SMALLINT DEFAULT 0,
+  is_flagged SMALLINT DEFAULT 0,
   CONSTRAINT unique_response UNIQUE (attempt_id, question_id)
 );
 CREATE INDEX idx_quiz_responses_question_id ON quiz_responses(question_id);
@@ -341,8 +341,8 @@ CREATE TABLE studymaterials (
   file_size BIGINT DEFAULT 0,
   tags TEXT DEFAULT NULL,
   batch_assignment TEXT DEFAULT NULL,
-  is_public BOOLEAN DEFAULT FALSE,
-  is_featured BOOLEAN DEFAULT FALSE,
+  is_public SMALLINT DEFAULT 0,
+  is_featured SMALLINT DEFAULT 0,
   difficulty VARCHAR(20) DEFAULT 'intermediate',
   duration_minutes INTEGER DEFAULT 0,
   rating NUMERIC(3,2) DEFAULT 0.00,
@@ -386,7 +386,7 @@ CREATE TABLE studymaterialcomments (
   content TEXT DEFAULT NULL,
   rating INTEGER DEFAULT NULL,
   parent_id INTEGER DEFAULT NULL,
-  is_approved BOOLEAN DEFAULT TRUE,
+  is_approved SMALLINT DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_study_material_comments_material_id ON studymaterialcomments(material_id);
@@ -519,7 +519,7 @@ INSERT INTO "banners" ("id", "image_data", "caption") VALUES
 
 -- Data for announcements (1 rows)
 INSERT INTO "announcements" ("id", "message", "is_active") VALUES
-  (1, 'Welcome to the Quiz Portal', TRUE);
+  (1, 'Welcome to the Quiz Portal', 1);
 
 -- No rows for judge_jobs
 
@@ -529,17 +529,17 @@ INSERT INTO "announcements" ("id", "message", "is_active") VALUES
 
 -- Data for users (4 rows)
 INSERT INTO "users" ("user_id", "full_name", "role", "email", "password_hash", "mobile", "phone_number", "enrolled_session", "selected_session", "occupation", "college", "department", "section", "study_year", "roll_number", "designation", "goal_type", "team_name", "team_members", "is_blocked", "attendance_present", "attendance_total", "allotted_center_id", "center_id", "seat_row", "seat_col", "avatar", "last_year_update", "active_session_token", "last_active_time", "must_change_password", "temporary_password_created_at", "password_changed_at", "created_by", "created_at") VALUES
-  (1, 'System Administrator', 'Admin', 'admin@quiz.com', 'scrypt:32768:8:1$i4UbLWZ2JrRaUgxH$791e46142ace0eb9c7a1cff3fbd90eb6946ed574bb80e9de9cc5548982942d461f182e64a62ef400b4789967a5d77c04bc3614ce9860fbc59a9dcfa55354bb3e', '9876543210', '9876543210', 'Batch-1', NULL, NULL, 'Engineering College', 'CSE', 'B', 'III/I sem', 'REG2026', NULL, NULL, NULL, NULL, FALSE, 18, 20, NULL, NULL, 2, 4, NULL, NULL, NULL, NULL, FALSE, NULL, NULL, NULL, '2026-09-14 21:37:43'),
-  (2, 'rahul', 'Student', 'rahul@gmail.com', 'scrypt:32768:8:1$rmROGrR9s9jdBWaz$a171b4941e7a22a3dc2cdca1833f217b18110148a24086f03b21a869125aa155dd04d70027d988b2e044c1bd3267c757966b0927dbcecf3436d38136f35ef365', '', '', 'Batch-1', NULL, NULL, '', 'CSE- Data Science', 'A', 'IV/I sem', '', NULL, NULL, NULL, NULL, FALSE, 0, 0, 4, 4, 1, 1, NULL, '2026-09-13 00:00:00', '86b72813e339e974f525253eaeeb71ce092641eaf2dd8891', '2026-09-14 22:28:36', FALSE, NULL, NULL, NULL, '2026-09-14 21:37:43'),
-  (4, 'Rahul Lavudya', 'Student', 'rahull@gmail.com', 'scrypt:32768:8:1$XPxGtBamtc6GHnwC$26997a36d2c7a3772abc6382249e623dfda07b816a3ec91ba510272ed83d0504e21f264f1cfcc5a3ca78d254a07b0f225f6ec12494ad8f1c47897090502e4caa', '9603230138', NULL, 'Batch-1', NULL, 'Student', 'avniet', 'CSE- Data Science', 'A', 'IV/I sem', '235U1A6708', NULL, 'Individual', NULL, NULL, FALSE, 0, 0, 4, 4, 1, 2, NULL, NULL, '56909b3ef2e3f8007e68c019b5688450b3ee7f6dac3b1978', '2026-09-14 21:30:24', FALSE, NULL, NULL, NULL, '2026-09-14 21:37:43'),
-  (5, 'sanju', 'Coordinator', 'sanju@gmail.com', 'scrypt:32768:8:1$2VRtpAa9E02ys9Bs$ab074b9a7b04ca395beadf341ffb66b974080bcf92915dcfb2fbd719da3ed8c6a75e4929c2bd581467a211008d4c12e84391ca68d1f0952575383abed4746261', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, FALSE, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, FALSE, NULL, NULL, NULL, '2026-09-14 21:37:43');
+  (1, 'System Administrator', 'Admin', 'admin@quiz.com', 'scrypt:32768:8:1$i4UbLWZ2JrRaUgxH$791e46142ace0eb9c7a1cff3fbd90eb6946ed574bb80e9de9cc5548982942d461f182e64a62ef400b4789967a5d77c04bc3614ce9860fbc59a9dcfa55354bb3e', '9876543210', '9876543210', 'Batch-1', NULL, NULL, 'Engineering College', 'CSE', 'B', 'III/I sem', 'REG2026', NULL, NULL, NULL, NULL, 0, 18, 20, NULL, NULL, 2, 4, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, '2026-09-14 21:37:43'),
+  (2, 'rahul', 'Student', 'rahul@gmail.com', 'scrypt:32768:8:1$rmROGrR9s9jdBWaz$a171b4941e7a22a3dc2cdca1833f217b18110148a24086f03b21a869125aa155dd04d70027d988b2e044c1bd3267c757966b0927dbcecf3436d38136f35ef365', '', '', 'Batch-1', NULL, NULL, '', 'CSE- Data Science', 'A', 'IV/I sem', '', NULL, NULL, NULL, NULL, 0, 0, 0, 4, 4, 1, 1, NULL, '2026-09-13 00:00:00', '86b72813e339e974f525253eaeeb71ce092641eaf2dd8891', '2026-09-14 22:28:36', 0, NULL, NULL, NULL, '2026-09-14 21:37:43'),
+  (4, 'Rahul Lavudya', 'Student', 'rahull@gmail.com', 'scrypt:32768:8:1$XPxGtBamtc6GHnwC$26997a36d2c7a3772abc6382249e623dfda07b816a3ec91ba510272ed83d0504e21f264f1cfcc5a3ca78d254a07b0f225f6ec12494ad8f1c47897090502e4caa', '9603230138', NULL, 'Batch-1', NULL, 'Student', 'avniet', 'CSE- Data Science', 'A', 'IV/I sem', '235U1A6708', NULL, 'Individual', NULL, NULL, 0, 0, 0, 4, 4, 1, 2, NULL, NULL, '56909b3ef2e3f8007e68c019b5688450b3ee7f6dac3b1978', '2026-09-14 21:30:24', 0, NULL, NULL, NULL, '2026-09-14 21:37:43'),
+  (5, 'sanju', 'Coordinator', 'sanju@gmail.com', 'scrypt:32768:8:1$2VRtpAa9E02ys9Bs$ab074b9a7b04ca395beadf341ffb66b974080bcf92915dcfb2fbd719da3ed8c6a75e4929c2bd581467a211008d4c12e84391ca68d1f0952575383abed4746261', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, '2026-09-14 21:37:43');
 
 -- No rows for official_assets
 
 -- Data for quizzes (2 rows)
 INSERT INTO "quizzes" ("quiz_id", "title", "marks", "category", "duration_minutes", "total_marks", "start_time", "instructions", "reg_status", "batch", "department", "section", "year") VALUES
-  (6, 'Demo', NULL, 'Exam', 10, 1, '2026-09-13 18:20:00', NULL, TRUE, 'Batch-1', 'CSE- Data Science', NULL, 'IV/I sem'),
-  (9, 'Coding', NULL, 'Exam', 10, 1, '2026-09-14 21:23:00', NULL, TRUE, 'Batch-1', 'CSE- Data Science', NULL, 'IV/I sem');
+  (6, 'Demo', NULL, 'Exam', 10, 1, '2026-09-13 18:20:00', NULL, 1, 'Batch-1', 'CSE- Data Science', NULL, 'IV/I sem'),
+  (9, 'Coding', NULL, 'Exam', 10, 1, '2026-09-14 21:23:00', NULL, 1, 'Batch-1', 'CSE- Data Science', NULL, 'IV/I sem');
 
 -- No rows for studychapters
 
@@ -560,10 +560,10 @@ INSERT INTO "questions" ("question_id", "quiz_id", "question_text", "correct_opt
 
 -- Data for quiz_attempts (4 rows)
 INSERT INTO "quiz_attempts" ("attempt_id", "user_id", "quiz_id", "total_score", "status", "cheat_detected", "certificate_approved", "start_time", "end_time", "submitted_at", "is_winner", "quiz_title", "total_marks", "batch", "total_questions") VALUES
-  (9, 4, 6, 0.00, 'Terminated', FALSE, FALSE, '2026-09-13 17:40:15', NULL, NULL, FALSE, 'Demo', 100.00, 'Batch-1', 0),
-  (12, 2, 6, 5.00, 'Completed', FALSE, TRUE, '2026-09-13 18:20:04', '2026-09-13 18:23:47', '2026-09-13 18:23:47', FALSE, 'Demo', 100.00, 'Batch-1', 0),
-  (17, 2, 9, 0.00, 'Completed', FALSE, FALSE, '2026-09-14 20:33:33', '2026-09-14 20:43:38', '2026-09-14 20:43:38', FALSE, 'Coding', 10.00, 'Batch-1', 0),
-  (18, 4, 9, 10.00, 'Completed', FALSE, TRUE, '2026-09-14 21:23:17', '2026-09-14 21:29:02', '2026-09-14 21:29:02', FALSE, 'Coding', 10.00, 'Batch-1', 0);
+  (9, 4, 6, 0.00, 'Terminated', 0, 0, '2026-09-13 17:40:15', NULL, NULL, 0, 'Demo', 100.00, 'Batch-1', 0),
+  (12, 2, 6, 5.00, 'Completed', 0, 1, '2026-09-13 18:20:04', '2026-09-13 18:23:47', '2026-09-13 18:23:47', 0, 'Demo', 100.00, 'Batch-1', 0),
+  (17, 2, 9, 0.00, 'Completed', 0, 0, '2026-09-14 20:33:33', '2026-09-14 20:43:38', '2026-09-14 20:43:38', 0, 'Coding', 10.00, 'Batch-1', 0),
+  (18, 4, 9, 10.00, 'Completed', 0, 1, '2026-09-14 21:23:17', '2026-09-14 21:29:02', '2026-09-14 21:29:02', 0, 'Coding', 10.00, 'Batch-1', 0);
 
 -- Data for questionsessionmapping (35 rows)
 INSERT INTO "questionsessionmapping" ("id", "question_id", "quiz_id", "created_at") VALUES
@@ -605,11 +605,11 @@ INSERT INTO "questionsessionmapping" ("id", "question_id", "quiz_id", "created_a
 
 -- Data for quiz_responses (7 rows)
 INSERT INTO "quiz_responses" ("response_id", "attempt_id", "question_id", "selected_option", "is_attempted", "is_flagged") VALUES
-  (13, 12, 137, 'o(log n)', TRUE, FALSE),
-  (21, 12, 135, 'COMPILATIO', TRUE, FALSE),
-  (29, 12, 138, '<a>', TRUE, FALSE),
-  (34, 12, 136, 'STack', TRUE, FALSE),
-  (39, 12, 134, 'a', TRUE, FALSE),
+  (13, 12, 137, 'o(log n)', 1, 0),
+  (21, 12, 135, 'COMPILATIO', 1, 0),
+  (29, 12, 138, '<a>', 1, 0),
+  (34, 12, 136, 'STack', 1, 0),
+  (39, 12, 134, 'a', 1, 0),
   (65, 17, 188, 'import sys
 
 def solve():
@@ -621,7 +621,7 @@ def solve():
     print(a+b)
     
     if __name__==''__main__'':
-        solve()', TRUE, FALSE),
+        solve()', 1, 0),
   (71, 18, 188, 'import sys
 
 def solve():
@@ -633,7 +633,7 @@ def solve():
     print(a+b)
     
 if __name__==''__main__'':
-    solve()', TRUE, FALSE);
+    solve()', 1, 0);
 
 -- No rows for studymaterials
 

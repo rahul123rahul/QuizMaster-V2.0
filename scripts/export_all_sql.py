@@ -71,7 +71,7 @@ def format_pg_val(val, is_bool=False):
     if val is None:
         return 'NULL'
     if is_bool or isinstance(val, bool):
-        return 'TRUE' if val else 'FALSE'
+        return '1' if val else '0'
     if isinstance(val, (int, float, Decimal)):
         return str(val)
     if isinstance(val, (datetime, date)):
@@ -236,7 +236,7 @@ CREATE TABLE banners (
 CREATE TABLE announcements (
   id INTEGER PRIMARY KEY,
   message TEXT DEFAULT NULL,
-  is_active BOOLEAN DEFAULT FALSE
+  is_active SMALLINT DEFAULT 0
 );
 
 -- ----------------------------------------------------------------------------
@@ -299,7 +299,7 @@ CREATE TABLE users (
   goal_type VARCHAR(50) DEFAULT NULL,
   team_name VARCHAR(100) DEFAULT NULL,
   team_members TEXT DEFAULT NULL,
-  is_blocked BOOLEAN DEFAULT FALSE,
+  is_blocked SMALLINT DEFAULT 0,
   attendance_present INTEGER DEFAULT 0,
   attendance_total INTEGER DEFAULT 0,
   allotted_center_id INTEGER DEFAULT NULL REFERENCES exam_centers(center_id) ON DELETE SET NULL,
@@ -310,7 +310,7 @@ CREATE TABLE users (
   last_year_update DATE DEFAULT NULL,
   active_session_token VARCHAR(64) DEFAULT NULL,
   last_active_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  must_change_password BOOLEAN DEFAULT FALSE,
+  must_change_password SMALLINT DEFAULT 0,
   temporary_password_created_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   password_changed_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   created_by INTEGER DEFAULT NULL,
@@ -332,7 +332,7 @@ CREATE TABLE official_assets (
   original_file_name VARCHAR(255) NOT NULL,
   mime_type VARCHAR(100) NOT NULL,
   file_size INTEGER NOT NULL,
-  is_active BOOLEAN DEFAULT FALSE,
+  is_active SMALLINT DEFAULT 0,
   uploaded_by INTEGER DEFAULT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -351,7 +351,7 @@ CREATE TABLE quizzes (
   total_marks INTEGER DEFAULT 0,
   start_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   instructions TEXT DEFAULT NULL,
-  reg_status BOOLEAN DEFAULT TRUE,
+  reg_status SMALLINT DEFAULT 1,
   batch VARCHAR(100) DEFAULT NULL,
   department VARCHAR(255) DEFAULT NULL,
   section VARCHAR(50) DEFAULT NULL,
@@ -438,12 +438,12 @@ CREATE TABLE quiz_attempts (
   quiz_id INTEGER DEFAULT NULL REFERENCES quizzes(quiz_id) ON DELETE SET NULL,
   total_score NUMERIC(10,2) DEFAULT 0.00,
   status VARCHAR(50) DEFAULT 'In-Progress' CHECK (status IN ('In-Progress', 'Completed', 'Terminated')),
-  cheat_detected BOOLEAN DEFAULT FALSE,
-  certificate_approved BOOLEAN DEFAULT FALSE,
+  cheat_detected SMALLINT DEFAULT 0,
+  certificate_approved SMALLINT DEFAULT 0,
   start_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   submitted_at TIMESTAMP WITH TIME ZONE DEFAULT NULL,
-  is_winner BOOLEAN DEFAULT FALSE,
+  is_winner SMALLINT DEFAULT 0,
   quiz_title VARCHAR(255) DEFAULT NULL,
   total_marks NUMERIC(10,2) DEFAULT 100.00,
   batch VARCHAR(100) DEFAULT NULL,
@@ -471,8 +471,8 @@ CREATE TABLE quiz_responses (
   attempt_id INTEGER NOT NULL REFERENCES quiz_attempts(attempt_id) ON DELETE CASCADE,
   question_id INTEGER NOT NULL REFERENCES questions(question_id) ON DELETE CASCADE,
   selected_option TEXT DEFAULT NULL,
-  is_attempted BOOLEAN DEFAULT FALSE,
-  is_flagged BOOLEAN DEFAULT FALSE,
+  is_attempted SMALLINT DEFAULT 0,
+  is_flagged SMALLINT DEFAULT 0,
   CONSTRAINT unique_response UNIQUE (attempt_id, question_id)
 );
 CREATE INDEX idx_quiz_responses_question_id ON quiz_responses(question_id);
@@ -491,8 +491,8 @@ CREATE TABLE studymaterials (
   file_size BIGINT DEFAULT 0,
   tags TEXT DEFAULT NULL,
   batch_assignment TEXT DEFAULT NULL,
-  is_public BOOLEAN DEFAULT FALSE,
-  is_featured BOOLEAN DEFAULT FALSE,
+  is_public SMALLINT DEFAULT 0,
+  is_featured SMALLINT DEFAULT 0,
   difficulty VARCHAR(20) DEFAULT 'intermediate',
   duration_minutes INTEGER DEFAULT 0,
   rating NUMERIC(3,2) DEFAULT 0.00,
@@ -536,7 +536,7 @@ CREATE TABLE studymaterialcomments (
   content TEXT DEFAULT NULL,
   rating INTEGER DEFAULT NULL,
   parent_id INTEGER DEFAULT NULL,
-  is_approved BOOLEAN DEFAULT TRUE,
+  is_approved SMALLINT DEFAULT 1,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_study_material_comments_material_id ON studymaterialcomments(material_id);
