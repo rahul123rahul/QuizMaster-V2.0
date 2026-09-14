@@ -1,9 +1,19 @@
 import os
 import re
 import urllib.parse
+import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
+
+def _sanitize_pg_row(r):
+    if r is None:
+        return None
+    d = dict(r)
+    for k, v in d.items():
+        if isinstance(v, datetime.datetime) and v.tzinfo is not None:
+            d[k] = v.replace(tzinfo=None)
+    return d
 
 # ==============================================================================
 # POSTGRESQL / SUPABASE COMPATIBILITY WRAPPER
@@ -39,15 +49,15 @@ class PostgresCursorWrapper:
 
     def fetchone(self):
         r = self._cur.fetchone()
-        return dict(r) if r is not None else None
+        return _sanitize_pg_row(r)
 
     def fetchall(self):
         rows = self._cur.fetchall()
-        return [dict(r) for r in rows] if rows else []
+        return [_sanitize_pg_row(r) for r in rows] if rows else []
 
     def fetchmany(self, size=None):
         rows = self._cur.fetchmany(size)
-        return [dict(r) for r in rows] if rows else []
+        return [_sanitize_pg_row(r) for r in rows] if rows else []
 
     @property
     def lastrowid(self):
@@ -102,6 +112,44 @@ class PostgresConnectionWrapper:
         self.close()
 
 _LAST_CONNECTION_ERROR = None
+_PG_FUNCS_ENSURED = False
+
+def _ensure_postgres_compatibility_functions(raw_conn):
+    global _PG_FUNCS_ENSURED
+    if _PG_FUNCS_ENSURED:
+        return
+    try:
+        with raw_conn.cursor() as cur:
+            cur.execute("""
+            CREATE OR REPLACE FUNCTION find_in_set(str text, strlist text)
+            RETURNS integer AS $$
+            DECLARE
+                pos integer;
+                arr text[];
+            BEGIN
+                IF str IS NULL OR strlist IS NULL THEN
+                    RETURN 0;
+                END IF;
+                arr := string_to_array(strlist, ',');
+                IF arr IS NULL THEN
+                    RETURN 0;
+                END IF;
+                FOR pos IN 1..COALESCE(array_length(arr, 1), 0) LOOP
+                    IF trim(arr[pos]) = trim(str) THEN
+                        RETURN pos;
+                    END IF;
+                END LOOP;
+                RETURN 0;
+            END;
+            $$ LANGUAGE plpgsql IMMUTABLE;
+            """)
+            raw_conn.commit()
+            _PG_FUNCS_ENSURED = True
+    except Exception:
+        try:
+            raw_conn.rollback()
+        except Exception:
+            pass
 
 def is_postgres_configured():
     """Detects whether PostgreSQL / Supabase credentials are provided."""
@@ -193,6 +241,7 @@ def _get_postgres_connection():
                 sslmode='require' if 'supabase.co' in host.lower() else 'prefer',
                 connect_timeout=15
             )
+        _ensure_postgres_compatibility_functions(conn)
         return PostgresConnectionWrapper(conn)
     except Exception as e:
         _LAST_CONNECTION_ERROR = str(e)

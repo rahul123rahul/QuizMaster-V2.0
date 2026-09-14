@@ -173,45 +173,55 @@ def student_dashboard():
                             WHERE batch=%s 
                             AND year=%s
                             AND (
-                                (section IS NOT NULL AND section != '' AND section != 'All' AND FIND_IN_SET(%s, department) > 0 AND section = %s)
+                                (section IS NOT NULL AND section != '' AND section != 'All' AND (FIND_IN_SET(%s, department) > 0 OR department = %s OR department = 'All') AND section = %s)
                                 OR (
                                     (section IS NULL OR section = '' OR section = 'All')
-                                    AND (FIND_IN_SET(%s, department) > 0 OR FIND_IN_SET(CONCAT(%s, ':', %s), department) > 0)
+                                    AND (FIND_IN_SET(%s, department) > 0 OR FIND_IN_SET(CONCAT(%s, ':', %s), department) > 0 OR department = %s OR department = 'All')
                                 )
                             )
                             ORDER BY start_time ASC
-                        ''', (user_info['enrolled_session'], user_info['study_year'], user_info['department'], u_sec, user_info['department'], user_info['department'], u_sec))
+                        ''', (user_info['enrolled_session'], user_info['study_year'], user_info['department'], user_info['department'], u_sec, user_info['department'], user_info['department'], u_sec, user_info['department']))
                     except Exception as e:
-                        if 'Unknown column' in str(e):
-                            cursor.execute('''
-                                SELECT z.*, 
-                                       (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
-                                       (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
-                                FROM Quizzes z 
-                                WHERE batch=%s AND FIND_IN_SET(%s, department) AND year=%s
-                                ORDER BY start_time ASC
-                            ''', (user_info['enrolled_session'], user_info['department'], user_info['study_year']))
-                        else:
-                            raise e
+                        # Resilient fallback across MySQL, MariaDB, and PostgreSQL
+                        cursor.execute('''
+                            SELECT z.*, 
+                                   (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
+                                   (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
+                            FROM Quizzes z 
+                            WHERE batch=%s 
+                            AND year=%s
+                            AND (department = %s OR department LIKE %s OR department = 'All' OR department IS NULL)
+                            ORDER BY start_time ASC
+                        ''', (user_info['enrolled_session'], user_info['study_year'], user_info['department'], f"%{user_info['department']}%"))
                 else:
                     cursor.execute('SELECT * FROM Quizzes WHERE 1=0')
 
                 quizzes = cursor.fetchall()
 
                 for q in quizzes:
-                    if isinstance(q['start_time'], str):
+                    raw_st = q.get('start_time')
+                    if not raw_st:
+                        dt = now_ist
+                    elif isinstance(raw_st, str):
                         try:
-                            dt = datetime.strptime(q['start_time'], '%Y-%m-%d %H:%M:%S')
+                            dt = datetime.strptime(raw_st, '%Y-%m-%d %H:%M:%S')
                         except:
-                            dt = datetime.strptime(q['start_time'].replace('T', ' '), '%Y-%m-%d %H:%M')
+                            try:
+                                dt = datetime.strptime(raw_st.replace('T', ' '), '%Y-%m-%d %H:%M')
+                            except:
+                                dt = now_ist
                     else:
-                        dt = q['start_time']
+                        dt = raw_st
+
+                    if hasattr(dt, 'tzinfo') and dt.tzinfo is not None:
+                        dt = dt.replace(tzinfo=None)
 
                     q['display_time'] = dt.strftime('%d-%b %I:%M %p')
                     diff = (dt - now_ist).total_seconds()
 
+                    duration = q.get('duration_minutes') or 60
                     if diff <= 0:
-                        end = dt + timedelta(minutes=q['duration_minutes'])
+                        end = dt + timedelta(minutes=duration)
                         late_cutoff = dt + timedelta(minutes=10)
 
                         if now_ist > end:
