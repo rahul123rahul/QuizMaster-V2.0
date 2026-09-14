@@ -372,6 +372,15 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>Filter by Session</label>
+                <select name="quiz_id">
+                    <option value="">All Sessions</option>
+                    {% for s in sessions %}
+                        <option value="{{ s.quiz_id }}" {% if current_quiz_id|string == s.quiz_id|string %}selected{% endif %}>{{ s.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Filter by Dept</label>
                 <select name="department">
                     <option value="">All Depts</option>

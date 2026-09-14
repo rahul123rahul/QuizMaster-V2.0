@@ -36,6 +36,14 @@ def _normalize_quiz_question(q, attempt_id=None):
     elif (q.get('module') or '').strip().lower() == 'coding' and not q.get('option_a') and not meta.get('options') and not any(k in combined_type for k in ['blank', 'fill', 'fib', 'single', 'multi', 'select', 'dropdown', 'true', 'false', 'boolean', 'tf']):
         is_coding = True
 
+    # 1b. Check Image MCQ metadata
+    image_url = meta.get('image_url') or q.get('image_url') or ''
+    image_pos = str(meta.get('image_position') or 'above').lower().strip()
+    if image_pos not in ['above', 'below', 'beside']:
+        image_pos = 'above'
+    image_cat = meta.get('image_category') or 'Diagram'
+    is_image_mcq = (clean_type in {'image_mcq', 'image', 'image_based'}) or bool(image_url)
+
     # 2. Determine normalized Question Type (Coding + 5 Quiz Question Types)
     if is_coding:
         norm_type = 'coding'
@@ -43,7 +51,7 @@ def _normalize_quiz_question(q, attempt_id=None):
         norm_type = 'fill_blank'
     elif any(k in combined_type for k in ['true_false', 'truefalse', 'boolean', 'tf', 'true', 'false']):
         norm_type = 'true_false'
-    elif any(k in combined_type for k in ['mscq_multiple', 'multiple', 'multi', 'checkbox']):
+    elif any(k in combined_type for k in ['mscq_multiple', 'multiple', 'multi', 'checkbox']) or (is_image_mcq and meta.get('selectionType') == 'multiple'):
         norm_type = 'mscq_multiple'
     elif any(k in combined_type for k in ['mscq_select', 'dropdown', 'select', 'select_dropdown']):
         norm_type = 'mscq_select'
@@ -77,6 +85,10 @@ def _normalize_quiz_question(q, attempt_id=None):
                 options.append({'key': key, 'text': str(val).strip()})
 
     q['is_coding'] = is_coding
+    q['is_image_mcq'] = is_image_mcq
+    q['image_url'] = image_url
+    q['image_position'] = image_pos
+    q['image_category'] = image_cat
     q['question_type_norm'] = norm_type
     q['meta_data'] = meta
 

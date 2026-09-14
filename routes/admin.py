@@ -325,8 +325,10 @@ def get_filtered_quiz_results(args):
     results = []
     batches = []
     departments = []
+    sessions = []
 
     current_batch = args.get('batch', '').strip()
+    current_quiz_id = args.get('quiz_id', '').strip()
     current_dept = args.get('department', '').strip()
     current_sec = args.get('section', '').strip()
     current_year = args.get('year', '').strip()
@@ -345,6 +347,13 @@ def get_filtered_quiz_results(args):
                 batches = cursor.fetchall()
             except Exception:
                 batches = []
+
+            # Fetch distinct assessment sessions for dropdown
+            try:
+                cursor.execute('SELECT quiz_id, title FROM Quizzes ORDER BY title ASC')
+                sessions = cursor.fetchall()
+            except Exception:
+                sessions = []
 
             # Fetch distinct departments for dropdown
             try:
@@ -389,6 +398,9 @@ def get_filtered_quiz_results(args):
             if current_batch:
                 query += ' AND (q.batch = %s OR a.batch = %s OR u.enrolled_session = %s)'
                 params.extend([current_batch, current_batch, current_batch])
+            if current_quiz_id and current_quiz_id != 'all':
+                query += ' AND a.quiz_id = %s'
+                params.append(current_quiz_id)
             if current_dept:
                 query += ' AND u.department = %s'
                 params.append(current_dept)
@@ -486,8 +498,9 @@ def get_filtered_quiz_results(args):
         'avg_rate': avg_rate
     }
 
-    return results, batches, departments, summary, {
+    return results, batches, departments, sessions, summary, {
         'current_batch': current_batch,
+        'current_quiz_id': current_quiz_id,
         'current_dept': current_dept,
         'current_sec': current_sec,
         'current_year': current_year
@@ -496,13 +509,14 @@ def get_filtered_quiz_results(args):
 @admin_bp.route('/results')
 @require_admin_or_coordinator
 def manage_results():
-    results, batches, departments, summary, current_filters = get_filtered_quiz_results(request.args)
+    results, batches, departments, sessions, summary, current_filters = get_filtered_quiz_results(request.args)
     return render_template(
         'admin_results.html',
         results=results,
         attempts=results,
         batches=batches,
         departments=departments,
+        sessions=sessions,
         summary=summary,
         **current_filters
     )
@@ -511,7 +525,7 @@ def manage_results():
 @admin_bp.route('/export_results')
 @require_admin_or_coordinator
 def download_results_csv():
-    results, _, _, summary, _ = get_filtered_quiz_results(request.args)
+    results, _, _, _, summary, _ = get_filtered_quiz_results(request.args)
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -1167,7 +1181,8 @@ def question_bank():
         'mscq_multiple': 0,
         'mscq_select': 0,
         'fill_blank': 0,
-        'true_false': 0
+        'true_false': 0,
+        'image_mcq': 0
     }
     total_marks = 0
     published_count = 0
@@ -1234,6 +1249,8 @@ def question_bank():
                     base_query += " AND (q.question_type = 'fill_blank' OR q.question_type = 'fillInTheBlanks')"
                 elif category_filter in ['true_false', 'trueFalse']:
                     base_query += " AND (q.question_type = 'true_false' OR q.question_type = 'trueFalse')"
+                elif category_filter in ['image_mcq', 'image', 'image_based', 'diagram']:
+                    base_query += " AND (q.question_type = 'image_mcq' OR q.metadata_json LIKE '%image_url%' OR q.metadata_json LIKE '%image_mcq%')"
                 elif category_filter in ['coding', 'code']:
                     base_query += " AND (q.question_type = 'coding' OR q.module = 'Coding')"
                 else:
@@ -1282,6 +1299,8 @@ def question_bank():
                     category_counts['fill_blank'] += c
                 elif qtype in ['true_false', 'trueFalse']:
                     category_counts['true_false'] += c
+                elif qtype in ['image_mcq', 'image', 'image_based', 'diagram']:
+                    category_counts['image_mcq'] += c
             category_counts['all'] = total_all
 
             # Status counts
@@ -1374,7 +1393,8 @@ def question_repository():
         'mscq_multiple': 0,
         'mscq_select': 0,
         'fill_blank': 0,
-        'true_false': 0
+        'true_false': 0,
+        'image_mcq': 0
     }
     total_marks = 0
     published_count = 0
@@ -1422,6 +1442,8 @@ def question_repository():
                     base_query += " AND (q.question_type = 'fill_blank' OR q.question_type = 'fillInTheBlanks')"
                 elif category_filter == 'true_false':
                     base_query += " AND (q.question_type = 'true_false' OR q.question_type = 'trueFalse')"
+                elif category_filter in ['image_mcq', 'image', 'image_based', 'diagram']:
+                    base_query += " AND (q.question_type = 'image_mcq' OR q.metadata_json LIKE '%image_url%' OR q.metadata_json LIKE '%image_mcq%')"
                 elif category_filter in ['coding', 'code']:
                     base_query += " AND (q.question_type = 'coding' OR q.module = 'Coding')"
 
@@ -1461,6 +1483,8 @@ def question_repository():
                     category_counts['fill_blank'] += cnt
                 elif q_type in ['true_false', 'trueFalse']:
                     category_counts['true_false'] += cnt
+                elif q_type in ['image_mcq', 'image', 'image_based', 'diagram']:
+                    category_counts['image_mcq'] += cnt
 
                 if r.get('status') == 'Published':
                     published_count += cnt
@@ -1552,6 +1576,8 @@ def save_question_bank():
         question_type = 'fill_blank'
     elif raw_type in ['true_false', 'trueFalse']:
         question_type = 'true_false'
+    elif raw_type in ['image_mcq', 'image', 'image_based', 'diagram']:
+        question_type = 'image_mcq'
 
     meta = {}
     opt_a, opt_b, opt_c, opt_d, correct_opt = '', '', '', '', ''
@@ -1644,6 +1670,39 @@ def save_question_bank():
         correct_opt = correct_val
         opt_a = 'True'
         opt_b = 'False'
+
+    # 6. Image MCQs (Diagram, Photograph, Chart, Map, Mathematical, Medical/Scientific)
+    elif question_type == 'image_mcq':
+        image_url = (incoming_meta.get('image_url') or data.get('image_url') or '').strip()
+        image_position = (incoming_meta.get('image_position') or data.get('image_position') or 'above').strip().lower()
+        if image_position not in ['above', 'below', 'beside']:
+            image_position = 'above'
+        image_category = (incoming_meta.get('image_category') or data.get('image_category') or 'Diagram').strip()
+        selection_type = (incoming_meta.get('selectionType') or data.get('selectionType') or 'single').strip().lower()
+
+        options = incoming_meta.get('options') or data.get('options') or [
+            {'id': 'A', 'text': data.get('opt_a', '')},
+            {'id': 'B', 'text': data.get('opt_b', '')},
+            {'id': 'C', 'text': data.get('opt_c', '')},
+            {'id': 'D', 'text': data.get('opt_d', '')}
+        ]
+        correct_opt = incoming_meta.get('correctAnswer') or incoming_meta.get('correct_id') or data.get('correctAnswer') or data.get('correct_opt', 'A')
+        if selection_type == 'multiple' and not correct_opt and options:
+            correct_opt = ', '.join([o.get('id', '') for o in options if o.get('is_correct')])
+
+        meta = {
+            'image_url': image_url,
+            'image_position': image_position,
+            'image_category': image_category,
+            'selectionType': selection_type,
+            'options': options,
+            'correctAnswer': correct_opt,
+            'negativeMarks': negative_marks
+        }
+        if len(options) > 0: opt_a = options[0].get('text', '')
+        if len(options) > 1: opt_b = options[1].get('text', '')
+        if len(options) > 2: opt_c = options[2].get('text', '')
+        if len(options) > 3: opt_d = options[3].get('text', '')
 
     metadata_json_str = json.dumps(meta)
 
@@ -2431,7 +2490,7 @@ def api_get_question(question_id):
         return jsonify({'success': False, 'error': 'Database connection error'}), 500
     try:
         with conn.cursor() as cursor:
-            cursor.execute('SELECT q.*, COALESCE(z.title, "General") as session_name FROM Questions q LEFT JOIN Quizzes z ON q.quiz_id = z.quiz_id WHERE q.question_id=%s', (question_id,))
+            cursor.execute("SELECT q.*, COALESCE(z.title, 'General') as session_name FROM Questions q LEFT JOIN Quizzes z ON q.quiz_id = z.quiz_id WHERE q.question_id=%s", (question_id,))
             q = cursor.fetchone()
             if not q:
                 return jsonify({'success': False, 'error': 'Question not found'}), 404
@@ -2443,6 +2502,39 @@ def api_get_question(question_id):
             return jsonify({'success': True, 'question': q})
     finally:
         conn.close()
+
+@admin_bp.route('/api/questions/upload_media', methods=['POST'])
+@admin_bp.route('/question_bank/upload_media', methods=['POST'])
+@require_admin_or_coordinator
+def upload_question_media():
+    if 'file' not in request.files:
+        return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+    file = request.files['file']
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+    
+    allowed_exts = {'png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'}
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in allowed_exts:
+        return jsonify({'success': False, 'error': f'Unsupported image format .{ext}'}), 400
+    
+    import secrets
+    safe_name = f"qimg_{secrets.token_hex(8)}.{ext}"
+    upload_dir = os.path.join(current_app.root_path, 'static', 'uploads', 'questions')
+    try:
+        os.makedirs(upload_dir, exist_ok=True)
+        target_path = os.path.join(upload_dir, safe_name)
+        file.save(target_path)
+        url = f"/static/uploads/questions/{safe_name}"
+        return jsonify({'success': True, 'url': url, 'filename': safe_name})
+    except Exception as e:
+        import base64
+        file.seek(0)
+        content = file.read()
+        mime = f"image/{'svg+xml' if ext=='svg' else ext}"
+        b64 = base64.b64encode(content).decode('utf-8')
+        data_url = f"data:{mime};base64,{b64}"
+        return jsonify({'success': True, 'url': data_url, 'filename': safe_name, 'is_data_url': True})
 
 @admin_bp.route('/question_bank/duplicate/<int:question_id>', methods=['POST', 'GET'])
 @require_admin_or_coordinator

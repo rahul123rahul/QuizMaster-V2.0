@@ -551,6 +551,59 @@
             border-color: var(--primary);
         }
 
+        /* Image MCQ Configuration Styles */
+        .img-cat-pill {
+            padding: 6px 13px;
+            border-radius: 20px;
+            border: 1px solid #bae6fd;
+            background: white;
+            color: #0369a1;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .img-cat-pill:hover, .img-cat-pill.active {
+            background: #0284c7;
+            color: white;
+            border-color: #0284c7;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+        }
+        .img-pos-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: white;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12.5px;
+        }
+        .img-pos-label:hover {
+            border-color: #0284c7;
+        }
+        .img-pos-label.active {
+            border-color: #0284c7;
+            background: #f0f9ff;
+            color: #0369a1;
+        }
+        .sim-image-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .sim-image-split {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .statement-textarea {
             width: 100%;
             min-height: 95px;
@@ -1523,8 +1576,8 @@
             <div class="stat-badge-card">
                 <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce;"><i class="fas fa-shapes"></i></div>
                 <div>
-                    <div class="stat-val">5</div>
-                    <div class="stat-lbl">Core Question Types</div>
+                    <div class="stat-val">6</div>
+                    <div class="stat-lbl">Question Formats</div>
                 </div>
             </div>
             <div class="stat-badge-card">
@@ -1539,10 +1592,10 @@
         <!-- CLEAN TWO-PANEL WORKSPACE -->
         <div class="builder-workspace-two-panel" id="builderWorkspace">
 
-            <!-- LEFT SIDEBAR: STRICTLY 5 QUESTION TYPES + ADVANCED SETTINGS -->
+            <!-- LEFT SIDEBAR: QUESTION TYPES + ADVANCED SETTINGS -->
             <div class="panel-sidebar-left">
                 <div class="sidebar-section-title">
-                    <span>Question Types (5)</span>
+                    <span>Question Types (6)</span>
                     <i class="fas fa-sliders-h"></i>
                 </div>
 
@@ -1605,6 +1658,18 @@
                             <div class="type-btn-subtitle">Binary truth options</div>
                         </div>
                         <span class="type-btn-count" id="count_true_false">{{ category_counts.get('true_false', 0) }}</span>
+                    </button>
+
+                    <!-- 6. Image MCQs -->
+                    <button class="type-btn" id="typeBtn_image_mcq" onclick="switchQuestionType('image_mcq')">
+                        <div class="type-btn-icon" style="background:#e0f2fe; color:#0284c7;">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="type-btn-info">
+                            <div class="type-btn-title">Image MCQs</div>
+                            <div class="type-btn-subtitle">Diagrams, charts, figures</div>
+                        </div>
+                        <span class="type-btn-count" id="count_image_mcq">{{ category_counts.get('image_mcq', 0) }}</span>
                     </button>
                 </div>
 
@@ -1727,6 +1792,84 @@
                             </div>
                         </div>
 
+                        <!-- IMAGE MCQ CONFIGURATION CARD (Shown when Image MCQs type is selected) -->
+                        <div id="imageConfigCard" style="display:none; background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:16px; padding:18px; margin-bottom:18px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <label class="form-label" style="margin-bottom:0; color:#0369a1; font-weight:800; font-size:14px;">
+                                    <i class="fas fa-image"></i> Image MCQ Configuration & Media Asset
+                                </label>
+                                <span style="font-size:11px; background:#e0f2fe; color:#0284c7; padding:3px 10px; border-radius:20px; font-weight:700;">
+                                    Visual Question
+                                </span>
+                            </div>
+
+                            <!-- Category Pills -->
+                            <div style="margin-bottom:14px;">
+                                <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Image Category / Visual Type:</label>
+                                <div style="display:flex; flex-wrap:wrap; gap:8px;" id="imageCategoryPills">
+                                    <button type="button" class="img-cat-pill active" data-cat="Diagram" onclick="selectImageCategory('Diagram')"><i class="fas fa-project-diagram"></i> Diagram</button>
+                                    <button type="button" class="img-cat-pill" data-cat="Photograph" onclick="selectImageCategory('Photograph')"><i class="fas fa-camera"></i> Photograph</button>
+                                    <button type="button" class="img-cat-pill" data-cat="Chart" onclick="selectImageCategory('Chart')"><i class="fas fa-chart-pie"></i> Chart / Graph</button>
+                                    <button type="button" class="img-cat-pill" data-cat="Map" onclick="selectImageCategory('Map')"><i class="fas fa-map-marked-alt"></i> Map</button>
+                                    <button type="button" class="img-cat-pill" data-cat="Mathematical figure" onclick="selectImageCategory('Mathematical figure')"><i class="fas fa-square-root-alt"></i> Mathematical Figure</button>
+                                    <button type="button" class="img-cat-pill" data-cat="Medical or scientific illustration" onclick="selectImageCategory('Medical or scientific illustration')"><i class="fas fa-heartbeat"></i> Medical / Scientific</button>
+                                </div>
+                                <input type="hidden" name="image_category" id="image_category" value="Diagram">
+                            </div>
+
+                            <!-- Image Upload & URL input -->
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; margin-bottom:14px;">
+                                <!-- Dropzone / File Upload -->
+                                <div>
+                                    <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Upload Image File:</label>
+                                    <div id="imageDropzone" onclick="document.getElementById('imageFileInput').click()" style="border:2px dashed #93c5fd; background:white; border-radius:12px; padding:18px 12px; text-align:center; cursor:pointer; transition:all 0.2s ease;">
+                                        <i class="fas fa-cloud-upload-alt" style="font-size:28px; color:#0284c7; margin-bottom:6px;"></i>
+                                        <div style="font-size:12.5px; font-weight:700; color:#0369a1;">Click or drag to upload image</div>
+                                        <div style="font-size:11px; color:var(--text-muted);">PNG, JPG, SVG, WEBP, GIF (max 8MB)</div>
+                                        <input type="file" id="imageFileInput" accept="image/*" style="display:none;" onchange="handleImageFileUpload(this.files[0])">
+                                    </div>
+                                    <div id="uploadProgress" style="display:none; margin-top:6px; font-size:11.5px; color:#0284c7; font-weight:700;">
+                                        <i class="fas fa-spinner fa-spin"></i> Uploading media...
+                                    </div>
+                                </div>
+
+                                <!-- Direct URL / Or preview -->
+                                <div>
+                                    <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">Or Paste Direct Image URL:</label>
+                                    <div style="display:flex; gap:8px;">
+                                        <input type="url" class="form-control" id="image_url_input" name="image_url" placeholder="https://example.com/diagram.png" oninput="handleImageUrlChange(this.value)">
+                                        <button type="button" class="btn btn-secondary btn-sm" onclick="clearImage()" title="Clear Image"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                    <!-- Image Preview Box -->
+                                    <div id="imagePreviewContainer" style="margin-top:10px; display:none; background:white; border:1px solid #e2e8f0; border-radius:10px; padding:8px; text-align:center;">
+                                        <img id="imagePreviewThumb" src="" alt="Question Preview" style="max-height:110px; max-width:100%; border-radius:6px; object-fit:contain;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Image Position Selector -->
+                            <div>
+                                <label style="font-size:12px; font-weight:700; color:var(--text-secondary); display:block; margin-bottom:6px;">
+                                    <i class="fas fa-align-center"></i> Image Position in Question Layout:
+                                </label>
+                                <input type="hidden" name="image_position" id="image_position" value="above">
+                                <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+                                    <div class="img-pos-label active" id="pos_label_above" onclick="setImagePosition('above')">
+                                        <i class="fas fa-arrow-up" style="font-size:16px; color:#0284c7;"></i>
+                                        <div><strong>Above Question</strong><div style="font-size:10.5px; color:var(--text-muted);">Image rendered at top</div></div>
+                                    </div>
+                                    <div class="img-pos-label" id="pos_label_beside" onclick="setImagePosition('beside')">
+                                        <i class="fas fa-columns" style="font-size:16px; color:#0284c7;"></i>
+                                        <div><strong>Beside Question</strong><div style="font-size:10.5px; color:var(--text-muted);">Split side-by-side</div></div>
+                                    </div>
+                                    <div class="img-pos-label" id="pos_label_below" onclick="setImagePosition('below')">
+                                        <i class="fas fa-arrow-down" style="font-size:16px; color:#0284c7;"></i>
+                                        <div><strong>Below Question</strong><div style="font-size:10.5px; color:var(--text-muted);">Above MCQ options</div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Question Statement Area -->
                         <div style="margin-bottom:18px;">
                             <div class="statement-box-header">
@@ -1809,12 +1952,40 @@
                         </div>
                     </div>
 
-                    <div class="sim-question-display" id="simQuestionText">
-                        Which language is used to structure web pages?
+                    <!-- Simulator Image Above Layout -->
+                    <div id="simImageWrapperAbove" style="display:none; margin-bottom:14px; text-align:center;">
+                        <div style="display:inline-block; position:relative; max-width:100%; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.06); background:#f8fafc;">
+                            <img id="simQuestionImageAbove" src="" style="max-height:240px; max-width:100%; object-fit:contain; display:block;">
+                            <span id="simImageBadgeAbove" style="position:absolute; top:8px; right:8px; background:rgba(15,23,42,0.85); color:white; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px;">Diagram</span>
+                        </div>
                     </div>
 
-                    <div class="sim-interaction-container" id="simInteractionArea">
-                        <!-- Populated by JS for student testing -->
+                    <!-- Simulator Main Grid (Used for beside or regular flow) -->
+                    <div id="simMainGrid">
+                        <div id="simImageWrapperBeside" style="display:none; text-align:center;">
+                            <div style="display:inline-block; position:relative; max-width:100%; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.06); background:#f8fafc;">
+                                <img id="simQuestionImageBeside" src="" style="max-height:260px; max-width:100%; object-fit:contain; display:block;">
+                                <span id="simImageBadgeBeside" style="position:absolute; top:8px; right:8px; background:rgba(15,23,42,0.85); color:white; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px;">Diagram</span>
+                            </div>
+                        </div>
+
+                        <div id="simContentCol">
+                            <div class="sim-question-display" id="simQuestionText">
+                                Which language is used to structure web pages?
+                            </div>
+
+                            <!-- Simulator Image Below Question Layout -->
+                            <div id="simImageWrapperBelow" style="display:none; margin-bottom:14px; text-align:center;">
+                                <div style="display:inline-block; position:relative; max-width:100%; border-radius:12px; overflow:hidden; border:1px solid #cbd5e1; box-shadow:0 4px 12px rgba(0,0,0,0.06); background:#f8fafc;">
+                                    <img id="simQuestionImageBelow" src="" style="max-height:240px; max-width:100%; object-fit:contain; display:block;">
+                                    <span id="simImageBadgeBelow" style="position:absolute; top:8px; right:8px; background:rgba(15,23,42,0.85); color:white; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px;">Diagram</span>
+                                </div>
+                            </div>
+
+                            <div class="sim-interaction-container" id="simInteractionArea">
+                                <!-- Populated by JS for student testing -->
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Simulator status feedback -->
@@ -2086,8 +2257,8 @@
 
     <!-- MAIN JAVASCRIPT LOGIC -->
     <script>
-        // --- 5 CORE QUESTION TYPES STATE ---
-        let currentType = 'mscq_single'; // 'mscq_single', 'mscq_multiple', 'mscq_select', 'fill_blank', 'true_false'
+        // --- 6 QUESTION TYPES STATE ---
+        let currentType = 'mscq_single'; // 'mscq_single', 'mscq_multiple', 'mscq_select', 'fill_blank', 'true_false', 'image_mcq'
 
         // Active question configuration state
         let currentOptions = [
@@ -2100,6 +2271,12 @@
         let currentBlankAccepted = ['A'];
         let currentCaseSensitive = true;
 
+        // Image MCQ specific state
+        let currentImageUrl = '';
+        let currentImagePosition = 'above'; // 'above', 'beside', 'below'
+        let currentImageCategory = 'Diagram';
+        let currentImageSelectionType = 'single'; // 'single' or 'multiple'
+
         // Validated questions cache for file import
         let parsedValidQuestionsCache = [];
 
@@ -2109,7 +2286,8 @@
             'mscq_multiple': { name: 'MSCQ — Multiple Choice', icon: 'fa-check-square', sub: 'Checkboxes (multiple answers)' },
             'mscq_select': { name: 'MSCQ — Select Dropdown', icon: 'fa-caret-square-down', sub: 'Dropdown select (1 correct answer)' },
             'fill_blank': { name: 'Fill in the Blanks', icon: 'fa-pen-nib', sub: 'Case-sensitive blank evaluation' },
-            'true_false': { name: 'True / False', icon: 'fa-toggle-on', sub: 'Binary truth evaluation' }
+            'true_false': { name: 'True / False', icon: 'fa-toggle-on', sub: 'Binary truth evaluation' },
+            'image_mcq': { name: 'Image MCQs', icon: 'fa-image', sub: 'Diagrams, photos, charts, maps' }
         };
 
         // --- INITIALIZATION ---
@@ -2142,7 +2320,13 @@
             const typeInfo = TYPE_MAP[typeKey] || { name: typeKey, icon: 'fa-question' };
             document.getElementById('activeTypePill').innerHTML = `<i class="fas ${typeInfo.icon}"></i> ${typeInfo.name}`;
 
-            // Reset or adjust options if transitioning to true_false or blanks
+            // Show or hide Image MCQ Configuration Card
+            const imgCard = document.getElementById('imageConfigCard');
+            if (imgCard) {
+                imgCard.style.display = (typeKey === 'image_mcq') ? 'block' : 'none';
+            }
+
+            // Reset or adjust options if transitioning to true_false, blanks, or mcq
             if (typeKey === 'true_false') {
                 currentOptions = [
                     { id: 'A', text: 'True' },
@@ -2275,6 +2459,50 @@
                         </label>
                     </div>`;
                 container.innerHTML = html;
+
+            } else if (currentType === 'image_mcq') {
+                title.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+                        <span><i class="fas fa-image" style="color:#0284c7;"></i> MCQ Options (${currentImageSelectionType === 'multiple' ? 'Multiple Choice' : 'Single Choice'})</span>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <span style="font-size:11px; font-weight:700; color:var(--text-secondary); margin-right:4px;">Answer Mode:</span>
+                            <button type="button" class="btn ${currentImageSelectionType==='single' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="padding:3px 10px; font-size:11px;" onclick="setImageSelectionMode('single')">Single Correct</button>
+                            <button type="button" class="btn ${currentImageSelectionType==='multiple' ? 'btn-primary' : 'btn-secondary'} btn-sm" style="padding:3px 10px; font-size:11px;" onclick="setImageSelectionMode('multiple')">Multiple Correct</button>
+                        </div>
+                    </div>`;
+
+                let html = `<div class="options-list-editor" id="optionsListEditor">`;
+                const correctArr = currentImageSelectionType === 'multiple' ? (currentCorrectAnswer ? currentCorrectAnswer.split(',').map(s => s.trim().toUpperCase()) : []) : [];
+
+                currentOptions.forEach((opt) => {
+                    if (currentImageSelectionType === 'single') {
+                        const isChecked = currentCorrectAnswer === opt.id ? 'checked' : '';
+                        const isRowChecked = currentCorrectAnswer === opt.id ? 'is-correct-row' : '';
+                        html += `
+                            <div class="opt-row ${isRowChecked}" id="optRow_${opt.id}">
+                                <input type="radio" name="editor_image_single_correct" value="${opt.id}" ${isChecked} class="opt-selector-input" onchange="setSingleCorrect('${opt.id}')" title="Mark as correct option">
+                                <span class="opt-letter-badge" style="background:#e0f2fe; color:#0284c7;">${opt.id}</span>
+                                <input type="text" class="opt-text-input" value="${escapeHtml(opt.text)}" placeholder="Option text..." oninput="updateOptionText('${opt.id}', this.value)">
+                                ${currentOptions.length > 2 ? `<button type="button" class="opt-remove-btn" onclick="removeOption('${opt.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>`;
+                    } else {
+                        const isChecked = correctArr.includes(opt.id) ? 'checked' : '';
+                        const isRowChecked = correctArr.includes(opt.id) ? 'is-correct-row' : '';
+                        html += `
+                            <div class="opt-row ${isRowChecked}" id="optRow_${opt.id}">
+                                <input type="checkbox" value="${opt.id}" ${isChecked} class="opt-selector-input" onchange="toggleMultipleCorrect('${opt.id}')" title="Check if correct answer">
+                                <span class="opt-letter-badge" style="background:#e0f2fe; color:#0284c7;">${opt.id}</span>
+                                <input type="text" class="opt-text-input" value="${escapeHtml(opt.text)}" placeholder="Option text..." oninput="updateOptionText('${opt.id}', this.value)">
+                                ${currentOptions.length > 2 ? `<button type="button" class="opt-remove-btn" onclick="removeOption('${opt.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                            </div>`;
+                    }
+                });
+                html += `</div>
+                    <div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="addNewOption()"><i class="fas fa-plus"></i> Add Another Option</button>
+                        <span style="font-size:12px; font-weight:700; color:var(--text-secondary);">Correct: <strong style="color:var(--primary);">${currentCorrectAnswer || 'None selected'}</strong></span>
+                    </div>`;
+                container.innerHTML = html;
             }
 
             syncMetadataJson();
@@ -2369,11 +2597,14 @@
             const meta = {
                 options: currentOptions,
                 correctAnswer: currentCorrectAnswer,
-                selectionType: currentType === 'mscq_multiple' ? 'multiple' : (currentType === 'mscq_select' ? 'select' : 'single'),
+                selectionType: currentType === 'image_mcq' ? currentImageSelectionType : (currentType === 'mscq_multiple' ? 'multiple' : (currentType === 'mscq_select' ? 'select' : 'single')),
                 marks: marks,
                 negativeMarks: negMarks,
                 caseSensitive: currentCaseSensitive,
-                acceptedAnswers: currentBlankAccepted
+                acceptedAnswers: currentBlankAccepted,
+                image_url: currentImageUrl,
+                image_position: currentImagePosition,
+                image_category: currentImageCategory
             };
             document.getElementById('metadata_json').value = JSON.stringify(meta);
         }
@@ -2389,9 +2620,44 @@
             const marks = parseFloat(document.getElementById('marks').value) || 1;
             document.getElementById('simTotalMarksDisplay').textContent = marks.toFixed(2);
 
+            // Update Simulator Media
+            const simAbove = document.getElementById('simImageWrapperAbove');
+            const simBelow = document.getElementById('simImageWrapperBelow');
+            const simBeside = document.getElementById('simImageWrapperBeside');
+            const simMainGrid = document.getElementById('simMainGrid');
+
+            if (simAbove) simAbove.style.display = 'none';
+            if (simBelow) simBelow.style.display = 'none';
+            if (simBeside) simBeside.style.display = 'none';
+            if (simMainGrid) simMainGrid.className = '';
+
+            if (currentType === 'image_mcq' && currentImageUrl) {
+                const categoryBadgeText = currentImageCategory || 'Visual Reference';
+                if (currentImagePosition === 'above' && simAbove) {
+                    const img = document.getElementById('simQuestionImageAbove');
+                    const badge = document.getElementById('simImageBadgeAbove');
+                    if (img) img.src = currentImageUrl;
+                    if (badge) badge.textContent = categoryBadgeText;
+                    simAbove.style.display = 'block';
+                } else if (currentImagePosition === 'below' && simBelow) {
+                    const img = document.getElementById('simQuestionImageBelow');
+                    const badge = document.getElementById('simImageBadgeBelow');
+                    if (img) img.src = currentImageUrl;
+                    if (badge) badge.textContent = categoryBadgeText;
+                    simBelow.style.display = 'block';
+                } else if (currentImagePosition === 'beside' && simBeside) {
+                    const img = document.getElementById('simQuestionImageBeside');
+                    const badge = document.getElementById('simImageBadgeBeside');
+                    if (img) img.src = currentImageUrl;
+                    if (badge) badge.textContent = categoryBadgeText;
+                    simBeside.style.display = 'block';
+                    if (simMainGrid) simMainGrid.className = 'sim-image-split';
+                }
+            }
+
             const container = document.getElementById('simInteractionArea');
 
-            if (currentType === 'mscq_single') {
+            if (currentType === 'mscq_single' || (currentType === 'image_mcq' && currentImageSelectionType === 'single')) {
                 let html = '';
                 currentOptions.forEach(opt => {
                     const isSel = simUserSelection === opt.id ? 'selected' : '';
@@ -2403,7 +2669,7 @@
                 });
                 container.innerHTML = html;
 
-            } else if (currentType === 'mscq_multiple') {
+            } else if (currentType === 'mscq_multiple' || (currentType === 'image_mcq' && currentImageSelectionType === 'multiple')) {
                 let html = '';
                 const selArr = Array.isArray(simUserSelection) ? simUserSelection : [];
                 currentOptions.forEach(opt => {
@@ -2490,14 +2756,14 @@
             let isCorrect = false;
             let isUnanswered = false;
 
-            if (currentType === 'mscq_single' || currentType === 'mscq_select') {
+            if (currentType === 'mscq_single' || currentType === 'mscq_select' || (currentType === 'image_mcq' && currentImageSelectionType === 'single')) {
                 if (!simUserSelection) {
                     isUnanswered = true;
                 } else {
                     isCorrect = simUserSelection.toUpperCase() === currentCorrectAnswer.toUpperCase();
                 }
 
-            } else if (currentType === 'mscq_multiple') {
+            } else if (currentType === 'mscq_multiple' || (currentType === 'image_mcq' && currentImageSelectionType === 'multiple')) {
                 const selArr = Array.isArray(simUserSelection) ? simUserSelection : [];
                 if (selArr.length === 0) {
                     isUnanswered = true;
@@ -2571,6 +2837,107 @@
                 document.getElementById('simExplanationText').textContent = explanation;
                 document.getElementById('simExplanationBox').style.display = 'block';
             }
+        }
+
+        // --- IMAGE MCQ ACTION HANDLERS ---
+        function setImageSelectionMode(mode) {
+            currentImageSelectionType = mode;
+            if (mode === 'single') {
+                const first = currentCorrectAnswer.split(',')[0].trim();
+                currentCorrectAnswer = first || (currentOptions[0] ? currentOptions[0].id : 'A');
+            }
+            renderDynamicAnswerEditor();
+            updateSimulator();
+        }
+
+        function selectImageCategory(cat) {
+            currentImageCategory = cat;
+            const hiddenCat = document.getElementById('image_category');
+            if (hiddenCat) hiddenCat.value = cat;
+            document.querySelectorAll('#imageCategoryPills .img-cat-pill').forEach(pill => {
+                pill.classList.toggle('active', pill.getAttribute('data-cat') === cat);
+            });
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function setImagePosition(pos) {
+            currentImagePosition = pos;
+            const hiddenPos = document.getElementById('image_position');
+            if (hiddenPos) hiddenPos.value = pos;
+            ['above', 'beside', 'below'].forEach(p => {
+                const el = document.getElementById(`pos_label_${p}`);
+                if (el) el.classList.toggle('active', p === pos);
+            });
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function handleImageUrlChange(url) {
+            currentImageUrl = (url || '').trim();
+            const prevCont = document.getElementById('imagePreviewContainer');
+            const prevThumb = document.getElementById('imagePreviewThumb');
+            if (currentImageUrl) {
+                if (prevThumb) prevThumb.src = currentImageUrl;
+                if (prevCont) prevCont.style.display = 'block';
+            } else {
+                if (prevThumb) prevThumb.src = '';
+                if (prevCont) prevCont.style.display = 'none';
+            }
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function clearImage() {
+            currentImageUrl = '';
+            const input = document.getElementById('image_url_input');
+            if (input) input.value = '';
+            const prevCont = document.getElementById('imagePreviewContainer');
+            if (prevCont) prevCont.style.display = 'none';
+            const prevThumb = document.getElementById('imagePreviewThumb');
+            if (prevThumb) prevThumb.src = '';
+            syncMetadataJson();
+            updateSimulator();
+        }
+
+        function handleImageFileUpload(file) {
+            if (!file) return;
+
+            // Instant local preview via FileReader
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const input = document.getElementById('image_url_input');
+                if (input) input.value = dataUrl;
+                handleImageUrlChange(dataUrl);
+            };
+            reader.readAsDataURL(file);
+
+            // Upload file to server
+            const progress = document.getElementById('uploadProgress');
+            if (progress) progress.style.display = 'block';
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/admin/api/questions/upload_media', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (progress) progress.style.display = 'none';
+                if (data.success && data.url) {
+                    currentImageUrl = data.url;
+                    const input = document.getElementById('image_url_input');
+                    if (input) input.value = data.url;
+                    handleImageUrlChange(data.url);
+                }
+            })
+            .catch(err => {
+                if (progress) progress.style.display = 'none';
+                console.log('Local preview maintained, upload notice:', err);
+            });
         }
 
         // --- ADVANCED SETTINGS TOGGLE & PERSISTENCE ---
@@ -3082,9 +3449,31 @@
                     if (meta.acceptedAnswers) currentBlankAccepted = meta.acceptedAnswers;
                     if (typeof meta.caseSensitive !== 'undefined') currentCaseSensitive = !!meta.caseSensitive;
 
+                    // Image MCQ attributes
+                    if (meta.image_url || q.image_url) {
+                        currentImageUrl = meta.image_url || q.image_url || '';
+                        currentImagePosition = meta.image_position || 'above';
+                        currentImageCategory = meta.image_category || 'Diagram';
+                        currentImageSelectionType = meta.selectionType || 'single';
+
+                        const imgInput = document.getElementById('image_url_input');
+                        if (imgInput) imgInput.value = currentImageUrl;
+                        selectImageCategory(currentImageCategory);
+                        setImagePosition(currentImagePosition);
+                        if (currentImageUrl) {
+                            const prevCont = document.getElementById('imagePreviewContainer');
+                            const prevThumb = document.getElementById('imagePreviewThumb');
+                            if (prevThumb) prevThumb.src = currentImageUrl;
+                            if (prevCont) prevCont.style.display = 'block';
+                        }
+                    } else {
+                        clearImage();
+                    }
+
                     let qType = q.question_type;
                     if (qType === 'MCQ' || qType === 'single_choice') qType = 'mscq_single';
                     if (qType === 'multiple_select') qType = 'mscq_multiple';
+                    if (qType === 'image_mcq' || qType === 'image' || qType === 'image_based' || qType === 'diagram' || meta.image_url) qType = 'image_mcq';
 
                     switchQuestionType(qType);
                     scrollToBuilder();
@@ -3117,6 +3506,7 @@
                 { id: 'D', text: 'Option D' }
             ];
             currentCorrectAnswer = 'A';
+            clearImage();
             switchQuestionType('mscq_single');
         }
 
@@ -3134,7 +3524,7 @@
                 const status = row.getAttribute('data-status') || '';
 
                 const matchesQuery = !query || text.includes(query);
-                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice'));
+                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice')) || (typeFilter === 'image_mcq' && (type === 'image_mcq' || type === 'image' || type === 'image_based'));
                 const matchesSession = sessionFilter === 'all' || quizId === sessionFilter;
                 const matchesStatus = statusFilter === 'all' || status === statusFilter;
 

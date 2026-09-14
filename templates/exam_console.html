@@ -2246,6 +2246,9 @@
                             <div class="q-header">
                                 <div class="d-flex align-items-center gap-2 flex-wrap">
                                     <span class="badge-module"><i class="fas fa-folder me-1"></i> Module: {{ q.module or 'General' }}</span>
+                                    {% if q.is_image_mcq or q.image_url %}
+                                        <span class="badge-type" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;"><i class="fas fa-image me-1"></i> Image MCQ ({{ q.image_category or 'Diagram' }})</span>
+                                    {% endif %}
                                     {% if q.question_type_norm == 'mscq_single' %}
                                         <span class="badge-type single"><i class="fas fa-dot-circle me-1"></i> Single Choice</span>
                                     {% elif q.question_type_norm == 'mscq_multiple' %}
@@ -2266,10 +2269,48 @@
                                 </div>
                             </div>
 
-                            <!-- Question Statement -->
+                            <!-- Question Statement with Image Positioning -->
                             <div class="q-card-wrapper">
                                 <div class="q-number-pill">Question {{ loop.index }} of {{ questions|length }}</div>
-                                <div class="q-text">{{ q.question_text }}</div>
+                                {% if q.image_url %}
+                                    {% if q.image_position == 'above' %}
+                                        <div class="exam-q-image-box above" style="margin-bottom:16px; text-align:center;">
+                                            <div class="img-meta-tag" style="display:inline-block; font-size:11px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:3px 10px; border-radius:12px; margin-bottom:8px;">
+                                                <i class="fas fa-image"></i> {{ q.image_category or 'Diagram / Illustration' }}
+                                            </div>
+                                            <div>
+                                                <img src="{{ q.image_url }}" alt="Question Figure" style="max-width:100%; max-height:360px; object-fit:contain; border-radius:12px; border:1px solid #cbd5e1; box-shadow:0 4px 14px rgba(0,0,0,0.06); cursor:pointer;" onclick="openExamImageModal('{{ q.image_url }}')">
+                                            </div>
+                                        </div>
+                                        <div class="q-text">{{ q.question_text }}</div>
+
+                                    {% elif q.image_position == 'below' %}
+                                        <div class="q-text" style="margin-bottom:14px;">{{ q.question_text }}</div>
+                                        <div class="exam-q-image-box below" style="text-align:center; margin-bottom:10px;">
+                                            <div class="img-meta-tag" style="display:inline-block; font-size:11px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:3px 10px; border-radius:12px; margin-bottom:8px;">
+                                                <i class="fas fa-image"></i> {{ q.image_category or 'Diagram / Illustration' }}
+                                            </div>
+                                            <div>
+                                                <img src="{{ q.image_url }}" alt="Question Figure" style="max-width:100%; max-height:360px; object-fit:contain; border-radius:12px; border:1px solid #cbd5e1; box-shadow:0 4px 14px rgba(0,0,0,0.06); cursor:pointer;" onclick="openExamImageModal('{{ q.image_url }}')">
+                                            </div>
+                                        </div>
+
+                                    {% elif q.image_position == 'beside' %}
+                                        <div class="exam-q-beside-grid" style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; margin-top:8px;">
+                                            <div class="exam-q-image-box beside" style="flex:1; min-width:260px; text-align:center;">
+                                                <div class="img-meta-tag" style="display:inline-block; font-size:11px; font-weight:700; color:#0284c7; background:#e0f2fe; padding:3px 10px; border-radius:12px; margin-bottom:8px;">
+                                                    <i class="fas fa-image"></i> {{ q.image_category or 'Diagram / Illustration' }}
+                                                </div>
+                                                <div>
+                                                    <img src="{{ q.image_url }}" alt="Question Figure" style="max-width:100%; max-height:360px; object-fit:contain; border-radius:12px; border:1px solid #cbd5e1; box-shadow:0 4px 14px rgba(0,0,0,0.06); cursor:pointer;" onclick="openExamImageModal('{{ q.image_url }}')">
+                                                </div>
+                                            </div>
+                                            <div class="q-text" style="flex:1.2; min-width:260px;">{{ q.question_text }}</div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="q-text">{{ q.question_text }}</div>
+                                {% endif %}
                             </div>
 
                             <!-- TYPE 1: Single Choice (Radio Button) -->
@@ -3634,6 +3675,20 @@
                 console.warn("window.onload initialization error:", e);
             }
         };
+        function openExamImageModal(src) {
+            document.getElementById('examImageModalImg').src = src;
+            document.getElementById('examImageModal').style.display = 'flex';
+        }
+        function closeExamImageModal() {
+            document.getElementById('examImageModal').style.display = 'none';
+        }
     </script>
+    <!-- Lightbox modal for question image preview -->
+    <div id="examImageModal" style="display:none; position:fixed; z-index:99999; inset:0; background:rgba(15,23,42,0.85); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:20px;" onclick="closeExamImageModal()">
+        <div style="position:relative; max-width:90vw; max-height:90vh;" onclick="event.stopPropagation()">
+            <img id="examImageModalImg" src="" style="max-width:100%; max-height:85vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+            <button type="button" onclick="closeExamImageModal()" style="position:absolute; top:-14px; right:-14px; width:34px; height:34px; border-radius:50%; background:#fff; border:none; color:#0f172a; font-size:16px; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.3);"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
 </body>
 </html>

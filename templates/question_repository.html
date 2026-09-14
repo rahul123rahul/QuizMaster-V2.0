@@ -667,7 +667,7 @@
             <div class="stat-badge-card">
                 <div class="stat-icon" style="background:#f3e8ff; color:#7e22ce;"><i class="fas fa-shapes"></i></div>
                 <div>
-                    <div class="stat-val">5</div>
+                    <div class="stat-val">6</div>
                     <div class="stat-lbl">Question Types</div>
                 </div>
             </div>
@@ -704,12 +704,13 @@
                 </div>
 
                 <select id="tableTypeFilter" class="filter-select" onchange="filterQuestionsTable()">
-                    <option value="all">All 5 Types</option>
+                    <option value="all">All 6 Question Types</option>
                     <option value="mscq_single">Single Choice ({{ category_counts.get('mscq_single', 0) }})</option>
                     <option value="mscq_multiple">Multiple Choice ({{ category_counts.get('mscq_multiple', 0) }})</option>
                     <option value="mscq_select">Select Dropdown ({{ category_counts.get('mscq_select', 0) }})</option>
                     <option value="fill_blank">Fill in the Blanks ({{ category_counts.get('fill_blank', 0) }})</option>
                     <option value="true_false">True / False ({{ category_counts.get('true_false', 0) }})</option>
+                    <option value="image_mcq">Image MCQs ({{ category_counts.get('image_mcq', 0) }})</option>
                 </select>
 
                 <select id="tableSessionFilter" class="filter-select" onchange="filterQuestionsTable()">
@@ -768,17 +769,28 @@
                                             <span class="badge-type" style="background:#fef3c7; color:#b45309;"><i class="fas fa-pen-nib"></i> Blanks</span>
                                         {% elif q.question_type == 'true_false' or q.question_type == 'trueFalse' %}
                                             <span class="badge-type" style="background:#dcfce7; color:#047857;"><i class="fas fa-toggle-on"></i> True/False</span>
+                                        {% elif q.question_type == 'image_mcq' or q.question_type == 'image' or q.question_type == 'image_based' or q.question_type == 'diagram' %}
+                                            <span class="badge-type" style="background:#e0f2fe; color:#0284c7;"><i class="fas fa-image"></i> Image MCQ</span>
                                         {% else %}
                                             <span class="badge-type" style="background:#f1f5f9; color:#475569;">{{ q.question_type }}</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <div style="font-weight:700; color:var(--text-dark);">
-                                            {{ q.question_text[:95] }}{% if q.question_text|length > 95 %}...{% endif %}
-                                        </div>
-                                        <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
-                                            Ans: <strong style="color:var(--text-secondary);">{{ q.correct_option or '-' }}</strong>
-                                            {% if q.negative_marks %}&bull; <span style="color:#ef4444;">-{{ q.negative_marks }} deduction</span>{% endif %}
+                                        <div style="display:flex; align-items:flex-start; gap:8px;">
+                                            {% if q.question_type == 'image_mcq' or q.question_type == 'image' or q.question_type == 'image_based' or q.question_type == 'diagram' %}
+                                                <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:6px; background:#e0f2fe; color:#0284c7; flex-shrink:0;" title="Visual Question">
+                                                    <i class="fas fa-image"></i>
+                                                </span>
+                                            {% endif %}
+                                            <div>
+                                                <div style="font-weight:700; color:var(--text-dark);">
+                                                    {{ q.question_text[:95] }}{% if q.question_text|length > 95 %}...{% endif %}
+                                                </div>
+                                                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                                                    Ans: <strong style="color:var(--text-secondary);">{{ q.correct_option or '-' }}</strong>
+                                                    {% if q.negative_marks %}&bull; <span style="color:#ef4444;">-{{ q.negative_marks }} deduction</span>{% endif %}
+                                                </div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td><span style="font-weight:600; color:var(--text-secondary);">{{ q.session_name or q.quiz_id }}</span></td>
@@ -1192,7 +1204,7 @@
                 const status = row.getAttribute('data-status') || '';
 
                 const matchesQuery = !query || text.includes(query);
-                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice'));
+                const matchesType = typeFilter === 'all' || type === typeFilter || (typeFilter === 'mscq_single' && (type === 'MCQ' || type === 'single_choice')) || (typeFilter === 'image_mcq' && (type === 'image_mcq' || type === 'image' || type === 'image_based' || type === 'diagram'));
                 const matchesSession = sessionFilter === 'all' || quizId === sessionFilter;
                 const matchesStatus = statusFilter === 'all' || status === statusFilter;
 
