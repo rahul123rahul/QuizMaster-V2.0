@@ -143,6 +143,18 @@ def internal_server_error(e):
         return jsonify({'success': False, 'error': 'Internal server error', 'status': 500}), 500
     return render_template('error.html', error_title='Server Error', error_message='An unexpected internal error occurred. Please try again later.'), 500
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint to verify app and database connectivity."""
+    from database import ping_db
+    is_healthy, msg = ping_db()
+    status_code = 200 if is_healthy else 503
+    return jsonify({
+        'status': 'healthy' if is_healthy else 'unhealthy',
+        'database': msg,
+        'timestamp': time.time()
+    }), status_code
+
 @app.route('/api/session/heartbeat', methods=['GET', 'POST'])
 def session_heartbeat():
     role = session.get('role')
