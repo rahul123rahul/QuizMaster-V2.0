@@ -205,7 +205,7 @@ CREATE TABLE quizzes (
   batch VARCHAR(100) DEFAULT NULL,
   department VARCHAR(255) DEFAULT NULL,
   section VARCHAR(50) DEFAULT NULL,
-  year VARCHAR(20) DEFAULT NULL
+  year VARCHAR(255) DEFAULT NULL
 );
 CREATE INDEX idx_quizzes_batch ON quizzes(batch);
 CREATE INDEX idx_quizzes_reg_status ON quizzes(reg_status);

@@ -115,9 +115,9 @@ CREATE TABLE Quizzes (
 
     -- Filters & Batches
     batch VARCHAR(100),
-    department VARCHAR(100),
+    department VARCHAR(255),
     section VARCHAR(50),
-    year VARCHAR(20),
+    year VARCHAR(255),
 
     INDEX idx_quiz_batch (batch)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

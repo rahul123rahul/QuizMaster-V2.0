@@ -158,7 +158,7 @@ def fix_db_schema():
                 log.append(f'Quizzes Table (section): {e}')
 
             try:
-                cursor.execute('ALTER TABLE Quizzes ADD COLUMN year VARCHAR(20)')
+                cursor.execute('ALTER TABLE Quizzes ADD COLUMN year VARCHAR(255)')
             except Exception as e:
                 log.append(f'Quizzes Table (year): {e}')
 

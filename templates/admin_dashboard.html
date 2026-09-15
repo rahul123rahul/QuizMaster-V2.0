@@ -793,13 +793,7 @@
 
             let filtered = allQuizzesForUpload.filter(q => {
                 const batchMatch = !batch || q.batch === batch;
-                const yearMatch = !year || q.year === year;
-                
-                // This is a simplified filter. For department/section, you'd add:
-                // const dept = document.getElementById('upload_dept').value;
-                // const deptMatch = !dept || (q.department && q.department.includes(dept));
-                // return batchMatch && yearMatch && deptMatch;
-
+                const yearMatch = !year || (q.year && q.year.split(',').map(y => y.trim()).includes(year)) || q.year === year;
                 return batchMatch && yearMatch;
             });
 
@@ -901,7 +895,7 @@
 
             let filtered = allQuizzesForUpload.filter(q => {
                 const batchMatch = !batch || q.batch === batch;
-                const yearMatch = !year || q.year === year;
+                const yearMatch = !year || (q.year && q.year.split(',').map(y => y.trim()).includes(year)) || q.year === year;
                 return batchMatch && yearMatch;
             });
 

@@ -332,6 +332,8 @@ def student_dashboard():
                 now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
 
                 if user_info and user_info.get('enrolled_session'):
+                    stu_yr = user_info.get('study_year') or ''
+                    stu_dept = user_info.get('department') or ''
                     try:
                         u_sec = user_info.get('section') or ''
                         cursor.execute('''
@@ -340,7 +342,7 @@ def student_dashboard():
                                    (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
                             FROM Quizzes z 
                             WHERE batch=%s 
-                            AND year=%s
+                            AND (year = %s OR FIND_IN_SET(%s, year) > 0 OR year LIKE %s OR year = 'All' OR year IS NULL OR year = '')
                             AND (
                                 (section IS NOT NULL AND section != '' AND section != 'All' AND (FIND_IN_SET(%s, department) > 0 OR department = %s OR department = 'All') AND section = %s)
                                 OR (
@@ -349,7 +351,7 @@ def student_dashboard():
                                 )
                             )
                             ORDER BY start_time ASC
-                        ''', (user_info['enrolled_session'], user_info['study_year'], user_info['department'], user_info['department'], u_sec, user_info['department'], user_info['department'], u_sec, user_info['department']))
+                        ''', (user_info['enrolled_session'], stu_yr, stu_yr, f"%{stu_yr}%", stu_dept, stu_dept, u_sec, stu_dept, stu_dept, u_sec, stu_dept))
                     except Exception as e:
                         # Resilient fallback across MySQL, MariaDB, and PostgreSQL
                         cursor.execute('''
@@ -358,14 +360,25 @@ def student_dashboard():
                                    (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
                             FROM Quizzes z 
                             WHERE batch=%s 
-                            AND year=%s
+                            AND (year = %s OR year LIKE %s OR year = 'All' OR year IS NULL OR year = '')
                             AND (department = %s OR department LIKE %s OR department = 'All' OR department IS NULL)
                             ORDER BY start_time ASC
-                        ''', (user_info['enrolled_session'], user_info['study_year'], user_info['department'], f"%{user_info['department']}%"))
+                        ''', (user_info['enrolled_session'], stu_yr, f"%{stu_yr}%", stu_dept, f"%{stu_dept}%"))
                 else:
                     cursor.execute('SELECT * FROM Quizzes WHERE 1=0')
 
                 quizzes = cursor.fetchall()
+
+                # Precise year matching for multi-select year sessions
+                def _matches_year(quiz_yr, stu_yr):
+                    if not quiz_yr or str(quiz_yr).strip() in ('', 'All'):
+                        return True
+                    if not stu_yr:
+                        return True
+                    allowed = [y.strip().lower() for y in str(quiz_yr).split(',') if y.strip()]
+                    return str(stu_yr).strip().lower() in allowed
+
+                quizzes = [q for q in quizzes if _matches_year(q.get('year'), user_info.get('study_year'))]
 
                 for q in quizzes:
                     raw_st = q.get('start_time')

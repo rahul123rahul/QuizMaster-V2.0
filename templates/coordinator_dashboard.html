@@ -435,7 +435,7 @@
 
         let filtered = allQuizzesForUpload.filter(q => {
             const batchMatch = !batch || q.batch === batch;
-            const yearMatch = !year || q.year === year;
+            const yearMatch = !year || (q.year && q.year.split(',').map(y => y.trim()).includes(year)) || q.year === year;
             return batchMatch && yearMatch;
         });
 
@@ -469,7 +469,7 @@
 
         let filtered = allQuizzesForUpload.filter(q => {
             const batchMatch = !batch || q.batch === batch;
-            const yearMatch = !year || q.year === year;
+            const yearMatch = !year || (q.year && q.year.split(',').map(y => y.trim()).includes(year)) || q.year === year;
             return batchMatch && yearMatch;
         });
 

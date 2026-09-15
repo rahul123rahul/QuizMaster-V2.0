@@ -18,9 +18,10 @@
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
         /* Multi-select styles */
-        .dept-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .dept-tags, .year-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         .dept-tag { background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
-        .dept-tag span { cursor: pointer; font-weight: bold; }
+        .dept-tag span, .year-tag span { cursor: pointer; font-weight: bold; }
+        .year-tag { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -74,17 +75,23 @@
 
             <div class="row">
                 <div>
-                    <label>Year/Sem</label>
-                    <select name="year" required>
-                        <option value="I/I sem" {% if quiz.year == 'I/I sem' %}selected{% endif %}>I/I</option>
-                        <option value="I/II sem" {% if quiz.year == 'I/II sem' %}selected{% endif %}>I/II</option>
-                        <option value="II/I sem" {% if quiz.year == 'II/I sem' %}selected{% endif %}>II/I</option>
-                        <option value="II/II sem" {% if quiz.year == 'II/II sem' %}selected{% endif %}>II/II</option>
-                        <option value="III/I sem" {% if quiz.year == 'III/I sem' %}selected{% endif %}>III/I</option>
-                        <option value="III/II sem" {% if quiz.year == 'III/II sem' %}selected{% endif %}>III/II</option>
-                        <option value="IV/I sem" {% if quiz.year == 'IV/I sem' %}selected{% endif %}>IV/I</option>
-                        <option value="IV/II sem" {% if quiz.year == 'IV/II sem' %}selected{% endif %}>IV/II</option>
-                    </select>
+                    <label>Year/Sem (Multi-Select)</label>
+                    <div style="display:flex; gap:5px;">
+                        <select id="yearSelect" style="margin-bottom:0;">
+                            <option value="" disabled selected>Select Year/Sem</option>
+                            <option value="I/I sem">I/I sem</option>
+                            <option value="I/II sem">I/II sem</option>
+                            <option value="II/I sem">II/I sem</option>
+                            <option value="II/II sem">II/II sem</option>
+                            <option value="III/I sem">III/I sem</option>
+                            <option value="III/II sem">III/II sem</option>
+                            <option value="IV/I sem">IV/I sem</option>
+                            <option value="IV/II sem">IV/II sem</option>
+                        </select>
+                        <button type="button" onclick="addYear()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
+                    </div>
+                    <div class="year-tags" id="yearTags"></div>
+                    <input type="hidden" name="year" id="realYearInput" value="{{ quiz.year }}" required>
                 </div>
                 <div>
                     <label>Duration (min)</label>
@@ -150,8 +157,50 @@
             document.getElementById('realDeptInput').value = selectedDepts.join(',');
         }
         
+        // Multi-Year Logic
+        let selectedYears = "{{ quiz.year or '' }}".split(',').map(s => s.trim()).filter(s => s !== '');
+
+        function addYear() {
+            const sel = document.getElementById('yearSelect');
+            const val = sel.value;
+            if (!val) return;
+            
+            if (!selectedYears.includes(val)) {
+                selectedYears.push(val);
+                renderYears();
+            }
+            sel.value = "";
+        }
+
+        function removeYear(val) {
+            selectedYears = selectedYears.filter(y => y !== val);
+            renderYears();
+        }
+
+        function renderYears() {
+            const container = document.getElementById('yearTags');
+            container.innerHTML = selectedYears.map(y => `<div class="year-tag">${y} <span onclick="removeYear('${y}')">&times;</span></div>`).join('');
+            document.getElementById('realYearInput').value = selectedYears.join(',');
+        }
+
         // Init
         renderDepts();
+        renderYears();
+
+        // Safety fallback: auto-add if selected in dropdown on submit
+        const editForm = document.querySelector('form');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                if (selectedDepts.length === 0) {
+                    const sel = document.getElementById('deptSelect');
+                    if (sel && sel.value) addDepartment();
+                }
+                if (selectedYears.length === 0) {
+                    const sel = document.getElementById('yearSelect');
+                    if (sel && sel.value) addYear();
+                }
+            });
+        }
     </script>
 </body>
 </html>

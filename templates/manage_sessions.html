@@ -59,9 +59,10 @@
         .badge-closed { background: #fee2e2; color: #991b1b; }
 
         /* Multi-select styles */
-        .dept-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+        .dept-tags, .year-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
         .dept-tag { background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
-        .dept-tag span { cursor: pointer; font-weight: bold; }
+        .dept-tag span, .year-tag span { cursor: pointer; font-weight: bold; }
+        .year-tag { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-size: 12px; display: flex; align-items: center; gap: 5px; }
     </style>
 </head>
 <body>
@@ -124,18 +125,23 @@
                             <input type="hidden" name="department" id="realDeptInput" required>
                         </div>
                         <div>
-                            <label>Year/Sem</label>
-                            <select name="year" required>
-                                <option value="" disabled selected>Select</option>
-                                <option value="I/I sem">I/I</option>
-                                <option value="I/II sem">I/II</option>
-                                <option value="II/I sem">II/I</option>
-                                <option value="II/II sem">II/II</option>
-                                <option value="III/I sem">III/I</option>
-                                <option value="III/II sem">III/II</option>
-                                <option value="IV/I sem">IV/I</option>
-                                <option value="IV/II sem">IV/II</option>
-                            </select>
+                            <label>Year/Sem (Multi-Select)</label>
+                            <div style="display:flex; gap:5px;">
+                                <select id="yearSelect" style="margin-bottom:0;">
+                                    <option value="" disabled selected>Select Year/Sem</option>
+                                    <option value="I/I sem">I/I sem</option>
+                                    <option value="I/II sem">I/II sem</option>
+                                    <option value="II/I sem">II/I sem</option>
+                                    <option value="II/II sem">II/II sem</option>
+                                    <option value="III/I sem">III/I sem</option>
+                                    <option value="III/II sem">III/II sem</option>
+                                    <option value="IV/I sem">IV/I sem</option>
+                                    <option value="IV/II sem">IV/II sem</option>
+                                </select>
+                                <button type="button" onclick="addYear()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div class="year-tags" id="yearTags"></div>
+                            <input type="hidden" name="year" id="realYearInput" required>
                         </div>
                     </div>
                     <div class="form-grid">
@@ -172,7 +178,14 @@
                             {% endfor %}
                             {% if q.section and q.section != 'All' %}<span class="badge" style="background:#f1f5f9; color:#64748b;">Global Sec: {{ q.section }}</span>{% endif %}
                         </td>
-                        <td>{{ q.year }}</td>
+                        <td>
+                            {% set yr_list = q.year.split(',') if q.year else [] %}
+                            {% for yr in yr_list %}
+                                <span class="badge" style="background:#fef3c7; color:#92400e; margin-bottom:2px; display:inline-block;">
+                                    {{ yr.strip() }}
+                                </span><br>
+                            {% endfor %}
+                        </td>
                         <td>{{ q.start_time }}</td>
                         <td>{{ q.duration_minutes }}m</td>
                         <td>
@@ -283,6 +296,47 @@
             const container = document.getElementById('deptTags');
             container.innerHTML = selectedDepts.map(d => `<div class="dept-tag">${d} <span onclick="removeDept('${d}')">&times;</span></div>`).join('');
             document.getElementById('realDeptInput').value = selectedDepts.join(',');
+        }
+
+        // Multi-Year Logic
+        let selectedYears = [];
+
+        function addYear() {
+            const sel = document.getElementById('yearSelect');
+            const val = sel.value;
+            if (!val) return;
+            
+            if (!selectedYears.includes(val)) {
+                selectedYears.push(val);
+                renderYears();
+            }
+            sel.value = "";
+        }
+
+        function removeYear(val) {
+            selectedYears = selectedYears.filter(y => y !== val);
+            renderYears();
+        }
+
+        function renderYears() {
+            const container = document.getElementById('yearTags');
+            container.innerHTML = selectedYears.map(y => `<div class="year-tag">${y} <span onclick="removeYear('${y}')">&times;</span></div>`).join('');
+            document.getElementById('realYearInput').value = selectedYears.join(',');
+        }
+
+        // Safety fallback: auto-add if selected in dropdown on submit
+        const manageForm = document.querySelector('#createSection form');
+        if (manageForm) {
+            manageForm.addEventListener('submit', function(e) {
+                if (selectedDepts.length === 0) {
+                    const sel = document.getElementById('deptSelect');
+                    if (sel && sel.value) addDepartment();
+                }
+                if (selectedYears.length === 0) {
+                    const sel = document.getElementById('yearSelect');
+                    if (sel && sel.value) addYear();
+                }
+            });
         }
     </script>
 </body>
