@@ -40,6 +40,9 @@ def _translate_mysql_to_postgres(query):
             if target:
                 update_clause_pg = re.sub(r'VALUES\s*\(\s*([a-zA-Z0-9_]+)\s*\)', r'EXCLUDED.\1', update_clause, flags=re.IGNORECASE)
                 return f"INSERT INTO {m.group(1)} {prefix} ON CONFLICT {target} DO UPDATE SET {update_clause_pg}"
+    # Replace MySQL-style empty string comparisons with double quotes (!= "" or = "") with single quotes
+    query = re.sub(r'(!=|<>|=)\s*""', r"\1 ''", query)
+    query = re.sub(r'""\s*(!=|<>|=)', r"'' \1", query)
     return query
 
 # ==============================================================================

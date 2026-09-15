@@ -257,39 +257,154 @@
     <div id="bulkBatchModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>Bulk Update Batch</span>
+                <span><i class="fas fa-edit" style="color:var(--primary); margin-right:6px;"></i> Bulk Update Batch</span>
                 <span class="close-btn" onclick="closeBulkBatchModal()">&times;</span>
             </div>
-            <p style="font-size:13px; color:#64748b;">Select a new batch for the selected students.</p>
-            <select id="newBatchSelect" style="margin-bottom:15px; width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-family:inherit; font-size:14px;">
+            
+            <div id="batchSelectionStatus" style="margin-bottom:14px; font-size:13px; padding:10px 14px; border-radius:10px; background:#f8fafc; border:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <span id="selectedCountText">Selected: <b style="color:#2563eb;">0</b> students</span>
+                <button type="button" onclick="quickSelectAll()" style="background:#2563eb; color:white; border:none; border-radius:6px; padding:4px 10px; font-size:11px; cursor:pointer; font-weight:600; white-space:nowrap;">
+                    <i class="fas fa-check-double"></i> Select All Visible
+                </button>
+            </div>
+
+            <p style="font-size:13px; color:#64748b; margin-bottom:8px;">Select registered batch or create a new batch for selected student(s):</p>
+            <select id="newBatchSelect" onchange="handleBatchSelectChange(this)" style="margin-bottom:10px; width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-family:inherit; font-size:14px;">
                 <option value="" disabled selected>-- Select Batch --</option>
                 {% for b in batches %}
                     <option value="{{ b.batch }}">{{ b.batch }}</option>
                 {% endfor %}
+                <option value="__custom__">+ Enter New Batch Name...</option>
             </select>
-            <button type="button" class="btn-filter" onclick="submitBulkBatch()">Update</button>
+
+            <div id="customBatchDiv" style="display:none; margin-bottom:12px;">
+                <input type="text" id="customBatchInput" placeholder="Enter new batch name (e.g. Batch-2026)..." style="width:100%; padding:10px 12px; border:1px solid #93c5fd; border-radius:8px; box-sizing:border-box; font-family:inherit; font-size:14px; outline:none;">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button type="button" class="btn-filter" style="flex:1; padding:10px;" onclick="submitBulkBatch()">
+                    <i class="fas fa-save"></i> Apply Batch
+                </button>
+                <button type="button" style="padding:10px 18px; border-radius:8px; border:1px solid #cbd5e1; background:#f1f5f9; color:#475569; cursor:pointer; font-weight:600;" onclick="closeBulkBatchModal()">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
 
     <script>
         function toggleSelectAll(source) {
             document.getElementsByName('user_ids').forEach(cb => cb.checked = source.checked);
+            updateSelectionCount();
         }
+
+        function quickSelectAll() {
+            document.getElementsByName('user_ids').forEach(cb => cb.checked = true);
+            const master = document.querySelector('thead input[type="checkbox"]');
+            if (master) master.checked = true;
+            updateSelectionCount();
+        }
+
+        function updateSelectionCount() {
+            const count = document.querySelectorAll('input[name="user_ids"]:checked').length;
+            const countElem = document.getElementById('selectedCountText');
+            if (countElem) {
+                if (count > 0) {
+                    countElem.innerHTML = `Selected: <b style="color:#2563eb;">${count}</b> student${count === 1 ? '' : 's'}`;
+                } else {
+                    countElem.innerHTML = `Selected: <b style="color:#ef4444;">0</b> students <span style="font-size:11px; color:#64748b;">(choose students below)</span>`;
+                }
+            }
+        }
+
+        function handleBatchSelectChange(select) {
+            const customDiv = document.getElementById('customBatchDiv');
+            const customInput = document.getElementById('customBatchInput');
+            if (select.value === '__custom__') {
+                customDiv.style.display = 'block';
+                customInput.focus();
+            } else {
+                customDiv.style.display = 'none';
+            }
+        }
+
         function openBulkBatchModal() {
-            if(document.querySelectorAll('input[name="user_ids"]:checked').length === 0) { alert("Please select at least one student."); return; }
+            updateSelectionCount();
+            // If batch dropdown only has placeholder and custom, try async fetch
+            const select = document.getElementById('newBatchSelect');
+            if (select && select.options.length <= 2) {
+                fetch('/admin/api/batches')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.batches && data.batches.length > 0) {
+                            const currentVal = select.value;
+                            select.innerHTML = '<option value="" disabled selected>-- Select Batch --</option>';
+                            data.batches.forEach(b => {
+                                const opt = document.createElement('option');
+                                opt.value = b;
+                                opt.textContent = b;
+                                select.appendChild(opt);
+                            });
+                            const customOpt = document.createElement('option');
+                            customOpt.value = '__custom__';
+                            customOpt.textContent = '+ Enter New Batch Name...';
+                            select.appendChild(customOpt);
+                            if (currentVal) select.value = currentVal;
+                        }
+                    })
+                    .catch(err => console.log('Batches async fetch notice:', err));
+            }
             document.getElementById('bulkBatchModal').style.display = 'flex';
         }
-        function closeBulkBatchModal() { document.getElementById('bulkBatchModal').style.display = 'none'; }
+
+        function closeBulkBatchModal() { 
+            document.getElementById('bulkBatchModal').style.display = 'none'; 
+        }
+
         function submitBulkBatch() {
-            const batch = document.getElementById('newBatchSelect').value;
-            if(!batch) { alert("Please select a batch."); return; }
+            const select = document.getElementById('newBatchSelect');
+            let batch = select.value;
+            if (batch === '__custom__') {
+                batch = (document.getElementById('customBatchInput').value || '').trim();
+            }
+            if (!batch || batch === '__custom__') {
+                alert("Please select or enter a batch name.");
+                return;
+            }
+
+            const checkedBoxes = document.querySelectorAll('input[name="user_ids"]:checked');
+            if (checkedBoxes.length === 0) {
+                alert("Please select at least one student from the table.");
+                return;
+            }
+
             const form = document.getElementById('bulkUserForm');
             form.action = "/admin/bulk_update_batch";
+            
+            // Clean up old hidden new_batch if present
+            const existing = form.querySelector('input[name="new_batch"]');
+            if (existing) existing.remove();
+
             const input = document.createElement('input');
-            input.type = 'hidden'; input.name = 'new_batch'; input.value = batch;
+            input.type = 'hidden'; 
+            input.name = 'new_batch'; 
+            input.value = batch;
             form.appendChild(input);
             form.submit();
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementsByName('user_ids').forEach(cb => {
+                cb.addEventListener('change', updateSelectionCount);
+            });
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('bulkBatchModal');
+                if (e.target === modal) closeBulkBatchModal();
+            });
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeBulkBatchModal();
+            });
+        });
     </script>
 </body>
 </html>

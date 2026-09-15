@@ -686,23 +686,30 @@ def manage_students_page():
             # Fetch all registered batches from Batches table (created at Create Batches)
             batch_set = set()
             try:
-                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name DESC')
+                cursor.execute("SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != '' ORDER BY batch_name DESC")
                 for r in cursor.fetchall():
                     b = (r.get('batch_name') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                cursor.execute("SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ''")
                 for r in cursor.fetchall():
                     b = (r.get('batch') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                cursor.execute("SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ''")
                 for r in cursor.fetchall():
                     b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT selected_session FROM Users WHERE selected_session IS NOT NULL AND selected_session != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('selected_session') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
@@ -761,23 +768,30 @@ def edit_student_page(user_id):
             # Fetch all registered batches for session selection
             batch_set = set()
             try:
-                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name')
+                cursor.execute("SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != '' ORDER BY batch_name")
                 for r in cursor.fetchall():
                     b = (r.get('batch_name') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                cursor.execute("SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ''")
                 for r in cursor.fetchall():
                     b = (r.get('batch') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                cursor.execute("SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ''")
                 for r in cursor.fetchall():
                     b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT selected_session FROM Users WHERE selected_session IS NOT NULL AND selected_session != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('selected_session') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
@@ -965,23 +979,86 @@ def add_coordinator():
         conn.close()
     return redirect('/admin/coordinators')
 
+@admin_bp.route('/api/batches')
+@require_admin_or_coordinator
+def api_get_batches():
+    conn = get_db_connection()
+    batches = []
+    if conn:
+        with conn.cursor() as cursor:
+            batch_set = set()
+            try:
+                cursor.execute("SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != '' ORDER BY batch_name DESC")
+                for r in cursor.fetchall():
+                    b = (r.get('batch_name') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('batch') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT selected_session FROM Users WHERE selected_session IS NOT NULL AND selected_session != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('selected_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            batches = sorted(batch_set, reverse=True)
+        conn.close()
+    return jsonify({'success': True, 'batches': batches})
+
 @admin_bp.route('/bulk_update_batch', methods=['POST'])
 @require_admin_or_coordinator
 def bulk_update_batch():
     user_ids = request.form.getlist('user_ids')
-    new_batch = request.form.get('new_batch')
+    new_batch = (request.form.get('new_batch') or '').strip()
 
-    if user_ids and new_batch:
+    valid_user_ids = [int(uid) for uid in user_ids if str(uid).strip().isdigit()]
+
+    if valid_user_ids and new_batch:
         conn = get_db_connection()
-        with conn.cursor() as cursor:
-            placeholders = ','.join(['%s'] * len(user_ids))
-            sql = f'UPDATE Users SET enrolled_session=%s WHERE user_id IN ({placeholders})'
-            cursor.execute(sql, [new_batch] + user_ids)
-        conn.commit()
-        conn.close()
-        flash(f'Successfully updated batch to "{new_batch}" for {len(user_ids)} student(s).', 'success')
+        if conn:
+            try:
+                with conn.cursor() as cursor:
+                    # Register new batch in Batches table if it doesn't exist yet
+                    try:
+                        cursor.execute("SELECT batch_id FROM Batches WHERE batch_name=%s", (new_batch,))
+                        if not cursor.fetchone():
+                            cursor.execute("INSERT INTO Batches (batch_name) VALUES (%s)", (new_batch,))
+                    except Exception as be:
+                        pass
+
+                    placeholders = ','.join(['%s'] * len(valid_user_ids))
+                    sql = f'UPDATE Users SET enrolled_session=%s, selected_session=%s WHERE user_id IN ({placeholders})'
+                    cursor.execute(sql, [new_batch, new_batch] + valid_user_ids)
+                conn.commit()
+                flash(f'Successfully updated batch to "{new_batch}" for {len(valid_user_ids)} student(s).', 'success')
+            except Exception as e:
+                conn.rollback()
+                flash(f'Error updating batch: {str(e)}', 'danger')
+            finally:
+                conn.close()
+        else:
+            flash('Database connection failed.', 'danger')
     else:
-        flash('No students or batch selected.', 'warning')
+        if not valid_user_ids:
+            flash('No students selected for batch update.', 'warning')
+        elif not new_batch:
+            flash('Please select or enter a valid batch name.', 'warning')
+        else:
+            flash('No students or batch selected.', 'warning')
     
     if session.get('role') == 'Coordinator':
         return redirect('/coordinator/students')

@@ -61,23 +61,30 @@ def manage_students():
             # Fetch all registered batches from Batches table (created at Create Batches)
             batch_set = set()
             try:
-                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name DESC')
+                cursor.execute("SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != '' ORDER BY batch_name DESC")
                 for r in cursor.fetchall():
                     b = (r.get('batch_name') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                cursor.execute("SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ''")
                 for r in cursor.fetchall():
                     b = (r.get('batch') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
             try:
-                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                cursor.execute("SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ''")
                 for r in cursor.fetchall():
                     b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute("SELECT DISTINCT selected_session FROM Users WHERE selected_session IS NOT NULL AND selected_session != ''")
+                for r in cursor.fetchall():
+                    b = (r.get('selected_session') or '').strip()
                     if b: batch_set.add(b)
             except Exception:
                 pass
