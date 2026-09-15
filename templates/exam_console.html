@@ -3620,6 +3620,14 @@
 
                             // 1. Single Choice Radio
                             let radioCard = document.querySelector(`#opt-group-${qId} .radio-card[data-opt="${optVal}"]`);
+                            if (!radioCard) {
+                                document.querySelectorAll(`#opt-group-${qId} .radio-card`).forEach(rc => {
+                                    let txt = rc.querySelector('.opt-text');
+                                    if (txt && txt.innerText.trim().toLowerCase() === optVal.toLowerCase()) {
+                                        radioCard = rc;
+                                    }
+                                });
+                            }
                             if (radioCard) radioCard.classList.add('selected');
 
                             // 2. Multiple Choice Checkbox

@@ -7,21 +7,23 @@ class ComputationEngine:
         Updates response. If option is None, it remains skipped (Orange).
         """
         conn = get_db_connection()
-        cursor = conn.cursor()
-        
+        if not conn:
+            return False
         is_attempted = True if option else False
-        
-        # Upsert Logic (Insert if new, Update if exists)
-        sql = """
-        INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted)
-        VALUES (%s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE 
-            selected_option = VALUES(selected_option),
-            is_attempted = VALUES(is_attempted)
-        """
-        cursor.execute(sql, (attempt_id, question_id, option, is_attempted))
-        conn.commit()
-        conn.close()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT response_id FROM Quiz_Responses WHERE attempt_id=%s AND question_id=%s", (attempt_id, question_id))
+                row = cursor.fetchone()
+                if row:
+                    r_id = row['response_id'] if isinstance(row, dict) else row[0]
+                    cursor.execute("UPDATE Quiz_Responses SET selected_option=%s, is_attempted=%s WHERE response_id=%s", (option, 1 if is_attempted else 0, r_id))
+                else:
+                    cursor.execute("INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted) VALUES (%s, %s, %s, %s)", (attempt_id, question_id, option, 1 if is_attempted else 0))
+            conn.commit()
+        except Exception:
+            if conn: conn.rollback()
+        finally:
+            conn.close()
         return is_attempted
 
     def get_palette_status(self, attempt_id):

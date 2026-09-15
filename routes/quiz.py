@@ -93,7 +93,8 @@ def _normalize_quiz_question(q, attempt_id=None):
     q['meta_data'] = meta
 
     # Shuffling options for single choice if desired, else keep stable
-    if norm_type in {'mscq_single'} and attempt_id and len(options) > 1:
+    # Image/diagram questions keep stable options so diagram labels (A, B, C, D) maintain 1:1 visual parity
+    if norm_type in {'mscq_single'} and not is_image_mcq and attempt_id and len(options) > 1:
         q['shuffled_options'] = _stable_shuffle(options, f'attempt:{attempt_id}:question:{q["question_id"]}:options')
     else:
         q['shuffled_options'] = options
@@ -107,6 +108,174 @@ def _normalize_quiz_question(q, attempt_id=None):
         q['case_sensitive'] = bool(meta.get('caseSensitive', False))
 
     return q
+
+def evaluate_question_response(q, user_ans, attempt_id=None):
+    """
+    Robust evaluator for all 5 question types + coding challenge.
+    Handles:
+    - Option key ('A') vs Option text ('Mitochondria')
+    - Formatted/prefixed values ('(A)', 'Option A', 'A. Mitochondria')
+    - Shuffled slot indices / slot letters from the student's attempt
+    - Image MCQs (single & multiple selection)
+    - Coding, Fill-in-the-blank, True/False, and Dropdowns
+    """
+    import re
+    q_norm = _normalize_quiz_question(dict(q), attempt_id=attempt_id)
+    norm_type = q_norm['question_type_norm']
+    meta = q_norm['meta_data']
+    options = q_norm.get('shuffled_options') or []
+    
+    # Original unshuffled options for key-to-text resolution
+    orig_options = []
+    if meta.get('options') and isinstance(meta['options'], list):
+        for opt in meta['options']:
+            if isinstance(opt, dict):
+                k = str(opt.get('id') or opt.get('key') or '').strip()
+                t = str(opt.get('text') or opt.get('value') or '').strip()
+                if t or k:
+                    orig_options.append({'key': k or chr(65 + len(orig_options)), 'text': t or k})
+            elif opt and str(opt).strip():
+                orig_options.append({'key': chr(65 + len(orig_options)), 'text': str(opt).strip()})
+    if not orig_options:
+        for key, field in [('A', 'option_a'), ('B', 'option_b'), ('C', 'option_c'), ('D', 'option_d')]:
+            val = q.get(field)
+            if val is not None and str(val).strip() != '':
+                orig_options.append({'key': key, 'text': str(val).strip()})
+    all_option_pools = [options, orig_options]
+
+    user_str = str(user_ans or '').strip()
+    if not user_str:
+        return False
+
+    correct_raw = str(q.get('correct_option') or meta.get('correctAnswer') or meta.get('correct_id') or '').strip()
+
+    # 1. Coding Challenge
+    if q_norm['is_coding']:
+        if user_str.lower() in {'accepted', 'pass'} or 'pass' in user_str.lower():
+            return True
+        try:
+            from utils import split_test_case_block, normalize_judge_output
+            from code_runner import execute_code
+            raw_inputs = split_test_case_block(q.get('test_input'))
+            raw_outputs = split_test_case_block(q.get('test_output'))
+            if raw_outputs:
+                exec_res = execute_code(user_str, 'python', stdin_data=(raw_inputs[0] if raw_inputs else ''))
+                actual = (exec_res.get('stdout') or '').strip()
+                if normalize_judge_output(actual) == normalize_judge_output(raw_outputs[0]):
+                    return True
+            elif user_str:
+                return True
+        except Exception:
+            if user_str:
+                return True
+        return False
+
+    # 2. Fill in the Blank
+    if norm_type == 'fill_blank':
+        accepted = meta.get('acceptedAnswers') or []
+        if not accepted and correct_raw:
+            accepted = [correct_raw]
+        case_sensitive = meta.get('caseSensitive', True)
+        if case_sensitive:
+            return any(user_str == str(acc).strip() for acc in accepted)
+        else:
+            return any(user_str.lower() == str(acc).strip().lower() for acc in accepted)
+
+    # 3. True / False
+    if norm_type == 'true_false':
+        norm_user = 'true' if user_str.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
+        norm_corr = 'true' if correct_raw.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
+        return norm_user == norm_corr
+
+    def _clean(s):
+        return re.sub(r'\s+', ' ', str(s or '').strip().lower().replace('.', ''))
+
+    def _resolve_token(token):
+        tok = str(token).strip()
+        tok_clean = _clean(tok)
+        tok_key = tok.strip('()[]{} .').upper()
+        matched_keys = set()
+        matched_texts = set()
+
+        for opt_list in all_option_pools:
+            for idx, opt in enumerate(opt_list):
+                okey = opt['key'].upper()
+                otext_clean = _clean(opt['text'])
+                if tok_key == okey or tok_clean in {f"option {okey}".lower(), f"({okey})".lower(), f"{okey}.".lower()}:
+                    matched_keys.add(okey)
+                    matched_texts.add(otext_clean)
+                elif tok_clean == otext_clean or tok_clean == _clean(f"{okey}. {opt['text']}"):
+                    matched_keys.add(okey)
+                    matched_texts.add(otext_clean)
+                elif tok == str(idx):
+                    matched_keys.add(okey)
+                    matched_texts.add(otext_clean)
+
+        if options:
+            for s_idx, s_opt in enumerate(options):
+                s_key = s_opt['key'].upper()
+                s_text_clean = _clean(s_opt['text'])
+                if tok_key == chr(65 + s_idx) or tok == str(s_idx):
+                    matched_keys.add(s_key)
+                    matched_texts.add(s_text_clean)
+
+        return matched_keys, matched_texts
+
+    # 4. Multiple Choice (MSCQ Multiple or Image MCQ Multiple)
+    if norm_type == 'mscq_multiple':
+        user_tokens = [x.strip() for x in user_str.split(',') if x.strip()]
+        correct_tokens = [x.strip() for x in correct_raw.split(',') if x.strip()]
+        if not user_tokens or not correct_tokens:
+            return False
+
+        target_keys, target_texts = set(), set()
+        for ctok in correct_tokens:
+            k_set, t_set = _resolve_token(ctok)
+            if k_set:
+                target_keys.update(k_set)
+                target_texts.update(t_set)
+            else:
+                target_keys.add(ctok.upper())
+                target_texts.add(_clean(ctok))
+
+        user_keys, user_texts = set(), set()
+        for utok in user_tokens:
+            k_set, t_set = _resolve_token(utok)
+            if k_set:
+                user_keys.update(k_set)
+                user_texts.update(t_set)
+            else:
+                user_keys.add(utok.upper())
+                user_texts.add(_clean(utok))
+
+        if target_keys and user_keys == target_keys:
+            return True
+        if target_texts and user_texts == target_texts:
+            return True
+        return False
+
+    # 5. Single Choice (MSCQ Single, Image MCQ Single, MSCQ Select)
+    if user_str.upper() == correct_raw.upper():
+        return True
+    if _clean(user_str) == _clean(correct_raw):
+        return True
+
+    target_keys, target_texts = _resolve_token(correct_raw)
+    if not target_keys and not target_texts:
+        target_keys = {correct_raw.strip('()[]{} .').upper()}
+        target_texts = {_clean(correct_raw)}
+
+    user_keys, user_texts = _resolve_token(user_str)
+    if not user_keys and not user_texts:
+        user_keys = {user_str.strip('()[]{} .').upper()}
+        user_texts = {_clean(user_str)}
+
+    if target_keys.intersection(user_keys):
+        return True
+    if target_texts.intersection(user_texts):
+        return True
+
+    return False
 
 def calculate_computed_semester(user_semester=None):
     """Calculate semester: if user has manual override, use that; otherwise calculate dynamically"""
@@ -568,18 +737,33 @@ def quiz_interface(quiz_id):
 
 @quiz_bp.route('/api/save_answer', methods=['POST'])
 def save_answer():
-    data = request.json
+    data = request.json or {}
     conn = get_db_connection()
-    with conn.cursor() as cursor:
-        opt = data.get('option')
-        is_att = 1 if (opt is not None and str(opt).strip() != '') else 0
-        cursor.execute('''
-            INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted) 
-            VALUES (%s, %s, %s, %s) 
-            ON DUPLICATE KEY UPDATE selected_option=%s, is_attempted=%s
-        ''', (data['attempt_id'], data['question_id'], opt, is_att, opt, is_att))
-    conn.commit()
-    conn.close()
+    if not conn:
+        return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
+    try:
+        with conn.cursor() as cursor:
+            opt = data.get('option')
+            is_att = 1 if (opt is not None and str(opt).strip() != '') else 0
+            cursor.execute('''
+                SELECT response_id FROM Quiz_Responses WHERE attempt_id=%s AND question_id=%s
+            ''', (data.get('attempt_id'), data.get('question_id')))
+            existing = cursor.fetchone()
+            if existing:
+                cursor.execute('''
+                    UPDATE Quiz_Responses SET selected_option=%s, is_attempted=%s WHERE response_id=%s
+                ''', (opt, is_att, existing['response_id']))
+            else:
+                cursor.execute('''
+                    INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted) 
+                    VALUES (%s, %s, %s, %s)
+                ''', (data.get('attempt_id'), data.get('question_id'), opt, is_att))
+        conn.commit()
+    except Exception as e:
+        if conn: conn.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    finally:
+        conn.close()
     return jsonify({'status': 'success'})
 
 @quiz_bp.route('/api/submit_quiz', methods=['POST'])
@@ -619,58 +803,7 @@ def submit_quiz():
             if not user_ans:
                 continue
 
-            q_norm = _normalize_quiz_question(dict(q))
-            q_type = q_norm['question_type_norm']
-            meta = q_norm['meta_data']
-            correct_opt = (q.get('correct_option') or meta.get('correctAnswer') or '').strip()
-
-            is_correct = False
-
-            if q_norm['is_coding']:
-                if user_ans.lower() in {'accepted', 'pass'} or 'pass' in user_ans.lower():
-                    is_correct = True
-                else:
-                    try:
-                        from utils import split_test_case_block, normalize_judge_output
-                        from code_runner import execute_code
-                        raw_inputs = split_test_case_block(q.get('test_input'))
-                        raw_outputs = split_test_case_block(q.get('test_output'))
-                        if raw_outputs:
-                            exec_res = execute_code(user_ans, 'python', stdin_data=(raw_inputs[0] if raw_inputs else ''))
-                            actual = (exec_res.get('stdout') or '').strip()
-                            if normalize_judge_output(actual) == normalize_judge_output(raw_outputs[0]):
-                                is_correct = True
-                        elif user_ans:
-                            is_correct = True
-                    except Exception:
-                        if user_ans:
-                            is_correct = True
-
-            elif q_type == 'mscq_single':
-                is_correct = (user_ans.upper() == correct_opt.upper())
-
-            elif q_type == 'mscq_multiple':
-                u_set = {x.strip().upper() for x in user_ans.split(',') if x.strip()}
-                c_set = {x.strip().upper() for x in correct_opt.split(',') if x.strip()}
-                is_correct = (u_set == c_set and len(u_set) > 0)
-
-            elif q_type == 'mscq_select':
-                is_correct = (user_ans.upper() == correct_opt.upper())
-
-            elif q_type == 'fill_blank':
-                accepted = meta.get('acceptedAnswers') or []
-                if not accepted and correct_opt:
-                    accepted = [correct_opt]
-                case_sensitive = meta.get('caseSensitive', True)
-                if case_sensitive:
-                    is_correct = any(user_ans == str(acc).strip() for acc in accepted)
-                else:
-                    is_correct = any(user_ans.lower() == str(acc).strip().lower() for acc in accepted)
-
-            elif q_type == 'true_false':
-                norm_user = 'true' if user_ans.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
-                norm_corr = 'true' if correct_opt.lower() in {'true', 't', 'a', 'yes', '1'} else 'false'
-                is_correct = (norm_user == norm_corr)
+            is_correct = evaluate_question_response(q, user_ans, attempt_id=aid)
 
             if is_correct:
                 user_score += marks

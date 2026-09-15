@@ -15,6 +15,33 @@ def _sanitize_pg_row(r):
             d[k] = v.replace(tzinfo=None)
     return d
 
+TABLE_CONFLICT_TARGETS = {
+    'system_settings': '(setting_key)',
+    'batches': '(batch_name)',
+    'quiz_responses': '(attempt_id, question_id)',
+    'studymaterialstats': '(material_id, date)',
+    'studymaterialbookmarks': '(material_id, user_id)',
+    'studyuserinteractions': '(user_id, material_id)'
+}
+
+def _translate_mysql_to_postgres(query):
+    """
+    Translates MySQL queries (e.g. ON DUPLICATE KEY UPDATE) to PostgreSQL compatible syntax.
+    """
+    if not isinstance(query, str):
+        return query
+    if "DUPLICATE" in query.upper():
+        m = re.search(r'INSERT\s+INTO\s+([`"\'\w]+)\s*(.*?)\s+ON\s+DUPLICATE\s+KEY\s+UPDATE\s+(.*)', query, flags=re.IGNORECASE | re.DOTALL)
+        if m:
+            table_name = m.group(1).strip('`"\'').lower()
+            prefix = m.group(2)
+            update_clause = m.group(3)
+            target = TABLE_CONFLICT_TARGETS.get(table_name)
+            if target:
+                update_clause_pg = re.sub(r'VALUES\s*\(\s*([a-zA-Z0-9_]+)\s*\)', r'EXCLUDED.\1', update_clause, flags=re.IGNORECASE)
+                return f"INSERT INTO {m.group(1)} {prefix} ON CONFLICT {target} DO UPDATE SET {update_clause_pg}"
+    return query
+
 # ==============================================================================
 # POSTGRESQL / SUPABASE COMPATIBILITY WRAPPER
 # ==============================================================================
@@ -29,8 +56,9 @@ class PostgresCursorWrapper:
         self._last_id = None
 
     def execute(self, query, params=None):
-        res = self._cur.execute(query, params)
-        q_upper = query.strip().upper()
+        translated = _translate_mysql_to_postgres(query)
+        res = self._cur.execute(translated, params)
+        q_upper = translated.strip().upper()
         if q_upper.startswith("INSERT"):
             try:
                 with self._conn.cursor() as seq_cur:
@@ -45,7 +73,8 @@ class PostgresCursorWrapper:
         return res
 
     def executemany(self, query, seq_of_params):
-        return self._cur.executemany(query, seq_of_params)
+        translated = _translate_mysql_to_postgres(query)
+        return self._cur.executemany(translated, seq_of_params)
 
     def fetchone(self):
         r = self._cur.fetchone()

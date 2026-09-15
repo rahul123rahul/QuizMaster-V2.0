@@ -267,11 +267,12 @@ def download_material(material_id):
                     cursor.execute("UPDATE StudyMaterials SET download_count = download_count + 1 WHERE id = %s", (material_id,))
                     
                     today = datetime.now().date()
-                    cursor.execute("""
-                        INSERT INTO StudyMaterialStats (material_id, date, downloads)
-                        VALUES (%s, %s, 1)
-                        ON DUPLICATE KEY UPDATE downloads = downloads + 1
-                    """, (material_id, today))
+                    cursor.execute("SELECT id FROM StudyMaterialStats WHERE material_id=%s AND date=%s", (material_id, today))
+                    stat_row = cursor.fetchone()
+                    if stat_row:
+                        cursor.execute("UPDATE StudyMaterialStats SET downloads = downloads + 1 WHERE id=%s", (stat_row['id'],))
+                    else:
+                        cursor.execute("INSERT INTO StudyMaterialStats (material_id, date, downloads) VALUES (%s, %s, 1)", (material_id, today))
             conn.commit()
         finally:
             conn.close()
@@ -307,12 +308,13 @@ def track_view(material_id):
                 cursor.execute("UPDATE StudyMaterials SET view_count = view_count + 1 WHERE id=%s", (material_id,))
                 
                 # Update daily stats
-                cursor.execute("""
-                    INSERT INTO StudyMaterialStats (material_id, date, views, unique_viewers)
-                    VALUES (%s, %s, 1, %s)
-                    ON DUPLICATE KEY UPDATE views = views + 1, 
-                    unique_viewers = unique_viewers + %s
-                """, (material_id, today, 1 if session.get('user_id') else 0, 1 if session.get('user_id') else 0))
+                viewer_inc = 1 if session.get('user_id') else 0
+                cursor.execute("SELECT id FROM StudyMaterialStats WHERE material_id=%s AND date=%s", (material_id, today))
+                stat_row = cursor.fetchone()
+                if stat_row:
+                    cursor.execute("UPDATE StudyMaterialStats SET views = views + 1, unique_viewers = unique_viewers + %s WHERE id=%s", (viewer_inc, stat_row['id']))
+                else:
+                    cursor.execute("INSERT INTO StudyMaterialStats (material_id, date, views, unique_viewers) VALUES (%s, %s, 1, %s)", (material_id, today, viewer_inc))
             conn.commit()
         finally:
             conn.close()
@@ -941,11 +943,12 @@ def bookmark_material(material_id):
             with conn.cursor() as cursor:
                 if request.method == 'POST':
                     note = request.json.get('note', '')
-                    cursor.execute("""
-                        INSERT INTO StudyMaterialBookmarks (material_id, user_id, note)
-                        VALUES (%s, %s, %s)
-                        ON DUPLICATE KEY UPDATE note = %s
-                    """, (material_id, session['user_id'], note, note))
+                    cursor.execute("SELECT id FROM StudyMaterialBookmarks WHERE material_id=%s AND user_id=%s", (material_id, session['user_id']))
+                    bm = cursor.fetchone()
+                    if bm:
+                        cursor.execute("UPDATE StudyMaterialBookmarks SET note=%s WHERE id=%s", (note, bm['id']))
+                    else:
+                        cursor.execute("INSERT INTO StudyMaterialBookmarks (material_id, user_id, note) VALUES (%s, %s, %s)", (material_id, session['user_id'], note))
                     message = 'Bookmarked'
                 else:
                     cursor.execute("DELETE FROM StudyMaterialBookmarks WHERE material_id = %s AND user_id = %s",

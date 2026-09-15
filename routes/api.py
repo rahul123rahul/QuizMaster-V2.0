@@ -329,13 +329,19 @@ def run_code():
     if attempt_id and question_id:
         conn = get_db_connection()
         if conn:
-            with conn.cursor() as cursor:
-                cursor.execute('''
-                    INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted)
-                    VALUES (%s, %s, %s, 1)
-                    ON DUPLICATE KEY UPDATE selected_option=VALUES(selected_option), is_attempted=1
-                ''', (attempt_id, question_id, code))
-            conn.close()
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute('SELECT response_id FROM Quiz_Responses WHERE attempt_id=%s AND question_id=%s', (attempt_id, question_id))
+                    existing = cursor.fetchone()
+                    if existing:
+                        cursor.execute('UPDATE Quiz_Responses SET selected_option=%s, is_attempted=1 WHERE response_id=%s', (code, existing['response_id']))
+                    else:
+                        cursor.execute('INSERT INTO Quiz_Responses (attempt_id, question_id, selected_option, is_attempted) VALUES (%s, %s, %s, 1)', (attempt_id, question_id, code))
+                conn.commit()
+            except Exception:
+                if conn: conn.rollback()
+            finally:
+                conn.close()
 
     return jsonify({
         'status': 'success',

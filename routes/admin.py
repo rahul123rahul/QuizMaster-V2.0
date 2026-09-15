@@ -270,44 +270,78 @@ def add_batch():
     batch_name = request.form.get('batch_name')
     if batch_name:
         conn = get_db_connection()
-        with conn.cursor() as cursor:
-            cursor.execute('INSERT INTO Batches (batch_name) VALUES (%s) ON DUPLICATE KEY UPDATE batch_name=%s', (batch_name, batch_name))
-        conn.commit()
-        conn.close()
-        flash('Batch added successfully!', 'success')
+        if conn:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute('SELECT batch_id FROM Batches WHERE batch_name=%s', (batch_name,))
+                    if not cursor.fetchone():
+                        cursor.execute('INSERT INTO Batches (batch_name) VALUES (%s)', (batch_name,))
+                conn.commit()
+                flash('Batch added successfully!', 'success')
+            except Exception as e:
+                if conn: conn.rollback()
+                flash(f'Error adding batch: {str(e)}', 'error')
+            finally:
+                conn.close()
     return redirect('/admin/sessions')
 
 @admin_bp.route('/delete_batch/<int:batch_id>')
 @require_admin
 def delete_batch(batch_id):
     conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute('DELETE FROM Batches WHERE batch_id=%s', (batch_id,))
-    conn.commit()
-    conn.close()
+    if conn:
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute('DELETE FROM Batches WHERE batch_id=%s', (batch_id,))
+            conn.commit()
+        except Exception as e:
+            if conn: conn.rollback()
+            flash(f'Error deleting batch: {str(e)}', 'error')
+        finally:
+            conn.close()
     return redirect('/admin/sessions')
 
 @admin_bp.route('/delete_session/<int:quiz_id>')
 @require_admin
 def delete_session(quiz_id):
     conn = get_db_connection()
-    with conn.cursor() as cursor:
-        # Cache quiz metadata on all attempts before deleting so student past results are preserved forever
-        cursor.execute('''
-            UPDATE Quiz_Attempts a
-            JOIN Quizzes q ON a.quiz_id = q.quiz_id
-            SET a.quiz_title = COALESCE(a.quiz_title, q.title),
-                a.total_marks = COALESCE(a.total_marks, q.total_marks, (SELECT COALESCE(SUM(marks), 100) FROM Questions WHERE quiz_id = q.quiz_id)),
-                a.batch = COALESCE(a.batch, q.batch),
-                a.total_questions = COALESCE(a.total_questions, (SELECT COUNT(*) FROM Questions WHERE quiz_id = q.quiz_id))
-            WHERE a.quiz_id = %s
-        ''', (quiz_id,))
-        # Disassociate attempt from quiz so cascade doesn't affect it
-        cursor.execute('UPDATE Quiz_Attempts SET quiz_id = NULL WHERE quiz_id = %s', (quiz_id,))
-        cursor.execute('DELETE FROM Quizzes WHERE quiz_id=%s', (quiz_id,))
-    conn.commit()
-    conn.close()
-    flash('Session deleted successfully! Student past results have been archived and preserved.', 'success')
+    if not conn:
+        flash('Database connection error.', 'error')
+        return redirect('/admin/sessions')
+    try:
+        with conn.cursor() as cursor:
+            # Fetch quiz metadata to cache on all attempts before deleting so student past results are preserved forever
+            cursor.execute('SELECT title, total_marks, batch FROM Quizzes WHERE quiz_id=%s', (quiz_id,))
+            quiz_meta = cursor.fetchone()
+
+            cursor.execute('SELECT COALESCE(SUM(marks), 100) AS sum_marks, COUNT(*) AS q_count FROM Questions WHERE quiz_id=%s', (quiz_id,))
+            q_stats = cursor.fetchone()
+
+            q_title = quiz_meta['title'] if quiz_meta and quiz_meta.get('title') else 'Archived Quiz'
+            q_total_marks = quiz_meta['total_marks'] if (quiz_meta and quiz_meta.get('total_marks') is not None) else (q_stats['sum_marks'] if q_stats else 100)
+            q_batch = quiz_meta['batch'] if quiz_meta and quiz_meta.get('batch') else 'General'
+            q_total_questions = q_stats['q_count'] if q_stats else 0
+
+            # Cache quiz metadata on all attempts before deleting so student past results are preserved forever
+            cursor.execute('''
+                UPDATE Quiz_Attempts
+                SET quiz_title = COALESCE(quiz_title, %s),
+                    total_marks = COALESCE(total_marks, %s),
+                    batch = COALESCE(batch, %s),
+                    total_questions = COALESCE(total_questions, %s)
+                WHERE quiz_id = %s
+            ''', (q_title, q_total_marks, q_batch, q_total_questions, quiz_id))
+
+            # Disassociate attempt from quiz so cascade doesn't affect it
+            cursor.execute('UPDATE Quiz_Attempts SET quiz_id = NULL WHERE quiz_id = %s', (quiz_id,))
+            cursor.execute('DELETE FROM Quizzes WHERE quiz_id=%s', (quiz_id,))
+        conn.commit()
+        flash('Session deleted successfully! Student past results have been archived and preserved.', 'success')
+    except Exception as e:
+        if conn: conn.rollback()
+        flash(f'Error deleting session: {str(e)}', 'error')
+    finally:
+        conn.close()
     return redirect('/admin/sessions')
 
 @admin_bp.route('/toggle_reg/<int:quiz_id>/<int:status>')
@@ -2668,7 +2702,10 @@ DEFAULT_ADVANCE_SETTINGS = {
     'fill_blank_trim_whitespace': True,
     'fill_blank_ignore_punctuation': True,
     'fill_blank_accept_multiple': True,
-    'randomize_options': True
+    'randomize_options': True,
+    'negative_carry_allowed': True,
+    'radio_incorrect_deduct': 0.25,
+    'checkbox_incorrect_deduct': 0.50
 }
 
 @admin_bp.route('/api/advance_settings', methods=['GET', 'POST'])
@@ -2679,13 +2716,21 @@ def api_advance_settings():
         return jsonify({'success': False, 'error': 'Database error'}), 500
     try:
         with conn.cursor() as cursor:
+            # Ensure System_Settings table exists in both PostgreSQL and MySQL
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS System_Settings (
+                    setting_key VARCHAR(100) PRIMARY KEY,
+                    setting_value TEXT DEFAULT NULL
+                )
+            ''')
             if request.method == 'POST':
                 data = request.get_json() or {}
-                cursor.execute('''
-                    INSERT INTO System_Settings (setting_key, setting_value)
-                    VALUES (%s, %s)
-                    ON DUPLICATE KEY UPDATE setting_value=%s
-                ''', ('advance_question_settings', json.dumps(data), json.dumps(data)))
+                val_json = json.dumps(data)
+                cursor.execute('SELECT setting_key FROM System_Settings WHERE setting_key=%s', ('advance_question_settings',))
+                if cursor.fetchone():
+                    cursor.execute('UPDATE System_Settings SET setting_value=%s WHERE setting_key=%s', (val_json, 'advance_question_settings'))
+                else:
+                    cursor.execute('INSERT INTO System_Settings (setting_key, setting_value) VALUES (%s, %s)', ('advance_question_settings', val_json))
                 conn.commit()
                 return jsonify({'success': True, 'message': 'Advanced settings saved successfully!', 'settings': data})
             else:

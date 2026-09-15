@@ -1683,37 +1683,37 @@
                     <div class="adv-panel-content" id="advPanel">
                         <div class="adv-row">
                             <label>
-                                <input type="checkbox" id="adv_enable_negative_marking" checked>
+                                <input type="checkbox" id="adv_enable_negative_marking" {% if advance_settings.get('enable_negative_marking', True) %}checked{% endif %}>
                                 <span>Enable Negative Marking</span>
                             </label>
                         </div>
                         <div class="adv-row">
                             <label>
-                                <input type="checkbox" id="adv_negative_carry_allowed" checked>
+                                <input type="checkbox" id="adv_negative_carry_allowed" {% if advance_settings.get('negative_carry_allowed', True) %}checked{% endif %}>
                                 <span>Negative Marks Carry to Total</span>
                             </label>
                         </div>
                         <div class="adv-row" style="margin-top:8px;">
                             <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Radio Button Deduct:</div>
-                            <input type="number" id="adv_radio_incorrect_deduct" step="0.05" min="0" value="0.25" class="form-control" style="padding:6px 10px; font-size:12px;">
+                            <input type="number" id="adv_radio_incorrect_deduct" step="0.05" min="0" value="{{ advance_settings.get('radio_incorrect_deduct', 0.25) }}" class="form-control" style="padding:6px 10px; font-size:12px;">
                         </div>
                         <div class="adv-row">
                             <div style="font-weight:700; color:var(--text-secondary); margin-bottom:4px;">Multiple Select Deduct:</div>
-                            <input type="number" id="adv_checkbox_incorrect_deduct" step="0.05" min="0" value="0.50" class="form-control" style="padding:6px 10px; font-size:12px;">
+                            <input type="number" id="adv_checkbox_incorrect_deduct" step="0.05" min="0" value="{{ advance_settings.get('checkbox_incorrect_deduct', 0.50) }}" class="form-control" style="padding:6px 10px; font-size:12px;">
                         </div>
                         <div class="adv-row" style="margin-top:8px; border-top:1px solid #e2e8f0; padding-top:8px;">
                             <label>
-                                <input type="checkbox" id="adv_fill_blank_case_sensitive" checked>
+                                <input type="checkbox" id="adv_fill_blank_case_sensitive" {% if advance_settings.get('fill_blank_case_sensitive', True) %}checked{% endif %}>
                                 <span>Blanks: Case Sensitive (A != a)</span>
                             </label>
                         </div>
                         <div class="adv-row">
                             <label>
-                                <input type="checkbox" id="adv_fill_blank_trim_whitespace" checked>
+                                <input type="checkbox" id="adv_fill_blank_trim_whitespace" {% if advance_settings.get('fill_blank_trim_whitespace', True) %}checked{% endif %}>
                                 <span>Blanks: Auto-Trim Whitespace</span>
                             </label>
                         </div>
-                        <button onclick="saveAdvancedSettings()" class="btn btn-primary btn-sm" style="width:100%; margin-top:8px;">
+                        <button onclick="saveAdvancedSettings()" class="btn btn-primary btn-sm" id="btnSaveAdvancedSettings" style="width:100%; margin-top:8px;">
                             <i class="fas fa-save"></i> Save Rules
                         </button>
                     </div>
@@ -2949,6 +2949,13 @@
         }
 
         function saveAdvancedSettings() {
+            const btn = document.getElementById('btnSaveAdvancedSettings');
+            const origHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
             const payload = {
                 enable_negative_marking: document.getElementById('adv_enable_negative_marking').checked,
                 negative_carry_allowed: document.getElementById('adv_negative_carry_allowed').checked,
@@ -2969,10 +2976,16 @@
                     alert('Advanced settings saved successfully!');
                     toggleAdvancedSettings();
                 } else {
-                    alert('Failed to save settings: ' + data.error);
+                    alert('Failed to save settings: ' + (data.error || 'Unknown error'));
                 }
             })
-            .catch(err => alert('Network error: ' + err));
+            .catch(err => alert('Network error: ' + err))
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            });
         }
 
         // --- BULK QUESTION CREATOR MODAL LOGIC (+ ADD MULTIPLE QUESTIONS) ---
