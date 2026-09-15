@@ -58,8 +58,30 @@ def manage_students():
             cursor.execute(query, tuple(params))
             students = cursor.fetchall()
             
-            cursor.execute('SELECT DISTINCT enrolled_session as batch FROM Users WHERE role=%s AND enrolled_session IS NOT NULL AND enrolled_session != %s ORDER BY enrolled_session DESC', ('Student', ''))
-            batches = cursor.fetchall()
+            # Fetch all registered batches from Batches table (created at Create Batches)
+            batch_set = set()
+            try:
+                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name DESC')
+                for r in cursor.fetchall():
+                    b = (r.get('batch_name') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('batch') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            batches = [{'batch': b} for b in sorted(batch_set, reverse=True)]
 
             cursor.execute('SELECT DISTINCT department FROM Users WHERE role=%s AND department IS NOT NULL AND department != %s', ('Student', ''))
             departments = cursor.fetchall()

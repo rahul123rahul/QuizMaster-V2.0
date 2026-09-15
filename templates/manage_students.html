@@ -110,7 +110,7 @@
         </div>
 
         <div class="filter-bar">
-            <form action="/manage_students" method="GET" class="filter-form">
+            <form action="" method="GET" class="filter-form">
                 <div>
                     <label>Search (Name/Email/Roll)</label>
                     <input type="text" name="search" placeholder="Type keywords..." value="{{ request.args.get('search', '') }}">
@@ -159,10 +159,12 @@
                 <span style="font-weight:600; color:#64748b;">Found {{ students|length }} records</span>
                 
                 <div style="display:flex; gap:10px;">
-                    {% if session.get('role') == 'Admin' %}
+                    {% if session.get('role') in ['Admin', 'Coordinator'] %}
                         <button type="button" class="btn-edit" style="padding:8px 15px; border-radius:8px; cursor:pointer;" onclick="openBulkBatchModal()">
                             <i class="fas fa-edit"></i> Update Batch
                         </button>
+                    {% endif %}
+                    {% if session.get('role') == 'Admin' %}
                         <button type="button" class="btn-del" style="padding:8px 15px; border-radius:8px; cursor:pointer;" onclick="if(confirm('Delete Selected?')) document.getElementById('bulkUserForm').submit()">
                             <i class="fas fa-trash"></i> Delete Selected
                         </button>
@@ -179,7 +181,7 @@
                     <table>
                         <thead>
                             <tr>
-                                {% if session.get('role') == 'Admin' %}<th width="40"><input type="checkbox" onclick="toggleSelectAll(this)"></th>{% endif %}
+                                {% if session.get('role') in ['Admin', 'Coordinator'] %}<th width="40"><input type="checkbox" onclick="toggleSelectAll(this)"></th>{% endif %}
                                 <th>User Profile</th>
                                 <th>Department</th>
                                 <th>Contact</th>
@@ -192,7 +194,7 @@
                             {% for s in students %}
                             <tr style="{% if s.is_blocked == 1 %}background:rgba(254, 226, 226, 0.5);{% endif %}">
                                 
-                                {% if session.get('role') == 'Admin' %}
+                                {% if session.get('role') in ['Admin', 'Coordinator'] %}
                                     <td><input type="checkbox" name="user_ids" value="{{ s.user_id }}"></td>
                                 {% endif %}
 
@@ -259,7 +261,7 @@
                 <span class="close-btn" onclick="closeBulkBatchModal()">&times;</span>
             </div>
             <p style="font-size:13px; color:#64748b;">Select a new batch for the selected students.</p>
-            <select id="newBatchSelect" style="margin-bottom:15px;">
+            <select id="newBatchSelect" style="margin-bottom:15px; width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-family:inherit; font-size:14px;">
                 <option value="" disabled selected>-- Select Batch --</option>
                 {% for b in batches %}
                     <option value="{{ b.batch }}">{{ b.batch }}</option>

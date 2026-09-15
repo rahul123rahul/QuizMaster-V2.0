@@ -314,6 +314,13 @@ def alias_edit_session(quiz_id):
     # the form payload and the POST method are preserved when forwarding to the correct route.
     return redirect(f'/admin/edit_session/{quiz_id}', code=307)
 
+@app.route('/manage_students')
+def alias_manage_students():
+    from flask import session, redirect
+    if session.get('role') == 'Coordinator':
+        return redirect('/coordinator/students')
+    return redirect('/admin/students')
+
 @app.route('/question/delete/<int:question_id>')
 def delete_question(question_id):
     conn = get_db_connection()

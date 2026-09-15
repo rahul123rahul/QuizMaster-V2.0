@@ -669,6 +669,7 @@ def clear_announcement():
     return redirect('/admin')
 
 @admin_bp.route('/students')
+@admin_bp.route('/manage_students')
 @require_admin_or_coordinator
 def manage_students_page():
     from utils import build_student_query
@@ -679,8 +680,32 @@ def manage_students_page():
         with conn.cursor() as cursor:
             cursor.execute(query, tuple(params))
             students = cursor.fetchall()
-            cursor.execute('SELECT DISTINCT enrolled_session as batch FROM Users WHERE role=%s AND enrolled_session IS NOT NULL AND enrolled_session != %s ORDER BY enrolled_session DESC', ('Student', ''))
-            batches = cursor.fetchall()
+            
+            # Fetch all registered batches from Batches table (created at Create Batches)
+            batch_set = set()
+            try:
+                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name DESC')
+                for r in cursor.fetchall():
+                    b = (r.get('batch_name') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('batch') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            batches = [{'batch': b} for b in sorted(batch_set, reverse=True)]
+
             cursor.execute('SELECT DISTINCT department FROM Users WHERE role=%s AND department IS NOT NULL AND department != %s', ('Student', ''))
             departments = cursor.fetchall()
         conn.close()
@@ -731,8 +756,30 @@ def edit_student_page(user_id):
         with conn.cursor() as cursor:
             cursor.execute('SELECT * FROM Users WHERE user_id=%s', (user_id,))
             user = cursor.fetchone()
-            cursor.execute('SELECT batch_name as batch FROM Batches ORDER BY batch_name')
-            sessions = cursor.fetchall()
+            # Fetch all registered batches for session selection
+            batch_set = set()
+            try:
+                cursor.execute('SELECT batch_name FROM Batches WHERE batch_name IS NOT NULL AND batch_name != "" ORDER BY batch_name')
+                for r in cursor.fetchall():
+                    b = (r.get('batch_name') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT batch FROM Quizzes WHERE batch IS NOT NULL AND batch != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('batch') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            try:
+                cursor.execute('SELECT DISTINCT enrolled_session FROM Users WHERE enrolled_session IS NOT NULL AND enrolled_session != ""')
+                for r in cursor.fetchall():
+                    b = (r.get('enrolled_session') or '').strip()
+                    if b: batch_set.add(b)
+            except Exception:
+                pass
+            sessions = [{'batch': b} for b in sorted(batch_set)]
             cursor.execute('SELECT center_id, center_name, capacity, allocated_count FROM Exam_Centers ORDER BY center_name')
             centers = cursor.fetchall()
 
@@ -917,7 +964,7 @@ def add_coordinator():
     return redirect('/admin/coordinators')
 
 @admin_bp.route('/bulk_update_batch', methods=['POST'])
-@require_admin
+@require_admin_or_coordinator
 def bulk_update_batch():
     user_ids = request.form.getlist('user_ids')
     new_batch = request.form.get('new_batch')
@@ -930,6 +977,12 @@ def bulk_update_batch():
             cursor.execute(sql, [new_batch] + user_ids)
         conn.commit()
         conn.close()
+        flash(f'Successfully updated batch to "{new_batch}" for {len(user_ids)} student(s).', 'success')
+    else:
+        flash('No students or batch selected.', 'warning')
+    
+    if session.get('role') == 'Coordinator':
+        return redirect('/coordinator/students')
     return redirect('/admin/students')
 
 @admin_bp.route('/mark_attendance', methods=['POST'])
