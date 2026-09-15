@@ -331,54 +331,104 @@ def student_dashboard():
 
                 now_ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
 
-                if user_info and user_info.get('enrolled_session'):
-                    stu_yr = user_info.get('study_year') or ''
-                    stu_dept = user_info.get('department') or ''
-                    try:
-                        u_sec = user_info.get('section') or ''
-                        cursor.execute('''
-                            SELECT z.*, 
-                                   (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
-                                   (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
-                            FROM Quizzes z 
-                            WHERE batch=%s 
-                            AND (year = %s OR FIND_IN_SET(%s, year) > 0 OR year LIKE %s OR year = 'All' OR year IS NULL OR year = '')
-                            AND (
-                                (section IS NOT NULL AND section != '' AND section != 'All' AND (FIND_IN_SET(%s, department) > 0 OR department = %s OR department = 'All') AND section = %s)
-                                OR (
-                                    (section IS NULL OR section = '' OR section = 'All')
-                                    AND (FIND_IN_SET(%s, department) > 0 OR FIND_IN_SET(CONCAT(%s, ':', %s), department) > 0 OR department = %s OR department = 'All')
-                                )
-                            )
-                            ORDER BY start_time ASC
-                        ''', (user_info['enrolled_session'], stu_yr, stu_yr, f"%{stu_yr}%", stu_dept, stu_dept, u_sec, stu_dept, stu_dept, u_sec, stu_dept))
-                    except Exception as e:
-                        # Resilient fallback across MySQL, MariaDB, and PostgreSQL
-                        cursor.execute('''
-                            SELECT z.*, 
-                                   (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
-                                   (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
-                            FROM Quizzes z 
-                            WHERE batch=%s 
-                            AND (year = %s OR year LIKE %s OR year = 'All' OR year IS NULL OR year = '')
-                            AND (department = %s OR department LIKE %s OR department = 'All' OR department IS NULL)
-                            ORDER BY start_time ASC
-                        ''', (user_info['enrolled_session'], stu_yr, f"%{stu_yr}%", stu_dept, f"%{stu_dept}%"))
+                user_batch = (user_info.get('enrolled_session') or user_info.get('batch') or user_info.get('selected_session') or '').strip() if user_info else ''
+                
+                if user_batch:
+                    cursor.execute('''
+                        SELECT z.*, 
+                               (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
+                               (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
+                        FROM Quizzes z 
+                        WHERE (z.batch = %s OR z.batch = 'All' OR z.batch IS NULL OR z.batch = '')
+                        ORDER BY z.start_time ASC
+                    ''', (user_batch,))
                 else:
-                    cursor.execute('SELECT * FROM Quizzes WHERE 1=0')
+                    cursor.execute('''
+                        SELECT z.*, 
+                               (SELECT COUNT(*) FROM Questions q WHERE q.quiz_id = z.quiz_id) as q_count,
+                               (SELECT COALESCE(SUM(marks), 0) FROM Questions q WHERE q.quiz_id = z.quiz_id) as real_marks
+                        FROM Quizzes z 
+                        WHERE (z.batch = 'All' OR z.batch IS NULL OR z.batch = '')
+                        ORDER BY z.start_time ASC
+                    ''')
 
                 quizzes = cursor.fetchall()
 
-                # Precise year matching for multi-select year sessions
-                def _matches_year(quiz_yr, stu_yr):
-                    if not quiz_yr or str(quiz_yr).strip() in ('', 'All'):
-                        return True
-                    if not stu_yr:
-                        return True
-                    allowed = [y.strip().lower() for y in str(quiz_yr).split(',') if y.strip()]
-                    return str(stu_yr).strip().lower() in allowed
+                import html
 
-                quizzes = [q for q in quizzes if _matches_year(q.get('year'), user_info.get('study_year'))]
+                def _normalize_year(val):
+                    if not val:
+                        return ''
+                    return str(val).strip().lower().replace(' sem', '').replace(' semester', '').replace(' year', '')
+
+                def _matches_year(quiz_yr, stu_yr):
+                    if not quiz_yr or str(quiz_yr).strip().lower() in ('', 'all', 'none'):
+                        return True
+                    if not stu_yr or str(stu_yr).strip().lower() in ('', 'all', 'none'):
+                        return True
+                    quiz_years = [y.strip() for y in str(quiz_yr).split(',') if y.strip()]
+                    norm_stu = _normalize_year(stu_yr)
+                    for qy in quiz_years:
+                        norm_qy = _normalize_year(qy)
+                        if not norm_qy or norm_qy == 'all':
+                            return True
+                        if norm_stu == norm_qy:
+                            return True
+                        # If student has "iv" and quiz has "iv/i" or "iv/ii"
+                        if '/' in norm_qy and norm_qy.split('/')[0] == norm_stu:
+                            return True
+                        # If quiz has "iv" and student has "iv/i"
+                        if '/' in norm_stu and norm_stu.split('/')[0] == norm_qy:
+                            return True
+                        if norm_stu + '/' in norm_qy:
+                            return True
+                    return False
+
+                def _matches_dept_and_sec(quiz_dept, quiz_sec, stu_dept, stu_sec):
+                    if not quiz_dept or str(quiz_dept).strip().lower() in ('', 'all'):
+                        return True
+                    if not stu_dept:
+                        return True
+                    clean_quiz_dept = html.unescape(str(quiz_dept)).strip()
+                    clean_stu_dept = html.unescape(str(stu_dept)).strip()
+                    u_sec = str(stu_sec or '').strip().upper()
+                    depts = [d.strip() for d in clean_quiz_dept.split(',') if d.strip()]
+                    for d in depts:
+                        target_dept = d
+                        target_sec = None
+                        if ':' in d:
+                            parts = d.split(':', 1)
+                            target_dept = parts[0].strip()
+                            target_sec = parts[1].strip().upper()
+                        elif quiz_sec and str(quiz_sec).strip() not in ('', 'All'):
+                            target_sec = str(quiz_sec).strip().upper()
+                        
+                        # Verify section compatibility
+                        if target_sec and target_sec != 'ALL' and u_sec and target_sec != u_sec:
+                            continue
+
+                        d_lower = target_dept.lower()
+                        s_lower = clean_stu_dept.lower()
+                        if d_lower == s_lower or d_lower == 'all':
+                            return True
+                        if d_lower in s_lower or s_lower in d_lower:
+                            return True
+                        
+                        # Match department abbreviations and prefixes (e.g. AI&DS, CSE- AIML, etc.)
+                        d_prefix = d_lower.split('-')[0].strip()
+                        s_prefix = s_lower.split('-')[0].strip()
+                        if d_prefix == s_prefix and d_prefix in ('civil', 'mechanical', 'ece', 'eee', 'cse', 'ai&ds', 'aids'):
+                            return True
+                    return False
+
+                stu_dept = (user_info.get('department') or '').strip() if user_info else ''
+                stu_sec = (user_info.get('section') or '').strip() if user_info else ''
+                stu_yr = (user_info.get('study_year') or '').strip() if user_info else ''
+
+                quizzes = [
+                    q for q in quizzes 
+                    if _matches_year(q.get('year'), stu_yr) and _matches_dept_and_sec(q.get('department'), q.get('section'), stu_dept, stu_sec)
+                ]
 
                 for q in quizzes:
                     raw_st = q.get('start_time')

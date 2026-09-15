@@ -27,7 +27,7 @@
 <body>
     <div class="card">
         <h2><i class="fas fa-edit"></i> Edit Session</h2>
-        <form action="/session/edit/{{ quiz.quiz_id }}" method="POST">
+        <form action="/admin/edit_session/{{ quiz.quiz_id }}" method="POST">
             
             <label>Event Title</label>
             <input type="text" name="title" value="{{ quiz.title }}" required>
@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div>
-                    <label>Department</label>
+                    <label>Departments (Multi-Select)</label>
                     <div style="display:flex; gap:5px;">
                         <select id="deptSelect" style="margin-bottom:0;">
                             <option value="" disabled selected>Select Dept</option>
@@ -69,7 +69,7 @@
                         <button type="button" onclick="addDepartment()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
                     </div>
                     <div class="dept-tags" id="deptTags"></div>
-                    <input type="hidden" name="department" id="realDeptInput" value="{{ quiz.department }}" required>
+                    <input type="hidden" name="department" id="realDeptInput" value="{{ (quiz.department or '') | safe }}" required>
                 </div>
             </div>
 
@@ -91,7 +91,7 @@
                         <button type="button" onclick="addYear()" style="width:40px; background:#4f46e5; color:white; border:none; border-radius:8px; cursor:pointer;"><i class="fas fa-plus"></i></button>
                     </div>
                     <div class="year-tags" id="yearTags"></div>
-                    <input type="hidden" name="year" id="realYearInput" value="{{ quiz.year }}" required>
+                    <input type="hidden" name="year" id="realYearInput" value="{{ (quiz.year or '') | safe }}" required>
                 </div>
                 <div>
                     <label>Duration (min)</label>
@@ -100,8 +100,7 @@
             </div>
 
             <label>Start Time</label>
-            <!-- Format datetime for input value -->
-            <input type="datetime-local" name="start_time" value="{{ quiz.start_time | replace(' ', 'T') }}" required>
+            <input type="datetime-local" name="start_time" value="{{ (quiz.start_time|string).replace(' ', 'T')[:16] }}" required>
 
             <label>Certificate Generation</label>
             <select name="cert_status">
@@ -126,7 +125,8 @@
         }
 
         // Multi-Department Logic
-        let selectedDepts = "{{ quiz.department or '' }}".split(',').filter(s => s && s.trim() !== '');
+        let rawDept = {{ (quiz.department or '') | tojson }};
+        let selectedDepts = rawDept ? rawDept.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 
         function addDepartment() {
             const sel = document.getElementById('deptSelect');
@@ -156,9 +156,10 @@
             container.innerHTML = selectedDepts.map(d => `<div class="dept-tag">${d} <span onclick="removeDept('${d}')">&times;</span></div>`).join('');
             document.getElementById('realDeptInput').value = selectedDepts.join(',');
         }
-        
+
         // Multi-Year Logic
-        let selectedYears = "{{ quiz.year or '' }}".split(',').map(s => s.trim()).filter(s => s !== '');
+        let rawYear = {{ (quiz.year or '') | tojson }};
+        let selectedYears = rawYear ? rawYear.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 
         function addYear() {
             const sel = document.getElementById('yearSelect');

@@ -201,15 +201,16 @@ def create_session_page():
 @admin_bp.route('/create_quiz_session', methods=['POST'])
 @require_admin_or_coordinator
 def create_quiz_session():
+    import html
     title = request.form.get('title')
     batch = request.form.get('batch')
-    year = request.form.get('year')
+    year = html.unescape(request.form.get('year') or '').strip()
     duration = request.form.get('duration')
     start_time = request.form.get('start_time')
     cert_status = request.form.get('cert_status', '0')
     description = request.form.get('description')
     category = request.form.get('category') or 'Exam'
-    department = request.form.get('department')
+    department = html.unescape(request.form.get('department') or '').strip()
     section = request.form.get('section')
     
     conn = get_db_connection()
@@ -231,15 +232,16 @@ def edit_session_page(quiz_id):
     conn = get_db_connection()
 
     if request.method == 'POST':
+        import html
         title = request.form.get('title')
         batch = request.form.get('batch')
-        year = request.form.get('year')
+        year = html.unescape(request.form.get('year') or '').strip()
         duration = request.form.get('duration')
         start_time = request.form.get('start_time')
         cert_status = request.form.get('cert_status', '0')
         description = request.form.get('description')
         category = request.form.get('category') or 'Exam'
-        department = request.form.get('department')
+        department = html.unescape(request.form.get('department') or '').strip()
         section = request.form.get('section')
         
         if conn:
